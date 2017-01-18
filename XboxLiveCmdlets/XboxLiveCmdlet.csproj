@@ -44,9 +44,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Progress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SetXblDevCredential.cs" />
+    <Compile Include="GetXblDevToken.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
@@ -54,9 +53,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Microsoft.Xbox.ToolAuth\Microsoft.Xbox.ToolAuth.csproj">
+    <ProjectReference Include="..\Microsoft.Xbox.Service.Tool\Microsoft.Xbox.Services.Tool.csproj">
       <Project>{2442b61c-1cd6-4556-bf98-56b73e4106de}</Project>
-      <Name>Microsoft.Xbox.ToolAuth.Win32.Csharp</Name>
+      <Name>Microsoft.Xbox.Services.Tool</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,17 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Management.Automation;
-using System.Management.Automation.Security;
-using System.Security;
-using Microsoft.PowerShell.Commands;
-
+﻿//*********************************************************
+//
+// Copyright (c) Microsoft. All rights reserved.
+// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
+//
+//*********************************************************
 
 namespace XboxLiveCmdlet
 {
-    [Cmdlet(VerbsCommon.Set, "XBLDevXDPCredential")]
+    using System;
+    using System.Management.Automation;
+    using System.Security;
+
+    [Cmdlet(VerbsCommon.Get, "XBLDevXDPToken")]
     public class SetXblDevXDPCredential : Cmdlet
     {
         [Parameter (Mandatory = true, Position = 0)]
@@ -35,7 +38,6 @@ namespace XboxLiveCmdlet
             {
                 var innerEx = e.InnerException;
                 WriteError(new ErrorRecord(innerEx, "GetXDPEToken failed", ErrorCategory.SecurityError, null));
-                //Wri
             }
             
         }

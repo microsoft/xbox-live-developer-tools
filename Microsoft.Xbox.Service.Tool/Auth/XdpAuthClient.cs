@@ -1,11 +1,14 @@
-﻿// -----------------------------------------------------------------------
-//  <copyright file="XdpAuthClient.cs" company="Microsoft">
-//      Copyright (c) Microsoft. All rights reserved.
-//      Internal use only.
-//  </copyright>
-// -----------------------------------------------------------------------
+﻿//*********************************************************
+//
+// Copyright (c) Microsoft. All rights reserved.
+// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
+//
+//*********************************************************
 
-namespace Microsoft.XboxTest.Xdts
+namespace Microsoft.Xbox.Services.Tool
 {
     using System;
     using System.Collections.Generic;
@@ -44,7 +47,7 @@ namespace Microsoft.XboxTest.Xdts
             {
                 if (response.Content == null)
                 {
-                    throw new TokenGenerationException("XdpETokenResponse was null.");
+                    throw new Exception("XdpETokenResponse was null.");
                 }
 
                 try
@@ -55,8 +58,8 @@ namespace Microsoft.XboxTest.Xdts
                 }
                 catch (JsonException ex)
                 {
-                    throw new TokenGenerationException("Failed to deserialize eToken response.", ex);
-                }                
+                    throw new Exception("Failed to deserialize eToken response.", ex);
+                }
             }
         }
 
@@ -64,7 +67,7 @@ namespace Microsoft.XboxTest.Xdts
         {
             if (emailaddress.IndexOf("@microsoft.com", StringComparison.OrdinalIgnoreCase) > 0)
             {
-                throw new TokenGenerationException("Microsoft corporate accounts are not supported.");
+                throw new Exception("Microsoft corporate accounts are not supported.");
             }
 
             WebPageResponse stsSignInPage = await GetStsSignInPageAsync(this.settings.XdpBaseUri);
@@ -131,7 +134,7 @@ namespace Microsoft.XboxTest.Xdts
 
             if (node == null)
             {
-                throw new TokenGenerationException("STS authentication failed. Check the password of the account.");
+                throw new Exception("STS authentication failed. Check the password of the account.");
             }
 
             string wa = HttpUtility.UrlEncode(node.Attributes["value"].Value);
@@ -240,7 +243,7 @@ namespace Microsoft.XboxTest.Xdts
             Stream stream = await response.Content.ReadAsStreamAsync();
             if (stream == null)
             {
-                throw new TokenGenerationException(
+                throw new Exception(
                     string.Format(
                         "The response stream from: {0} was null.",
                         response.RequestMessage.RequestUri));
@@ -274,7 +277,7 @@ namespace Microsoft.XboxTest.Xdts
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new TokenGenerationException(
+                    throw new Exception(
                         string.Format(
                             "Request to {0} failed. StatusCode: {1} ReasonPhrase: {2}",
                             response.RequestMessage.RequestUri,
