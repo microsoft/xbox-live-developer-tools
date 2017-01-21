@@ -10,55 +10,93 @@
 
 namespace Microsoft.Xbox.Services.Tool
 {
+    using HtmlAgilityPack;
+    using Newtonsoft.Json;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
     using System.Net.Http;
+    using System.Security;
     using System.Text;
     using System.Threading.Tasks;
     using System.Web;
 
-    using HtmlAgilityPack;
-
-    using Newtonsoft.Json;
-    using System.Security;
-
     public class XdpAuthClient
     {
         private const string XdpAuthorizeUserPath = "/User/Authorize";
-        private readonly XdpAuthClientSettings settings;
-        
-        public XdpAuthClient(XdpAuthClientSettings settings)
+        private ConcurrentDictionary<string, XdtsTokenResponse> cachedTokens = new ConcurrentDictionary<string, XdtsTokenResponse>();
+        private CookieContainer authCookies = null;
+
+        public XdpAuthClient()
         {
-            this.settings = settings;
         }
 
-        public async Task<XdpETokenResponse> GetEToken(string emailaddress, SecureString password, string sandboxId = null)
+        public bool HasAuthCookie()
+        {
+            return this.authCookies != null;
+        }
+
+        public async Task<string> GetETokenSilentlyAsync(string sandbox = "")
+        {
+            XdtsTokenResponse cachedToken;
+            if (this.cachedTokens.TryGetValue(sandbox, out cachedToken))
+            {
+                if (cachedToken != null && !string.IsNullOrEmpty(cachedToken.Token) && cachedToken.NotAfter >= DateTime.UtcNow)
+                {
+                    return cachedToken.Token;
+                }
+            }
+            else if (this.authCookies != null)
+            {
+                return await GetETokenInternalAsync(this.authCookies, sandbox);
+            }
+
+            throw new XboxLiveException("No auth info");
+        }
+
+        public async Task<string> GetETokenAsync(string emailaddress, SecureString password, string sandboxId = null)
         {
             CookieContainer xdpAuthenticationCookies = await this.GetXdpAuthenticationCookies(emailaddress, password);
 
+            return await GetETokenInternalAsync(xdpAuthenticationCookies, sandboxId);
+        }
+
+        public async Task<string> GetETokenInternalAsync(CookieContainer authCookie, string sandboxId)
+        {
             string xdpETokenPath = string.IsNullOrWhiteSpace(sandboxId) ?
                 XdpAuthorizeUserPath :
                 string.Format("{0}?sandboxId={1}", XdpAuthorizeUserPath, sandboxId);
 
-            Uri xdpAuthorizeUri = new Uri(this.settings.XdpBaseUri, xdpETokenPath);
-            using (HttpResponseMessage response = await SendRequestAsync(HttpMethod.Get, xdpAuthorizeUri, null, xdpAuthenticationCookies))
+            Uri xdpAuthorizeUri = new Uri(ClientSettings.Singleton.XdpBaseUri, xdpETokenPath);
+            using (HttpResponseMessage response = await SendRequestAsync(HttpMethod.Get, xdpAuthorizeUri, null, authCookie))
             {
                 if (response.Content == null)
                 {
-                    throw new Exception("XdpETokenResponse was null.");
+                    throw new XboxLiveException("XdpETokenResponse was null.", response, null);
                 }
 
                 try
                 {
                     string json = await response.Content.ReadAsStringAsync();
                     XdpETokenResponse xdpETokenResponse = JsonConvert.DeserializeObject<XdpETokenResponse>(json);
-                    return xdpETokenResponse;
+                    if (xdpETokenResponse.Data != null && xdpETokenResponse.Data.Token != null)
+                    {
+                        // save all cached data
+                        this.authCookies = authCookie;
+                        this.cachedTokens[sandboxId] = xdpETokenResponse.Data;
+                        return xdpETokenResponse.Data.Token;
+                    }
+                    else
+                    {
+                        throw new XboxLiveException("Invalid etoken format", response, null);
+                    }
+
                 }
                 catch (JsonException ex)
                 {
-                    throw new Exception("Failed to deserialize eToken response.", ex);
+                    throw new XboxLiveException("Failed to deserialize eToken response.", response, ex);
                 }
             }
         }
@@ -67,24 +105,24 @@ namespace Microsoft.Xbox.Services.Tool
         {
             if (emailaddress.IndexOf("@microsoft.com", StringComparison.OrdinalIgnoreCase) > 0)
             {
-                throw new Exception("Microsoft corporate accounts are not supported.");
+                throw new XboxLiveException("Microsoft corporate accounts are not supported.");
             }
 
-            WebPageResponse stsSignInPage = await GetStsSignInPageAsync(this.settings.XdpBaseUri);
-            NetworkCredential credentials = new NetworkCredential(emailaddress, password);           
+            WebPageResponse stsSignInPage = await GetStsSignInPageAsync(ClientSettings.Singleton.XdpBaseUri);
+            NetworkCredential credentials = new NetworkCredential(emailaddress, password);
 
             FormUrlEncodedContent stsSignInContent = new FormUrlEncodedContent(
                 new[]
                 {
-                            new KeyValuePair<string, string>("__VIEWSTATE", stsSignInPage.Document.GetElementbyId("__VIEWSTATE").Attributes["value"].Value),
-                            new KeyValuePair<string, string>("__EVENTVALIDATION", stsSignInPage.Document.GetElementbyId("__EVENTVALIDATION").Attributes["value"].Value),
-                            new KeyValuePair<string, string>("__db", stsSignInPage.Document.DocumentNode.SelectSingleNode("//input[@name='__db']").Attributes["value"].Value),
-                            new KeyValuePair<string, string>("ctl00$ContentPlaceHolder1$PassiveIdentityProvidersDropDownList", this.settings.WindowsLiveAuthenticationType),
-                            new KeyValuePair<string, string>("ctl00$ContentPlaceHolder1$PassiveSignInButton", "Continue to Sign In")
+                    new KeyValuePair<string, string>("__VIEWSTATE", stsSignInPage.Document.GetElementbyId("__VIEWSTATE").Attributes["value"].Value),
+                    new KeyValuePair<string, string>("__EVENTVALIDATION", stsSignInPage.Document.GetElementbyId("__EVENTVALIDATION").Attributes["value"].Value),
+                    new KeyValuePair<string, string>("__db", stsSignInPage.Document.DocumentNode.SelectSingleNode("//input[@name='__db']").Attributes["value"].Value),
+                    new KeyValuePair<string, string>("ctl00$ContentPlaceHolder1$PassiveIdentityProvidersDropDownList", ClientSettings.Singleton.WindowsLiveAuthenticationType),
+                    new KeyValuePair<string, string>("ctl00$ContentPlaceHolder1$PassiveSignInButton", "Continue to Sign In")
                 });
             
             WebPageResponse windowsLiveSignInResponse = await this.SignInToWindowsLiveAsync(credentials, stsSignInPage.WebPageRequestUri, stsSignInContent);
-            HttpResponseMessage adfsAuthenticatedResponse = await this.GetStsAdfsAuthenticatedResponseAsync(this.settings.StsAdfsAuthenticationUri, windowsLiveSignInResponse.Document, windowsLiveSignInResponse.ResponseCookies);
+            HttpResponseMessage adfsAuthenticatedResponse = await this.GetStsAdfsAuthenticatedResponseAsync(ClientSettings.Singleton.StsAdfsAuthenticationUri, windowsLiveSignInResponse.Document, windowsLiveSignInResponse.ResponseCookies);
             return await this.ExtractAuthenticationCookiesFromXdpResponseAsync(adfsAuthenticatedResponse);
         }
 
@@ -101,7 +139,7 @@ namespace Microsoft.Xbox.Services.Tool
                     });
 
                 CookieContainer xdpAuthenticationCookies = new CookieContainer();
-                await SendRequestAsync(HttpMethod.Post, this.settings.XdpBaseUri, authorizedXdpContent, xdpAuthenticationCookies);
+                await SendRequestAsync(HttpMethod.Post, ClientSettings.Singleton.XdpBaseUri, authorizedXdpContent, xdpAuthenticationCookies);
                 return xdpAuthenticationCookies;
             }
         }
@@ -134,7 +172,7 @@ namespace Microsoft.Xbox.Services.Tool
 
             if (node == null)
             {
-                throw new Exception("STS authentication failed. Check the password of the account.");
+                throw new XboxLiveException("STS authentication failed. Check the password of the account.");
             }
 
             string wa = HttpUtility.UrlEncode(node.Attributes["value"].Value);
@@ -169,7 +207,7 @@ namespace Microsoft.Xbox.Services.Tool
             string queryStringValue = body.Substring(searchValueStart, searchValueEnd - searchValueStart);
 
             // Siging into Windows Live
-            UriBuilder uriBuilder = new UriBuilder(this.settings.WindowsLiveUri)
+            UriBuilder uriBuilder = new UriBuilder(ClientSettings.Singleton.WindowsLiveUri)
             {
                 Path = "/ppsecure/post.srf",
                 Query = baseUri.Query.Substring(1) + SearchValue + queryStringValue
@@ -243,10 +281,10 @@ namespace Microsoft.Xbox.Services.Tool
             Stream stream = await response.Content.ReadAsStreamAsync();
             if (stream == null)
             {
-                throw new Exception(
+                throw new XboxLiveException(
                     string.Format(
                         "The response stream from: {0} was null.",
-                        response.RequestMessage.RequestUri));
+                        response.RequestMessage.RequestUri), response, null);
             }
 
             HtmlDocument document = new HtmlDocument();
@@ -277,12 +315,12 @@ namespace Microsoft.Xbox.Services.Tool
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception(
+                    throw new XboxLiveException(
                         string.Format(
                             "Request to {0} failed. StatusCode: {1} ReasonPhrase: {2}",
                             response.RequestMessage.RequestUri,
                             response.StatusCode,
-                            response.ReasonPhrase));
+                            response.ReasonPhrase), response, null);
                 }
 
                     return response;

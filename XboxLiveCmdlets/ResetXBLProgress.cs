@@ -1,0 +1,55 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+
+namespace XboxLiveCmdlet
+{
+    using System;
+    using System.Management.Automation;
+
+    [Cmdlet(VerbsCommon.Reset, "XBLProgress")]
+    public class ResetXblProgress : Cmdlet
+    {
+        [Parameter(Mandatory = true)]
+        public string ServiceConfigId { get; set; }
+
+        [Parameter(Mandatory = true)]
+        public string SandboxId { get; set; }
+
+        [Parameter(Mandatory = true )]
+        public List<string> XboxUserIds { get; set; }
+
+        [Parameter(DontShow = true, Mandatory = false)]
+        [ValidateSet("prod", "dnet", IgnoreCase =true)]
+        public string Environment { get; set; }
+
+        protected override void BeginProcessing()
+        {
+            if (!Microsoft.Xbox.Services.Tool.Auth.HasAuthInfo())
+            {
+                var errorRecord = new ErrorRecord(new Exception("User did not sign in, use Add-XblcAccount command."), "", ErrorCategory.AuthenticationError, null);
+                ThrowTerminatingError(errorRecord);
+            }
+        }
+
+        protected override void ProcessRecord()
+        {
+            try
+            {
+                var task = Microsoft.Xbox.Services.Tool.ProgressResetter.ResetProgressAsync(SandboxId, ServiceConfigId, XboxUserIds);
+                task.Wait();
+                var result = task.Result;
+                WriteObject(result, true);
+            }
+            catch (AggregateException e)
+            {
+                var innerEx = e.InnerException;
+                WriteError(new ErrorRecord(innerEx, "ResetXblProgress failed", ErrorCategory.InvalidOperation, null));
+            }
+
+        }
+    }
+}

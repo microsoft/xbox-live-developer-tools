@@ -13,18 +13,60 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Security;
     using System.Threading.Tasks;
 
-    public class ToolAuth
+    public class Auth
     {
-       
-        static public async Task<string> GetXDPEToken(string username, SecureString password, string environment = "", string sandbox = null)
+        private static XdpAuthClient client = null;
+        private static object initLock = new object();
+
+        static public bool HasAuthInfo()
         {
-            XdpAuthClient client = new XdpAuthClient(new XdpAuthClientSettings(environment));
-            XdpETokenResponse response = await client.GetEToken(username, password, sandbox);
-            if (response.Data != null && response.Data.Token != null)
+            lock (initLock)
             {
-                return response.Data.Token;
+                return (client != null && client.HasAuthCookie());
             }
-            return "";
+        }
+
+        static private string PrepareForAuthHeader(string etoken)
+        {
+            return "XBL3.0 x=-;" + etoken;
+        }
+
+        static public async Task<string> GetXDPETokenSilentlyAsync(string sandbox = "")
+        {
+            lock (initLock)
+            {
+                if (client == null)
+                {
+                    // GetXDPETokenSilentlyAsync can't be called before a succeful sign in 
+                    throw new XboxLiveException("Invalid status: GetXDPETokenSilentlyAsync");
+                }
+            }
+
+            string etoken = await client.GetETokenSilentlyAsync(sandbox);
+            return PrepareForAuthHeader(etoken);
+        }
+
+        static public async Task<string> GetXDPEToken(string username, SecureString password, string environment = "", string sandbox = "")
+        {
+            lock (initLock)
+            {
+                if (client == null)
+                {
+                    client = new XdpAuthClient();
+                }
+            }
+
+            string token = string.Empty;
+            try
+            {
+                token = await client.GetETokenSilentlyAsync(sandbox);
+            }
+            catch (XboxLiveException)
+            {
+                token = await client.GetETokenAsync(username, password, sandbox);
+            }
+
+            return PrepareForAuthHeader(token);
         }
     }
 }

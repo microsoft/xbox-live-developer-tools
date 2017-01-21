@@ -14,7 +14,7 @@ namespace XboxLiveCmdlet
     using System.Management.Automation;
     using System.Security;
 
-    [Cmdlet(VerbsCommon.Get, "XBLDevXDPToken")]
+    [Cmdlet(VerbsCommon.Add, "XBLDevXDPAccount")]
     public class SetXblDevXDPCredential : Cmdlet
     {
         [Parameter (Mandatory = true, Position = 0)]
@@ -28,16 +28,15 @@ namespace XboxLiveCmdlet
             try
             {
                 // Save the creditial 
-                PSCredential cred = new PSCredential(this.UserName, this.Password);
+                //PSCredential cred = new PSCredential(this.UserName, this.Password);
 
-                var task = Microsoft.Xbox.ToolAuth.GetXDPEToken(this.UserName, this.Password);
+                var task = Microsoft.Xbox.Services.Tool.Auth.GetXDPEToken(this.UserName, this.Password);
                 task.Wait();
-                WriteObject(task.Result);
             }
             catch(AggregateException e)
             {
                 var innerEx = e.InnerException;
-                WriteError(new ErrorRecord(innerEx, "GetXDPEToken failed", ErrorCategory.SecurityError, null));
+                WriteError(new ErrorRecord(innerEx, "Add-XBLDevXDPAccount failed", ErrorCategory.SecurityError, null));
             }
             
         }
