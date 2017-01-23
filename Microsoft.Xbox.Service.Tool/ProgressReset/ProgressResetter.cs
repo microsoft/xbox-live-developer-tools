@@ -54,7 +54,8 @@ namespace Microsoft.Xbox.Services.Tool
     {
         Succeeded = 0,
         Failed,
-        Timeout
+        Timeout,
+        Unknown
     }
 
     public class UserResetResult
@@ -71,60 +72,60 @@ namespace Microsoft.Xbox.Services.Tool
 
         static public async Task<IEnumerable<UserResetResult>> ResetProgressAsync(string sandbox, string scid, IEnumerable<string> xuids)
         {
-            BlockingCollection<UserResetResult> result = new BlockingCollection<UserResetResult>();
+            var tasks = new List<Task<UserResetResult>>();
             foreach (string xuid in xuids)
             {
-                try
+                tasks.Add(SubmitJobAndPollStatus(sandbox, scid, xuid));
+            }
+
+            Task.WaitAll(tasks.ToArray());
+            return tasks.Select(task => task.Result).ToList(); ;
+        }
+
+        private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid)
+        {
+            UserResetResult result = new UserResetResult
+            {
+                XboxLiveUserId = xuid,
+                Status = ResetStatus.Unknown,
+            };
+
+            try
+            {
+                string jobid = await SubmitJobAsync(sandbox, scid, xuid);
+
+                if (!string.IsNullOrEmpty(jobid))
                 {
-                    string jobid = await SubmitJobAsync(sandbox, scid, xuid);
-
-                    if (!string.IsNullOrEmpty(jobid))
+                    string status = "";
+                    for (int i = 0; i < MaxPollingAttempts; i++)
                     {
-                        string status = "InProgress";
-                        for (int i = 0; i < MaxPollingAttempts; i++)
+                        status = await CheckJobStatus(jobid);
+                        if (status == "CompletedSuccess")
                         {
-                            status = await CheckJobStatus(jobid);
-                            if (status == "CompletedSuccess")
-                            {
-                                result.Add(new UserResetResult
-                                {
-                                    XboxLiveUserId = xuid,
-                                    Status = ResetStatus.Succeeded,
-                                });
-                                break;
-                            }
-                            else if (status == "CompletedFailed")
-                            {
-                                result.Add(new UserResetResult
-                                {
-                                    XboxLiveUserId = xuid,
-                                    Status = ResetStatus.Failed,
-                                });
-                                break;
-                            }
-
-                            await Task.Delay(1000);
+                            result.Status = ResetStatus.Succeeded;
+                            break;
+                        }
+                        else if (status == "CompletedFailed")
+                        {
+                            result.Status = ResetStatus.Failed;
+                            break;
                         }
 
-                        if (status == "InProgress")
-                        {
-                            result.Add(new UserResetResult
-                            {
-                                XboxLiveUserId = xuid,
-                                Status = ResetStatus.Timeout,
-                            });
-                        }
+                        await Task.Delay(1000);
                     }
-                }
-                catch(XboxLiveException)
-                {
-                    result.Add(new UserResetResult
+
+                    if (status == "InProgress" || status == "Queued")
                     {
-                        XboxLiveUserId = xuid,
-                        Status = ResetStatus.Failed,
-                    });
+                        result.Status = ResetStatus.Timeout;
+                    }
+
                 }
             }
+            catch (XboxLiveException)
+            {
+                result.Status = ResetStatus.Failed;
+            }
+
             return result;
         }
 
@@ -149,6 +150,9 @@ namespace Microsoft.Xbox.Services.Tool
                 AddRequestHeaders(ref requestMsg, eToken);
 
                 jobid = await submitRequest.SendAsync(requestMsg);
+
+                // remove "" if found one.
+                jobid = jobid.Trim(new char[] { '\\', '\"' });
             }
 
             return jobid;

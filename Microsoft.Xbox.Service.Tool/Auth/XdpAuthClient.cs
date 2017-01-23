@@ -41,12 +41,12 @@ namespace Microsoft.Xbox.Services.Tool
         public async Task<string> GetETokenSilentlyAsync(string sandbox = "")
         {
             XdtsTokenResponse cachedToken;
-            if (this.cachedTokens.TryGetValue(sandbox, out cachedToken))
+
+            // return cachaed token if we have one and didn't expire
+            if (this.cachedTokens.TryGetValue(sandbox, out cachedToken)
+                && (cachedToken != null && !string.IsNullOrEmpty(cachedToken.Token) && cachedToken.NotAfter >= DateTime.UtcNow))
             {
-                if (cachedToken != null && !string.IsNullOrEmpty(cachedToken.Token) && cachedToken.NotAfter >= DateTime.UtcNow)
-                {
-                    return cachedToken.Token;
-                }
+                return cachedToken.Token;
             }
             else if (this.authCookies != null)
             {
