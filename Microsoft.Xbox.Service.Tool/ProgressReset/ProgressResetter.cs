@@ -78,7 +78,7 @@ namespace Microsoft.Xbox.Services.Tool
                 tasks.Add(SubmitJobAndPollStatus(sandbox, scid, xuid));
             }
 
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
             return tasks.Select(task => task.Result).ToList(); ;
         }
 
