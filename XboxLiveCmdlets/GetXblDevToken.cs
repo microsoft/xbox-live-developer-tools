@@ -15,7 +15,7 @@ namespace XboxLiveCmdlet
     using System.Security;
 
     [Cmdlet(VerbsCommon.Add, "XBLDevXDPAccount")]
-    public class SetXblDevXDPCredential : Cmdlet
+    public class SetXblDevXDPCredential : XboxliveCmdlet
     {
         [Parameter (Mandatory = true, Position = 0)]
         public string UserName { get; set; }
@@ -38,7 +38,7 @@ namespace XboxLiveCmdlet
                 var innerEx = e.InnerException;
                 WriteError(new ErrorRecord(innerEx, "Add-XBLDevXDPAccount failed", ErrorCategory.SecurityError, null));
             }
-            
         }
+        
     }
 }

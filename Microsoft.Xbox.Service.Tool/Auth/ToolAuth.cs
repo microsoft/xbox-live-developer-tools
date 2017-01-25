@@ -48,6 +48,7 @@ namespace Microsoft.Xbox.Services.Tool
 
         static public async Task<string> GetXDPEToken(string username, SecureString password, string environment = "", string sandbox = "")
         {
+            Log.WriteLog($"GetXDPEToken start, username:{username}, sandbox:{sandbox}, environment:{environment}");
             lock (initLock)
             {
                 if (client == null)

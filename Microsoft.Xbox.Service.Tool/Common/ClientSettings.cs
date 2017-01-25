@@ -11,7 +11,6 @@
 namespace Microsoft.Xbox.Services.Tool
 {
     using System;
-    using System.Diagnostics;
 
     public class ClientSettings
     {
@@ -43,7 +42,7 @@ namespace Microsoft.Xbox.Services.Tool
                 environment = "PRODUCTION";
             }
 
-            Debug.WriteLine($"client setting environment: {environment}");
+            Log.WriteLog($"client setting environment: {environment}");
 
             // Default values are for production
             string xdpBaseEndpoint = "https://xdp.xboxlive.com";

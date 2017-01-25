@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Auth\ToolAuth.cs" />
+    <Compile Include="Common\Log.cs" />
     <Compile Include="Common\TestHook.cs" />
     <Compile Include="Common\XboxLiveException.cs" />
     <Compile Include="Common\XboxLiveHttpRequest.cs" />
