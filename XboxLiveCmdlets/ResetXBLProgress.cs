@@ -11,7 +11,7 @@ namespace XboxLiveCmdlet
     using System.Management.Automation;
 
     [Cmdlet(VerbsCommon.Reset, "XBLProgress")]
-    public class ResetXblProgress : Cmdlet
+    public class ResetXblProgress : XboxliveCmdlet
     {
         [Parameter(Mandatory = true)]
         public string ServiceConfigId { get; set; }
@@ -30,9 +30,11 @@ namespace XboxLiveCmdlet
         {
             if (!Microsoft.Xbox.Services.Tool.Auth.HasAuthInfo())
             {
-                var errorRecord = new ErrorRecord(new Exception("User did not sign in, use Add-XblcAccount command."), "", ErrorCategory.AuthenticationError, null);
+                var errorRecord = new ErrorRecord(new Exception("User did not sign in, use Add-XBLDevXDPAccount command."), "", ErrorCategory.AuthenticationError, null);
                 ThrowTerminatingError(errorRecord);
             }
+
+            base.BeginProcessing();
         }
 
         protected override void ProcessRecord()

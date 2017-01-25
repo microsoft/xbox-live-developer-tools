@@ -153,6 +153,8 @@ namespace Microsoft.Xbox.Services.Tool
 
                 // remove "" if found one.
                 jobid = jobid.Trim(new char[] { '\\', '\"' });
+
+                Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} succeeded. Jobid: {jobid}");
             }
 
             return jobid;
@@ -169,6 +171,8 @@ namespace Microsoft.Xbox.Services.Tool
 
                 var response = await submitRequest.SendAsync(requestMsg);
                 var jobstatus =  JsonConvert.DeserializeObject<JobStatusResponse>(response);
+
+                Log.WriteLog($"Checking {jobid} job stauts: {jobstatus.Status}");
 
                 return jobstatus.Status;
             }

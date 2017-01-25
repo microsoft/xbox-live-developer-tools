@@ -46,14 +46,16 @@ namespace Microsoft.Xbox.Services.Tool
             if (this.cachedTokens.TryGetValue(sandbox, out cachedToken)
                 && (cachedToken != null && !string.IsNullOrEmpty(cachedToken.Token) && cachedToken.NotAfter >= DateTime.UtcNow))
             {
+                Log.WriteLog($"Using token from cache for sandbox:{sandbox}.");
                 return cachedToken.Token;
             }
             else if (this.authCookies != null)
             {
+                Log.WriteLog($"Cached auth cookie found for sandbox:{sandbox}.");
                 return await GetETokenInternalAsync(this.authCookies, sandbox);
             }
 
-            throw new XboxLiveException("No auth info");
+            throw new XboxLiveException("No cached auth info, get etoken using cached info failed.");
         }
 
         public async Task<string> GetETokenAsync(string emailaddress, SecureString password, string sandboxId = null)
@@ -69,6 +71,8 @@ namespace Microsoft.Xbox.Services.Tool
                 XdpAuthorizeUserPath :
                 string.Format("{0}?sandboxId={1}", XdpAuthorizeUserPath, sandboxId);
 
+            Log.WriteLog($"Fetching etoken with auth cookie.");
+
             Uri xdpAuthorizeUri = new Uri(ClientSettings.Singleton.XdpBaseUri, xdpETokenPath);
             using (HttpResponseMessage response = await SendRequestAsync(HttpMethod.Get, xdpAuthorizeUri, null, authCookie))
             {
@@ -83,6 +87,8 @@ namespace Microsoft.Xbox.Services.Tool
                     XdpETokenResponse xdpETokenResponse = JsonConvert.DeserializeObject<XdpETokenResponse>(json);
                     if (xdpETokenResponse.Data != null && xdpETokenResponse.Data.Token != null)
                     {
+                        Log.WriteLog($"Fetching etoken succeeded.");
+
                         // save all cached data
                         this.authCookies = authCookie;
                         this.cachedTokens[sandboxId] = xdpETokenResponse.Data;
@@ -123,7 +129,9 @@ namespace Microsoft.Xbox.Services.Tool
             
             WebPageResponse windowsLiveSignInResponse = await this.SignInToWindowsLiveAsync(credentials, stsSignInPage.WebPageRequestUri, stsSignInContent);
             HttpResponseMessage adfsAuthenticatedResponse = await this.GetStsAdfsAuthenticatedResponseAsync(ClientSettings.Singleton.StsAdfsAuthenticationUri, windowsLiveSignInResponse.Document, windowsLiveSignInResponse.ResponseCookies);
-            return await this.ExtractAuthenticationCookiesFromXdpResponseAsync(adfsAuthenticatedResponse);
+            var cookie =  await this.ExtractAuthenticationCookiesFromXdpResponseAsync(adfsAuthenticatedResponse);
+            Log.WriteLog("Creating auth cookie succeeded");
+            return cookie;
         }
 
         private async Task<CookieContainer> ExtractAuthenticationCookiesFromXdpResponseAsync(HttpResponseMessage adfsAuthenticatedResponse)
