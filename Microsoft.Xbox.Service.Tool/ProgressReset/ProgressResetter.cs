@@ -72,6 +72,10 @@ namespace Microsoft.Xbox.Services.Tool
 
         static public async Task<IEnumerable<UserResetResult>> ResetProgressAsync(string sandbox, string scid, IEnumerable<string> xuids)
         {
+            // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
+            // populate the auth error up-front.
+            await Auth.GetETokenSilentlyAsync(scid, sandbox);
+
             var tasks = new List<Task<UserResetResult>>();
             foreach (string xuid in xuids)
             {
@@ -146,7 +150,7 @@ namespace Microsoft.Xbox.Services.Tool
                 var requestContent = JsonConvert.SerializeObject(new JobSubmitReqeust(sandbox, scid, xuid));
                 requestMsg.Content = new StringContent(requestContent);
 
-                string eToken = await Auth.GetXDPETokenSilentlyAsync(sandbox);
+                string eToken = await Auth.GetETokenSilentlyAsync(scid, sandbox);
                 AddRequestHeaders(ref requestMsg, eToken);
 
                 jobid = await submitRequest.SendAsync(requestMsg);
@@ -166,7 +170,7 @@ namespace Microsoft.Xbox.Services.Tool
             {
                 var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "jobs/" + jobid));
 
-                string eToken = await Auth.GetXDPETokenSilentlyAsync();
+                string eToken = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
                 AddRequestHeaders(ref requestMsg, eToken);
 
                 var response = await submitRequest.SendAsync(requestMsg);

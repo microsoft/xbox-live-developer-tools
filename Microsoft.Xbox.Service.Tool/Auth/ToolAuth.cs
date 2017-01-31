@@ -15,14 +15,14 @@ namespace Microsoft.Xbox.Services.Tool
 
     public class Auth
     {
-        private static XdpAuthClient client = null;
+        private static AuthClient client = null;
         private static object initLock = new object();
 
         static public bool HasAuthInfo()
         {
             lock (initLock)
             {
-                return (client != null && client.HasAuthCookie());
+                return (client != null && client.HasCredential());
             }
         }
 
@@ -31,7 +31,7 @@ namespace Microsoft.Xbox.Services.Tool
             return "XBL3.0 x=-;" + etoken;
         }
 
-        static public async Task<string> GetXDPETokenSilentlyAsync(string sandbox = "")
+        static public async Task<string> GetETokenSilentlyAsync(string scid, string sandbox)
         {
             lock (initLock)
             {
@@ -42,13 +42,13 @@ namespace Microsoft.Xbox.Services.Tool
                 }
             }
 
-            string etoken = await client.GetETokenSilentlyAsync(sandbox);
+            string etoken = await client.GetETokenAsync(scid, sandbox);
             return PrepareForAuthHeader(etoken);
         }
 
-        static public async Task<string> GetXDPEToken(string username, SecureString password, string environment = "", string sandbox = "")
+        static public async Task<string> GetXDPEToken(string username, SecureString password)
         {
-            Log.WriteLog($"GetXDPEToken start, username:{username}, sandbox:{sandbox}, environment:{environment}");
+            Log.WriteLog($"GetXDPEToken start, username:{username}");
             lock (initLock)
             {
                 if (client == null)
@@ -60,11 +60,35 @@ namespace Microsoft.Xbox.Services.Tool
             string token = string.Empty;
             try
             {
-                token = await client.GetETokenSilentlyAsync(sandbox);
+                token = await client.GetETokenAsync("", "");
             }
             catch (XboxLiveException)
             {
-                token = await client.GetETokenAsync(username, password, sandbox);
+                token = await client.SignInAsync(username, password);
+            }
+
+            return PrepareForAuthHeader(token);
+        }
+
+        static public async Task<string> GetUDCEToken(string username, SecureString password)
+        {
+            Log.WriteLog($"GetXDPEToken start, username:{username}");
+            lock (initLock)
+            {
+                if (client == null)
+                {
+                    client = new UDCAuthClient();
+                }
+            }
+
+            string token = string.Empty;
+            if (client.HasCredential())
+            {
+                token = await client.GetETokenAsync("", "");
+            }
+            else
+            {
+                token = await client.SignInAsync(username, password);
             }
 
             return PrepareForAuthHeader(token);

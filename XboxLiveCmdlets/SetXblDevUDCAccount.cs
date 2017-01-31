@@ -14,31 +14,28 @@ namespace XboxLiveCmdlet
     using System.Management.Automation;
     using System.Security;
 
-    [Cmdlet(VerbsCommon.Add, "XBLDevXDPAccount")]
-    public class SetXblDevXDPCredential : XboxliveCmdlet
+    [Cmdlet(VerbsCommon.Set, "XBLDevUDCAccount")]
+    public class SetXblDevUDCAccount: XboxliveCmdlet
     {
-        [Parameter (Mandatory = true, Position = 0)]
+        [Parameter(Mandatory = true, Position = 0)]
         public string UserName { get; set; }
 
-        [Parameter(Mandatory = true, Position = 1)]
+        [Parameter(Position = 1)]
         public SecureString Password { set; get; }
 
         protected override void ProcessRecord()
         {
             try
             {
-                // Save the creditial 
-                //PSCredential cred = new PSCredential(this.UserName, this.Password);
-
-                var task = Microsoft.Xbox.Services.Tool.Auth.GetXDPEToken(this.UserName, this.Password);
+                var task = Microsoft.Xbox.Services.Tool.Auth.GetUDCEToken(this.UserName, this.Password);
                 task.Wait();
             }
-            catch(AggregateException e)
+            catch (AggregateException e)
             {
                 var innerEx = e.InnerException;
-                WriteError(new ErrorRecord(innerEx, "Add-XBLDevXDPAccount failed", ErrorCategory.SecurityError, null));
+                WriteError(new ErrorRecord(innerEx, "Set-XBLDevUDCAccount failed", ErrorCategory.SecurityError, null));
             }
         }
-        
+
     }
 }
