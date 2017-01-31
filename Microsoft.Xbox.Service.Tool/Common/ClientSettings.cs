@@ -48,7 +48,7 @@ namespace Microsoft.Xbox.Services.Tool
             string xdpBaseEndpoint = "https://xdp.xboxlive.com";
             string windowsLiveUriEndpoint = "https://login.live.com";
             string stsAdfsAuthenticationEndpoint = "https://edadfs.partners.extranet.microsoft.com/adfs/ls/";
-            this.ActiveDirectoryAuthenticationEndpoint = "http://corp.sts.microsoft.com";
+            this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/";
             this.WindowsLiveAuthenticationType = "uri:WindowsLiveID";
             this.OmegaResetToolEndpoint = "https://jobs.xboxlive.com";
             
@@ -60,17 +60,15 @@ namespace Microsoft.Xbox.Services.Tool
                 stsAdfsAuthenticationEndpoint = "https://edstssit.partners.extranet.microsoft.com/adfs/ls/";
                 this.WindowsLiveAuthenticationType = "uri:WindowsLiveIDINT";
                 this.OmegaResetToolEndpoint = "https://jobs.dnet.xboxlive.com";
+                this.UDCAuthEndpoint = "https://devx.microsoft-tst.com/xdts/authorize";
             }
 
             this.XdpBaseUri = new Uri(xdpBaseEndpoint);
             this.WindowsLiveUri = new Uri(windowsLiveUriEndpoint);
             this.StsAdfsAuthenticationUri = new Uri(stsAdfsAuthenticationEndpoint);
-            this.ActiveDirectoryAuthenticationBaseUri = new Uri(this.ActiveDirectoryAuthenticationEndpoint);
         }
 
         public Uri XdpBaseUri { get; private set; }
-
-        public Uri ActiveDirectoryAuthenticationBaseUri { get; private set; }
 
         public Uri WindowsLiveUri { get; private set; }
 
@@ -81,5 +79,11 @@ namespace Microsoft.Xbox.Services.Tool
         public string WindowsLiveAuthenticationType { get; private set; }
 
         public string OmegaResetToolEndpoint { get; private set; }
+
+        public string XDTSToolTokenType { get; private set; } = "http://oauth.net/grant_type/jwt/1.0/bearer";
+        public string XDTSToolRelyingParty { get; private set; } = "http://developer.xboxlive.com";
+        public string AADApplicationId { get; private set; } = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1";
+        public string AADResource { get; private set; } = "https://developer.microsoft.com/";
+        public string UDCAuthEndpoint{ get; private set; } = "https://developer.microsoft.com/xdts/authorize";
     }
 }

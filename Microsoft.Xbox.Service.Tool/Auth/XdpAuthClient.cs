@@ -23,46 +23,42 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Threading.Tasks;
     using System.Web;
 
-    public class XdpAuthClient
+    public class XdpAuthClient : AuthClient
     {
         private const string XdpAuthorizeUserPath = "/User/Authorize";
-        private ConcurrentDictionary<string, XdtsTokenResponse> cachedTokens = new ConcurrentDictionary<string, XdtsTokenResponse>();
         private CookieContainer authCookies = null;
 
         public XdpAuthClient()
         {
         }
 
-        public bool HasAuthCookie()
+        public override bool HasCredential()
         {
             return this.authCookies != null;
         }
 
-        public async Task<string> GetETokenSilentlyAsync(string sandbox = "")
+        public override async Task<string> GetETokenAsync(string scid, string sandbox)
         {
-            XdtsTokenResponse cachedToken;
-
+            string token;
             // return cachaed token if we have one and didn't expire
-            if (this.cachedTokens.TryGetValue(sandbox, out cachedToken)
-                && (cachedToken != null && !string.IsNullOrEmpty(cachedToken.Token) && cachedToken.NotAfter >= DateTime.UtcNow))
+            if (this.TryGetCachedToken(sandbox, out token))
             {
-                Log.WriteLog($"Using token from cache for sandbox:{sandbox}.");
-                return cachedToken.Token;
+                return token;
             }
             else if (this.authCookies != null)
             {
-                Log.WriteLog($"Cached auth cookie found for sandbox:{sandbox}.");
+                Log.WriteLog($"Cached auth cookie found for key:{sandbox}.");
                 return await GetETokenInternalAsync(this.authCookies, sandbox);
             }
 
             throw new XboxLiveException("No cached auth info, get etoken using cached info failed.");
         }
 
-        public async Task<string> GetETokenAsync(string emailaddress, SecureString password, string sandboxId = null)
+        public override async Task<string> SignInAsync(string emailaddress, SecureString password)
         {
             CookieContainer xdpAuthenticationCookies = await this.GetXdpAuthenticationCookies(emailaddress, password);
 
-            return await GetETokenInternalAsync(xdpAuthenticationCookies, sandboxId);
+            return await GetETokenInternalAsync(xdpAuthenticationCookies, "");
         }
 
         public async Task<string> GetETokenInternalAsync(CookieContainer authCookie, string sandboxId)
