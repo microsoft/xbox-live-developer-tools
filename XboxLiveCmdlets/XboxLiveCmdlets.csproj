@@ -47,7 +47,7 @@
     <Compile Include="SetXblDevUDCAccount.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SetXBLDevXDPAccount.cs" />
-    <Compile Include="ResetXblProgress.cs" />
+    <Compile Include="ResetXblPlayerData.cs" />
     <Compile Include="XboxliveCmdlet.cs" />
   </ItemGroup>
   <ItemGroup>

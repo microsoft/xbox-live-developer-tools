@@ -23,7 +23,7 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Threading.Tasks;
     using System.Web;
 
-    public class XdpAuthClient : AuthClient
+    internal class XdpAuthClient : AuthClient
     {
         private const string XdpAuthorizeUserPath = "/User/Authorize";
         private CookieContainer authCookies = null;

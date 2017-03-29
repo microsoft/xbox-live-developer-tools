@@ -10,8 +10,8 @@ namespace XboxLiveCmdlet
     using System;
     using System.Management.Automation;
 
-    [Cmdlet(VerbsCommon.Reset, "XBLProgress")]
-    public class ResetXblProgress : XboxliveCmdlet
+    [Cmdlet(VerbsCommon.Reset, "XblPlayerData")]
+    public class ResetXblPlayerData : XboxliveCmdlet
     {
         [Parameter(Mandatory = true)]
         public string ServiceConfigId { get; set; }
@@ -21,10 +21,6 @@ namespace XboxLiveCmdlet
 
         [Parameter(Mandatory = true )]
         public List<string> XboxUserIds { get; set; }
-
-        [Parameter(DontShow = true, Mandatory = false)]
-        [ValidateSet("prod", "dnet", IgnoreCase =true)]
-        public string Environment { get; set; }
 
         protected override void BeginProcessing()
         {
@@ -44,6 +40,7 @@ namespace XboxLiveCmdlet
                 var task = Microsoft.Xbox.Services.Tool.ProgressResetter.ResetProgressAsync(SandboxId, ServiceConfigId, XboxUserIds);
                 task.Wait();
                 var result = task.Result;
+
                 WriteObject(result, true);
             }
             catch (AggregateException e)

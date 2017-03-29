@@ -17,6 +17,12 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Text;
     using System.Threading.Tasks;
 
+    internal class XboxLiveHttpContent
+    {
+        public string Content { get; set; }
+        public string CollrelationId { get; set; }
+    }
+
     internal class XboxLiveHttpRequest : IDisposable
     {
         private HttpClient httpClient;
@@ -29,13 +35,23 @@ namespace Microsoft.Xbox.Services.Tool
         }
 
         // Take a Func<HttpRequestMessage> so that HttpRequestMessage will be construct in caller scope.
-        public async Task<string> SendAsync(HttpRequestMessage request)
+        public async Task<XboxLiveHttpContent> SendAsync(HttpRequestMessage request)
         {
+            var content = new XboxLiveHttpContent();
             var response = await this.httpClient.SendAsync(request);
 
             if (response != null && response.IsSuccessStatusCode)
             {
-                return await response.Content?.ReadAsStringAsync();
+                content.Content = await response.Content?.ReadAsStringAsync();
+                IEnumerable<string> correlationIds = null;
+                if (response.Headers.TryGetValues("X-XblCorrelationId", out correlationIds))
+                {
+                    if (correlationIds != null && !string.IsNullOrEmpty(correlationIds.First()))
+                    {
+                        content.CollrelationId = correlationIds.First();
+                    }
+                }
+                return content;
             }
 
             throw new XboxLiveException("Failed to call xbox live services", response, null);

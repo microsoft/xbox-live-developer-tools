@@ -10,7 +10,7 @@
 
 namespace Microsoft.Xbox.Services.Tool
 {
-    public class XdpETokenResponse
+    internal class XdpETokenResponse
     {
         public string Message { get; set; }
 
