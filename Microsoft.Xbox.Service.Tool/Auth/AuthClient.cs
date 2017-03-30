@@ -19,7 +19,7 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Text;
     using System.Threading.Tasks;
 
-    public abstract class AuthClient
+    internal abstract class AuthClient
     {
         protected ConcurrentDictionary<string, XdtsTokenResponse> cachedTokens = new ConcurrentDictionary<string, XdtsTokenResponse>();
 

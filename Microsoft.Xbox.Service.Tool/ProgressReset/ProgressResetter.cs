@@ -11,6 +11,7 @@
 namespace Microsoft.Xbox.Services.Tool
 {
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -21,21 +22,36 @@ namespace Microsoft.Xbox.Services.Tool
 
     internal class JobSubmitReqeust
     {
-        public JobSubmitReqeust(string sandbox, string scid, string xuid)
+        public JobSubmitReqeust(string scid, string xuid)
         {
-            this.JobProperties = new Dictionary<string, string>
-            {
-                {"Sandbox", sandbox},
-                {"Scid", scid},
-                {"UserId", xuid},
-            };
+            UserId = xuid;
+            Scid = scid;
         }
 
-        [JsonProperty("jobType", Required = Required.Always)]
-        public string JobType { get; set; } = "deletedata";
+        [JsonProperty("userId", Required = Required.Always)]
+        public string UserId { get; set; } = "deletedata";
 
-        [JsonProperty("jobProperties", Required = Required.Always)]
-        public Dictionary<string, string> JobProperties { get; set; }
+        [JsonProperty("Scid", Required = Required.Always)]
+        public string Scid { get; set; }
+    }
+
+    internal class JobSubmitResponse
+    {
+        public string JobId { get; set; }
+        public string CorrelationId { get; set; }
+    }
+
+    public class JobProviderStatus
+    {
+        [JsonProperty("provider")]
+        public string Provider { get; set; }
+
+        [JsonProperty("status"),JsonConverter(typeof(StringEnumConverter))]
+        public ResetProviderStatus Status { get; set; }
+
+        [JsonProperty("errorMessage")]
+        public string ErrorMessage { get; set; }
+
     }
 
     internal class JobStatusResponse
@@ -43,18 +59,28 @@ namespace Microsoft.Xbox.Services.Tool
         [JsonProperty("jobId")]
         public string JobId { get; set; }
 
-        [JsonProperty("status")]
+        [JsonProperty("overallStatus")]
         public string Status { get; set; }
 
-        [JsonProperty("statusProperties")]
-        public Dictionary<string, string> StatusProperties { get; set; }
+        [JsonProperty("providerStatus")]
+        public List<JobProviderStatus> ProviderStatus { get; set; }
     }
 
-    public enum ResetStatus
+    public enum ResetOverallStatus
     {
         Succeeded = 0,
-        Failed,
+        CompletedError,
         Timeout,
+        Unknown
+    }
+
+    public enum ResetProviderStatus
+    {
+        CompletedSuccess = 0,
+        CompletedError,
+        NotStarted,
+        InProgress,
+        NotImplemented,
         Unknown
     }
 
@@ -62,13 +88,15 @@ namespace Microsoft.Xbox.Services.Tool
     {
         public string XboxLiveUserId { get; internal set; }
 
-        public ResetStatus Status { get; internal set; }
+        public ResetOverallStatus OverallStatus { get; internal set; }
+
+        //public List<JobProviderStatus> ProviderStatus { get; internal set; }
     }
 
     public class ProgressResetter
     {
         private static Uri baseUri = new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint);
-        private const int MaxPollingAttempts = 10;
+        private const int MaxPollingAttempts = 4;
 
         static public async Task<IEnumerable<UserResetResult>> ResetProgressAsync(string sandbox, string scid, IEnumerable<string> xuids)
         {
@@ -91,43 +119,81 @@ namespace Microsoft.Xbox.Services.Tool
             UserResetResult result = new UserResetResult
             {
                 XboxLiveUserId = xuid,
-                Status = ResetStatus.Unknown,
+                OverallStatus = ResetOverallStatus.Unknown,
             };
+            JobStatusResponse jobStatus = null;
 
             try
             {
-                string jobid = await SubmitJobAsync(sandbox, scid, xuid);
+                string correlationId = string.Empty;
+                var jobResponse = await SubmitJobAsync(sandbox, scid, xuid);
 
-                if (!string.IsNullOrEmpty(jobid))
+                if (!string.IsNullOrEmpty(jobResponse.JobId))
                 {
-                    string status = "";
                     for (int i = 0; i < MaxPollingAttempts; i++)
                     {
-                        status = await CheckJobStatus(jobid);
-                        if (status == "CompletedSuccess")
+                        // Wait for 3 seconds for each interval
+                        await Task.Delay(3000);
+
+                        try
                         {
-                            result.Status = ResetStatus.Succeeded;
-                            break;
+                            jobStatus = await CheckJobStatus(jobResponse);
                         }
-                        else if (status == "CompletedFailed")
+                        catch(XboxLiveException ex)
                         {
-                            result.Status = ResetStatus.Failed;
-                            break;
+                            // TODO: BUG: service currently have bug that if polling to early for 
+                            // job status, it will return 400. Right now we threat it as job queue
+                            // and wait for next poll.
+                            if (ex.Response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                            {
+                                jobStatus = new JobStatusResponse
+                                {
+                                    Status = "Queued",
+                                    JobId = jobResponse.JobId
+                                };
+                            }
+                            else
+                            {
+                                throw ex;
+                            }
+
                         }
 
-                        await Task.Delay(1000);
+                        if (jobStatus.Status == "CompletedSuccess")
+                        {
+                            result.OverallStatus = ResetOverallStatus.Succeeded;
+                            break;
+                        }
+                        else if (jobStatus.Status == "CompletedError")
+                        {
+                            result.OverallStatus = ResetOverallStatus.CompletedError;
+                            break;
+                        }
                     }
 
-                    if (status == "InProgress" || status == "Queued")
+                    if (jobStatus.Status == "InProgress" || jobStatus.Status == "Queued")
                     {
-                        result.Status = ResetStatus.Timeout;
+                        result.OverallStatus = ResetOverallStatus.Timeout;
                     }
 
                 }
             }
             catch (XboxLiveException)
             {
-                result.Status = ResetStatus.Failed;
+                result.OverallStatus = ResetOverallStatus.CompletedError;
+            }
+
+            // Log detail status
+            if(result.OverallStatus != ResetOverallStatus.Succeeded)
+            {
+                Log.WriteLog($"Resetting player {xuid} result {result.OverallStatus}: ");
+                if (jobStatus != null && jobStatus.ProviderStatus != null)
+                {
+                    foreach (var providerStatus in jobStatus.ProviderStatus)
+                    {
+                        Log.WriteLog($"\t provider: {providerStatus.Provider}, status: {providerStatus.Status}, error message: {providerStatus.ErrorMessage}");
+                    }
+                }
             }
 
             return result;
@@ -139,46 +205,51 @@ namespace Microsoft.Xbox.Services.Tool
             request.Headers.Add("Authorization", eToken);
         }
 
-        private static async Task<string> SubmitJobAsync(string sandbox, string scid, string xuid)
+        private static async Task<JobSubmitResponse> SubmitJobAsync(string sandbox, string scid, string xuid)
         {
-            string jobid = string.Empty;
+            var job = new JobSubmitResponse();
 
             using (var submitRequest = new XboxLiveHttpRequest())
             {
                 var requestMsg = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "submitJob"));
 
-                var requestContent = JsonConvert.SerializeObject(new JobSubmitReqeust(sandbox, scid, xuid));
+                var requestContent = JsonConvert.SerializeObject(new JobSubmitReqeust(scid, xuid));
                 requestMsg.Content = new StringContent(requestContent);
 
                 string eToken = await Auth.GetETokenSilentlyAsync(scid, sandbox);
                 AddRequestHeaders(ref requestMsg, eToken);
 
-                jobid = await submitRequest.SendAsync(requestMsg);
+                var responseContent = await submitRequest.SendAsync(requestMsg);
 
                 // remove "" if found one.
-                jobid = jobid.Trim(new char[] { '\\', '\"' });
+                job.JobId = responseContent.Content.Trim(new char[] { '\\', '\"' });
+                job.CorrelationId = responseContent.CollrelationId;
 
-                Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} succeeded. Jobid: {jobid}");
+                Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} succeeded. Jobid: {job.JobId}");
             }
 
-            return jobid;
+            return job;
         }
 
-        private static async Task<string> CheckJobStatus(string jobid)
+        private static async Task<JobStatusResponse> CheckJobStatus(JobSubmitResponse job)
         {
             using (var submitRequest = new XboxLiveHttpRequest())
             {
-                var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "jobs/" + jobid));
+                var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "jobs/" + job.JobId));
+                if (!string.IsNullOrEmpty(job.CorrelationId))
+                {
+                    requestMsg.Headers.Add("X-XblCorrelationId", job.CorrelationId);
+                }
 
                 string eToken = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
                 AddRequestHeaders(ref requestMsg, eToken);
 
                 var response = await submitRequest.SendAsync(requestMsg);
-                var jobstatus =  JsonConvert.DeserializeObject<JobStatusResponse>(response);
+                var jobstatus =  JsonConvert.DeserializeObject<JobStatusResponse>(response.Content);
 
-                Log.WriteLog($"Checking {jobid} job stauts: {jobstatus.Status}");
+                Log.WriteLog($"Checking {job.JobId} job stauts: {jobstatus.Status}");
 
-                return jobstatus.Status;
+                return jobstatus;
             }
         }
 

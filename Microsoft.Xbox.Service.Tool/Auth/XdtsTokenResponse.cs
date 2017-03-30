@@ -12,7 +12,7 @@ namespace Microsoft.Xbox.Services.Tool
     using System;
     using System.Collections.Generic;
 
-    public class XdtsTokenResponse
+    internal class XdtsTokenResponse
     {
         /// <summary>
         /// Gets or sets the issue instant for the token.

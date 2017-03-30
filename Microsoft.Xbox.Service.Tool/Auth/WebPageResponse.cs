@@ -15,7 +15,7 @@ namespace Microsoft.Xbox.Services.Tool
 
     using HtmlAgilityPack;
 
-    public class WebPageResponse
+    internal class WebPageResponse
     {
         public HtmlDocument Document { get; set; }
 

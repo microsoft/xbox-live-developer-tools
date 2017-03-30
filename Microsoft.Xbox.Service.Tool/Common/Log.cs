@@ -17,7 +17,7 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Threading.Tasks;
     using System.Diagnostics;
 
-    public class Log
+    internal class Log
     {
         internal static void WriteLog(string log)
         {

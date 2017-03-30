@@ -23,7 +23,7 @@ namespace Microsoft.Xbox.Services.Tool
                 {
                     if (singleton == null)
                     {
-                        singleton = new ClientSettings("DNET");
+                        singleton = new ClientSettings("");
                     }
                 }
 
@@ -39,7 +39,7 @@ namespace Microsoft.Xbox.Services.Tool
         {
             if (string.IsNullOrEmpty(environment))
             {
-                environment = "PRODUCTION";
+                environment = "PROD";
             }
 
             Log.WriteLog($"client setting environment: {environment}");
@@ -50,7 +50,7 @@ namespace Microsoft.Xbox.Services.Tool
             string stsAdfsAuthenticationEndpoint = "https://edadfs.partners.extranet.microsoft.com/adfs/ls/";
             this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/";
             this.WindowsLiveAuthenticationType = "uri:WindowsLiveID";
-            this.OmegaResetToolEndpoint = "https://jobs.xboxlive.com";
+            this.OmegaResetToolEndpoint = "https://eraser.xboxlive.com";
             
             // Override values for other environments
             if (environment.ToUpper() == "DNET")
@@ -59,7 +59,7 @@ namespace Microsoft.Xbox.Services.Tool
                 windowsLiveUriEndpoint = "https://login.live-int.com";
                 stsAdfsAuthenticationEndpoint = "https://edstssit.partners.extranet.microsoft.com/adfs/ls/";
                 this.WindowsLiveAuthenticationType = "uri:WindowsLiveIDINT";
-                this.OmegaResetToolEndpoint = "https://jobs.dnet.xboxlive.com";
+                this.OmegaResetToolEndpoint = "https://eraser.dnet.xboxlive.com";
                 this.UDCAuthEndpoint = "https://devx.microsoft-tst.com/xdts/authorize";
             }
 
@@ -81,6 +81,8 @@ namespace Microsoft.Xbox.Services.Tool
         public string OmegaResetToolEndpoint { get; private set; }
 
         public string XDTSToolTokenType { get; private set; } = "http://oauth.net/grant_type/jwt/1.0/bearer";
+
+        // TODO: Update this to runtime etoken after it's ready, for now we use design time etoken.
         public string XDTSToolRelyingParty { get; private set; } = "http://developer.xboxlive.com";
         public string AADApplicationId { get; private set; } = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1";
         public string AADResource { get; private set; } = "https://developer.microsoft.com/";

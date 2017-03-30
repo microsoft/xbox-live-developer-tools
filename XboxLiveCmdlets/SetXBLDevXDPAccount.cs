@@ -14,7 +14,7 @@ namespace XboxLiveCmdlet
     using System.Management.Automation;
     using System.Security;
 
-    [Cmdlet(VerbsCommon.Set, "XBLDevXDPAccount")]
+    [Cmdlet(VerbsCommon.Set, "XblDevXDPAccount")]
     public class SetXblDevXDPCredential : XboxliveCmdlet
     {
         [Parameter (Mandatory = true, Position = 0)]

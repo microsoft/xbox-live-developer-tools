@@ -46,7 +46,7 @@ namespace Microsoft.Xbox.Services.Tool
 
     }
 
-    public class UDCAuthClient: AuthClient
+    internal class UDCAuthClient: AuthClient
     {
         private AuthenticationContext authContext;
 
@@ -104,10 +104,10 @@ namespace Microsoft.Xbox.Services.Tool
 
             requestMsg.Headers.Authorization = new AuthenticationHeaderValue(authResult.AccessToken);
 
-            string response = await tokenRequest.SendAsync(requestMsg);
+            var responseContent = await tokenRequest.SendAsync(requestMsg);
             Log.WriteLog("Fetch xdts Token succeeded.");
 
-            var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(response);
+            var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(responseContent.Content);
             this.cachedTokens[scid + sandbox] = token;
 
             return token;
