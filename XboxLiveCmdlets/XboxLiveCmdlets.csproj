@@ -44,8 +44,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsDevicePortalWrapper, Version=0.9.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\WindowsDevicePortalWrapper.0.9.4\lib\net452\WindowsDevicePortalWrapper.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>..\packages\WindowsDevicePortalWrapper.0.9.4.1-beta\lib\net452\WindowsDevicePortalWrapper.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

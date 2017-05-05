@@ -92,6 +92,9 @@ namespace XboxLiveCmdlet
                     IDevicePortalConnection connection = new DefaultDevicePortalConnection(url, string.Empty, string.Empty);
                     DevicePortal portal = new DevicePortal(connection);
 
+                    portal.UnvalidatedCert += Portal_UnvalidatedCert;
+
+                    portal.ConnectAsync().Wait();
                     portal.SetXboxLiveSandboxAsync(SandboxId).Wait();
                     portal.RebootAsync().Wait();
                 }
@@ -107,5 +110,9 @@ namespace XboxLiveCmdlet
             }
         }
 
+        private bool Portal_UnvalidatedCert(DevicePortal sender, System.Security.Cryptography.X509Certificates.X509Certificate certificate, System.Security.Cryptography.X509Certificates.X509Chain chain, System.Net.Security.SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
     }
 }

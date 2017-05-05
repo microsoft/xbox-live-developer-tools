@@ -19,6 +19,7 @@ namespace XboxLiveCmdlet
     [Cmdlet(VerbsCommon.Get, "XblSandbox")]
     public class GetXblSandbox : XboxliveCmdlet
     {
+        [Parameter]
         public string MachineName { get; set; }
 
         internal static PSObject GetLocalSandboxObject()
@@ -51,7 +52,7 @@ namespace XboxLiveCmdlet
                     string url = "https://" + MachineName + ":11443";
                     IDevicePortalConnection connection = new DefaultDevicePortalConnection(url, string.Empty, string.Empty);
                     DevicePortal portal = new DevicePortal(connection);
-
+                    portal.ConnectAsync().Wait();
                     var task = portal.GetXboxLiveSandboxAsync();
                     task.Wait();
                     var result = task.Result;
