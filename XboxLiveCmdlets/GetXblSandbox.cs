@@ -22,6 +22,12 @@ namespace XboxLiveCmdlet
         [Parameter]
         public string MachineName { get; set; }
 
+        [Parameter]
+        public string UserName { get; set; }
+
+        [Parameter]
+        public string Password { get; set; }
+
         internal static PSObject GetLocalSandboxObject()
         {
             RegistryKey regBase = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
@@ -50,12 +56,7 @@ namespace XboxLiveCmdlet
                 else
                 {
                     string url = "https://" + MachineName + ":11443";
-                    IDevicePortalConnection connection = new DefaultDevicePortalConnection(url, string.Empty, string.Empty);
-                    DevicePortal portal = new DevicePortal(connection);
-                    portal.ConnectAsync().Wait();
-                    var task = portal.GetXboxLiveSandboxAsync();
-                    task.Wait();
-                    var result = task.Result;
+                    var result = WdpConnections.GetXboxLiveSandboxAsync(url, UserName, Password).Result;
 
                     WriteObject(result, false);
                 }
@@ -63,7 +64,17 @@ namespace XboxLiveCmdlet
             catch (AggregateException ex)
             {
                 var innerEx = ex.InnerException;
-                WriteError(new ErrorRecord(innerEx, "Get-XblSandbox failed: " + innerEx.Message, ErrorCategory.InvalidOperation, null));
+                var deviceEx = innerEx as DevicePortalException;
+                if (deviceEx != null)
+                {
+                    WriteError(new ErrorRecord(ex, $"Get-XblSandbox failed, reason: {deviceEx.Reason}, code: {deviceEx.StatusCode}", ErrorCategory.InvalidOperation, null));
+                }
+                else
+                {
+                    WriteError(new ErrorRecord(innerEx, "Get-XblSandbox failed: " + innerEx.Message,
+                        ErrorCategory.InvalidOperation, null));
+                }
+                
             }
             catch (Exception ex)
             {

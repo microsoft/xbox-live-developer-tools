@@ -28,6 +28,12 @@ namespace XboxLiveCmdlet
         [Parameter]
         public string MachineName { get; set; }
 
+        [Parameter]
+        public string UserName { get; set; }
+
+        [Parameter]
+        public string Password { get; set; }
+
         protected override void ProcessRecord()
         {
             try
@@ -89,14 +95,7 @@ namespace XboxLiveCmdlet
                 else
                 {
                     string url = "https://" + MachineName + ":11443";
-                    IDevicePortalConnection connection = new DefaultDevicePortalConnection(url, string.Empty, string.Empty);
-                    DevicePortal portal = new DevicePortal(connection);
-
-                    portal.UnvalidatedCert += Portal_UnvalidatedCert;
-
-                    portal.ConnectAsync().Wait();
-                    portal.SetXboxLiveSandboxAsync(SandboxId).Wait();
-                    portal.RebootAsync().Wait();
+                    WdpConnections.SetXboxLiveSandboxAsync(url, SandboxId, UserName, Password).Wait();
                 }
             }
             catch (AggregateException ex)

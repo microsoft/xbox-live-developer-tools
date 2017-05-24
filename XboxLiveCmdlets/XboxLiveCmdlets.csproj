@@ -53,8 +53,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SetXBLDevXDPAccount.cs" />
     <Compile Include="ResetXblPlayerData.cs" />
-    <Compile Include="SetXblRemoteSandbox.cs" />
     <Compile Include="SetXblSandbox.cs" />
+    <Compile Include="WdpConnections.cs" />
     <Compile Include="XboxliveCmdlet.cs" />
   </ItemGroup>
   <ItemGroup>
