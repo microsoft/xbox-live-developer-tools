@@ -1,4 +1,4 @@
-Microsoft Xbox Live Service API (XSAPI) 
+Microsoft Xbox Live Powsershell Module
 
 The MIT License (MIT) 
 Copyright (c) 2016 Microsoft
