@@ -40,6 +40,7 @@ You can also learn how to use xboxlive powershell module by reading our document
 Is there a feature missing that you'd like to see, or found a bug that you have a fix for? Or do you have an idea or just interest in helping out in building the library? Let us know and we'd love to work with you. For a good starting point on where we are headed and feature ideas, take a look at our [requested features and bugs](../../issues).  
 
 [Contrubute guidance](CONTRIBUTING.md)
+[Develop guidance](DEVELOP.md)
 
 Big or small we'd like to take your contributions back to help improve the Xbox Live Powershell Module for everyone. 
 

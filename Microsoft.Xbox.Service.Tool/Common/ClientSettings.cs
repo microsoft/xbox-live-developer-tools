@@ -12,7 +12,7 @@ namespace Microsoft.Xbox.Services.Tool
 {
     using System;
 
-    public class ClientSettings
+    internal class ClientSettings
     {
 
         public static ClientSettings Singleton

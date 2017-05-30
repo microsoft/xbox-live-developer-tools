@@ -29,27 +29,3 @@ Before you start working on bug fixes and features it is good idea to discuss th
 *   For any new functionality you have written complete unit tests
 *   You have run all unit tests and they pass
 *   In order to speed up the process of accepting your contributions, you should try to make your checkins as small as possible, avoid any unnecessary deltas and the need to rebase.
-
-### Getting start with writting new features
-
-For people who is not familiar with Powershell cmdlets, here is some helpful link:
-* [Writing a Windows PowerShell Cmdlet](https://msdn.microsoft.com/en-us/library/dd878294(v=vs.85).aspx)
-* [Writing a Windows PowerShell Module](https://msdn.microsoft.com/en-us/library/dd878310(v=vs.85).aspx)
-
-Update documents:
-We use [platyPS](https://github.com/PowerShell/platyPS) to create markdowns. 
-
-Usage for adding or updating cmdlet: 
-* Finish coding new cmdlet, export it in XboxLivePsModule.psd1 if it's a new cmdlet.
-* Run powershell from root folder, load the lastest XboxLivePsModule locally: 
-```powershell
-Import-Module .\XboxLiveCmdlets\bin\Debug\XboxLivePsModule.psd1.
-```
-* From root folder, run 
-```powershell
-Update-MarkdownHelpModule -Path ".\docs"
-```
-* Generate into a xml file to be shipped with module: 
-```powershell
-New-ExternalHelp -Path ".\docs" -OutputPath ".\docs\en-US" -f
-```

@@ -25,12 +25,11 @@ namespace Microsoft.Xbox.Services.Tool
 
     internal class XboxLiveHttpRequest : IDisposable
     {
-        private HttpClient httpClient;
-        private HttpMessageHandler requestHandler;
+        private readonly HttpClient httpClient;
 
         public XboxLiveHttpRequest()
         {
-            this.requestHandler = /*TestHook.MockHttpHandler ??*/ new WebRequestHandler();
+            var requestHandler = TestHook.MockHttpHandler ?? new WebRequestHandler();
             httpClient = new HttpClient(requestHandler);
         }
 

@@ -39,7 +39,7 @@ namespace Microsoft.Xbox.Services.Tool
             return false;
         }
 
-        public abstract bool HasCredential();
+        public abstract bool HasCredential { get; }
 
         public abstract Task<string> GetETokenAsync(string scid, string sandbox);
 
