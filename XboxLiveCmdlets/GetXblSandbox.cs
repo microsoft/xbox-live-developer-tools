@@ -20,7 +20,7 @@ namespace XboxLiveCmdlet
     public class GetXblSandbox : XboxliveCmdlet
     {
         [Parameter]
-        public string MachineName { get; set; }
+        public string ConsoleName { get; set; }
 
         [Parameter]
         public string UserName { get; set; }
@@ -49,13 +49,13 @@ namespace XboxLiveCmdlet
         {
             try
             {
-                if (string.IsNullOrEmpty(MachineName))
+                if (string.IsNullOrEmpty(ConsoleName))
                 {
                     WriteObject(GetLocalSandboxObject());
                 }
                 else
                 {
-                    string url = "https://" + MachineName + ":11443";
+                    string url = "https://" + ConsoleName + ":11443";
                     var result = WdpConnections.GetXboxLiveSandboxAsync(url, UserName, Password).Result;
 
                     WriteObject(result, false);

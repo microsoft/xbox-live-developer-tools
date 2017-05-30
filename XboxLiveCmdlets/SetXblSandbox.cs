@@ -26,7 +26,7 @@ namespace XboxLiveCmdlet
         public string SandboxId { get; set; }
 
         [Parameter]
-        public string MachineName { get; set; }
+        public string ConsoleName { get; set; }
 
         [Parameter]
         public string UserName { get; set; }
@@ -38,7 +38,7 @@ namespace XboxLiveCmdlet
         {
             try
             {
-                if (string.IsNullOrEmpty(MachineName))
+                if (string.IsNullOrEmpty(ConsoleName))
                 {
                     // Check if running as admin
                     // Get the ID and security principal of the current user account
@@ -94,7 +94,7 @@ namespace XboxLiveCmdlet
                 }
                 else
                 {
-                    string url = "https://" + MachineName + ":11443";
+                    string url = "https://" + ConsoleName + ":11443";
                     WdpConnections.SetXboxLiveSandboxAsync(url, SandboxId, UserName, Password).Wait();
                 }
             }
