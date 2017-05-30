@@ -72,8 +72,7 @@ PowerShellVersion = '3.0'
 FunctionsToExport = @()
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = 'Set-XblSandbox', 'Get-XblSandbox', 'Set-XblDevXDPAccount', 
-               'Set-XblDevUDCAccount', 'Reset-XblPlayerData'
+CmdletsToExport = 'Set-XblSandbox', 'Get-XblSandbox'
 
 # Variables to export from this module
 # VariablesToExport = @()
