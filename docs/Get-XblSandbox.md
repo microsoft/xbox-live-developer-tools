@@ -1,5 +1,5 @@
 ---
-external help file: XboxLiveCmdlet.dll-help.xml
+external help file: XboxLiveCmdlet.dll-Help.xml
 online version: 
 schema: 2.0.0
 ---
@@ -21,7 +21,6 @@ The Get-XblSandbox cmdlet let you get the sandbox for current machine or a remot
 ## EXAMPLES
 
 ### -- Example 1: Get Sandbox for current machine runs cmdlet. --
-
 ```
 Get-XblSandbox
 ```
@@ -29,7 +28,6 @@ Get-XblSandbox
 Thie command returns the sandbox for current machine runs cmdlet.
 
 ### -- Example 2: Get Sandbox for remote Xbox One console. --
-
 ```
 Get-XblSandbox -ConsoleName console -UserName username -Password password
 ```

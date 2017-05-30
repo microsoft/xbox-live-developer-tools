@@ -58,6 +58,10 @@
     <Compile Include="XboxliveCmdlet.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\XboxlivePSModule\XboxLivePsModule.psd1">
+      <Link>XboxLivePsModule.psd1</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
