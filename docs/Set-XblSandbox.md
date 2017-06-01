@@ -30,7 +30,6 @@ Set-XblSandbox XDKS.1
 Set current machine&#39;s sandbox to XDKS.1
 
 ### -- Example 2: Get Sandbox for remote Xbox One console. --
-
 ```
 Set-XblSandbox XDKS.1 -ConsoleName console -UserName username -Password password
 ```

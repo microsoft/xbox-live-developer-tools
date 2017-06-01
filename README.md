@@ -5,7 +5,7 @@ The Microsoft Xbox Live Powershell Module provides a way to
 * Get/Set sandboxes on PC and Xbox console.
 
 
-## Quick Start
+## Getting Start using Xbox Live PowerShell Module
 
 * Install xbox live PS module from the [PowerShell Gallery](https://powershellgallery.com):
 
@@ -14,16 +14,32 @@ Install-Module XboxlivePSModule -Scope CurrentUser
 Import-Module XboxlivePSModule
 ```
 
+* Update your exsiting Xbox Live PS Module 
+```powershell
+Update-Module XboxlivePSModule
+```
+
+* Usage
+
+    * Get and set sandbox on your PC or Xbox One Console with [Get-XblSandbox](docs/Get-XblSandbox.md) and [Set-XblSandbox](docs/Set-XblSandbox.md )
+
+## Repo Structure
+* [/docs/](docs): Cmdlets documents.
+* [/Microsoft.Xbox.Service.Tool/](Microsoft.Xbox.Service.Tool): XBL cloud tooling dll, contains code for talking to xbl service tooling endpoints. Being consumed by cmdlets. [TODO: to be released as seprate nuget package, to be consumed by externally]
+* [/XboxLiveCmdlets/](XboxLiveCmdlets): Code for xbl cmdlets, warpper for consuming Microsoft.Xbox.Service.Tool.dll, also contains client only code for tooling like sandbox utilities.  
+* [/XboxlivePSModule/](XboxlivePSModule): Manifest and building script for Xbl PS module.
+
 ## Documentation
+You can also learn how to use xboxlive powershell module by reading our documentation:
 
-You can learn how to use xboxlive powershell module by reading our documentation:
-
-- [Cmdlet Documentation](docs)
+- [Cmdlet Documentation](docs/XboxLivePsModule.md)
 
 
 ## Contribute Back!
 
 Is there a feature missing that you'd like to see, or found a bug that you have a fix for? Or do you have an idea or just interest in helping out in building the library? Let us know and we'd love to work with you. For a good starting point on where we are headed and feature ideas, take a look at our [requested features and bugs](../../issues).  
+
+[Contrubute guidance](CONTRIBUTING.md)
 
 Big or small we'd like to take your contributions back to help improve the Xbox Live Powershell Module for everyone. 
 
