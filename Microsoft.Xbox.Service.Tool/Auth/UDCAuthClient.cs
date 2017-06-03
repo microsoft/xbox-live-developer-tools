@@ -16,12 +16,12 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using System.Security;
     using System.Net.Http;
     using Newtonsoft.Json;
     using System.Net.Http.Headers;
     using System.Collections.Concurrent;
+    using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
     internal class XDTSTokenRequest
     {
@@ -48,53 +48,55 @@ namespace Microsoft.Xbox.Services.Tool
 
     internal class UDCAuthClient: AuthClient
     {
-        private AuthenticationContext authContext;
+        private AadAuthContext authContext;
 
-        public override bool HasCredential()
+        public UDCAuthClient(AadAuthContext aadAuthContext)
         {
-            return authContext != null && authContext.ValidateAuthority;
+            this.authContext = aadAuthContext ?? new AadAuthContext();
+        }
+        
+
+        public override bool HasCredential
+        {
+            get { return authContext.HasCredential; }
         }
 
         public override async Task<string> GetETokenAsync(string scid, string sandbox)
         {
-            string token;
+            string eToken;
             // return cachaed token if we have one and didn't expire
-            if (!this.TryGetCachedToken(scid+sandbox, out token)
+            if (!this.TryGetCachedToken(scid+sandbox, out eToken)
                 && (this.authContext != null))
             {
-                var authResult = await this.authContext.AcquireTokenSilentAsync(ClientSettings.Singleton.AADResource, ClientSettings.Singleton.AADApplicationId);
-                var xtdsToken = await FetchXdtsToken(authResult, scid, sandbox);
-                token = xtdsToken.Token;
+                var aadToken = await this.authContext.AcquireTokenSilentAsync(ClientSettings.Singleton.AADResource, ClientSettings.Singleton.AADApplicationId);
+                var xtdsToken = await FetchXdtsToken(aadToken, scid, sandbox);
+                eToken = xtdsToken.Token;
             }
 
-            return token;
+            return eToken;
         }
 
         public override async Task<string> SignInAsync(string emailaddress, SecureString password)
         {
-            var authContext = new AuthenticationContext(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint + "common");
 
-            AuthenticationResult authResult = null;
+            string aadToken = null;
             if (password != null && password.Length != 0)
             {
                 var userCred = new UserPasswordCredential(emailaddress, password);
-                authResult = await authContext.AcquireTokenAsync(ClientSettings.Singleton.AADResource, ClientSettings.Singleton.AADApplicationId, userCred);
+                aadToken = await authContext.AcquireTokenAsync(ClientSettings.Singleton.AADResource, ClientSettings.Singleton.AADApplicationId, userCred);
             }
             else
             {
                 UserIdentifier userId = new UserIdentifier(emailaddress, UserIdentifierType.RequiredDisplayableId);
-                authResult = await authContext.AcquireTokenAsync(ClientSettings.Singleton.AADResource, ClientSettings.Singleton.AADApplicationId, new Uri("urn:ietf:wg:oauth:2.0:oob"), new PlatformParameters(PromptBehavior.Auto), userId);
+                aadToken = await authContext.AcquireTokenAsync(ClientSettings.Singleton.AADResource, ClientSettings.Singleton.AADApplicationId, new Uri("urn:ietf:wg:oauth:2.0:oob"), new PlatformParameters(PromptBehavior.Auto), userId);
             }
 
-            var token = await FetchXdtsToken(authResult, string.Empty, string.Empty);
-
-            // now save authContext and token cache
-            this.authContext = authContext;
+            var token = await FetchXdtsToken(aadToken, string.Empty, string.Empty);
 
             return token.Token;
         }
 
-        private async Task<XdtsTokenResponse> FetchXdtsToken(AuthenticationResult authResult, string scid, string sandbox)
+        private async Task<XdtsTokenResponse> FetchXdtsToken(string aadToken, string scid, string sandbox)
         {
             var tokenRequest = new XboxLiveHttpRequest();
             var requestMsg = new HttpRequestMessage(HttpMethod.Post, ClientSettings.Singleton.UDCAuthEndpoint);
@@ -102,7 +104,7 @@ namespace Microsoft.Xbox.Services.Tool
             var requestContent = JsonConvert.SerializeObject(new XDTSTokenRequest(scid, sandbox));
             requestMsg.Content = new StringContent(requestContent);
 
-            requestMsg.Headers.Authorization = new AuthenticationHeaderValue(authResult.AccessToken);
+            requestMsg.Headers.Authorization = new AuthenticationHeaderValue(aadToken);
 
             var responseContent = await tokenRequest.SendAsync(requestMsg);
             Log.WriteLog("Fetch xdts Token succeeded.");

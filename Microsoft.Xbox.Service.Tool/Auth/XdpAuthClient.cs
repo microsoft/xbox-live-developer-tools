@@ -32,9 +32,9 @@ namespace Microsoft.Xbox.Services.Tool
         {
         }
 
-        public override bool HasCredential()
+        public override bool HasCredential
         {
-            return this.authCookies != null;
+            get { return this.authCookies != null; }
         }
 
         public override async Task<string> GetETokenAsync(string scid, string sandbox)
