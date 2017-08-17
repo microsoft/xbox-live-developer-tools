@@ -18,7 +18,7 @@ namespace XboxLiveCmdlet
     [Cmdlet(VerbsCommon.Set, "XblDevAccount")]
     public class SetXblDevAccount: XboxliveCmdlet
     {
-        [ValidateSet("XboxDeveloperPortal", "UniversalDeveloeprCenter", "XDP", "UDC", IgnoreCase = true)]
+        [ValidateSet("XboxDeveloperPortal", "UniversalDeveloperCenter", "XDP", "UDC", IgnoreCase = true)]
         [Parameter(Mandatory = true, Position = 0)]
         public string AccountSource { get; set; }
 
@@ -29,7 +29,7 @@ namespace XboxLiveCmdlet
         {
             try
             {
-                DevAccountSource accountType = DevAccountSource.UniversalDeveloeprCenter;
+                DevAccountSource accountType = DevAccountSource.UniversalDeveloperCenter;
                 if (AccountSource.Equals("XboxDeveloperPortal", StringComparison.OrdinalIgnoreCase)  || AccountSource.Equals("XDP", StringComparison.OrdinalIgnoreCase))
                 {
                     accountType = DevAccountSource.XboxDeveloperPortal;

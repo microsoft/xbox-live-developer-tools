@@ -11,7 +11,7 @@ namespace Microsoft.Xbox.Services.Tool
     {
         XboxDeveloperPortal,
 
-        UniversalDeveloeprCenter
+        UniversalDeveloperCenter
     }
 
     public class DevAccount

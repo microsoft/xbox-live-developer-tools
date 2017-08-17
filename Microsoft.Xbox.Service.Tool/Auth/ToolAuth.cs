@@ -60,7 +60,7 @@ namespace Microsoft.Xbox.Services.Tool
                 {
                     switch (accountType)
                     {
-                        case DevAccountSource.UniversalDeveloeprCenter:
+                        case DevAccountSource.UniversalDeveloperCenter:
                             Client = new AuthClient(new AadAuthContext());
                             break;
                         case DevAccountSource.XboxDeveloperPortal:

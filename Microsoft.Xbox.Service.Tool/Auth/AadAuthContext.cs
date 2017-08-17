@@ -9,7 +9,7 @@
         private readonly AuthenticationContext authContext =
             new AuthenticationContext(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint + "common");
 
-        public DevAccountSource AccountSource { get; } = DevAccountSource.UniversalDeveloeprCenter;
+        public DevAccountSource AccountSource { get; } = DevAccountSource.UniversalDeveloperCenter;
 
         public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.UDCAuthEndpoint;
 

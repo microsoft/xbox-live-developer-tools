@@ -46,7 +46,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
                 .Callback(() =>hasCredential = true)
                 .ReturnsAsync("aadtoken");
 
-            authMock.Setup(o => o.AccountSource).Returns(DevAccountSource.UniversalDeveloeprCenter);
+            authMock.Setup(o => o.AccountSource).Returns(DevAccountSource.UniversalDeveloperCenter);
 
             authMock.Setup(o => o.XtdsEndpoint).Returns(DefaultXtdsEndpoint);
 
@@ -90,13 +90,13 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloeprCenter, string.Empty);
+            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloperCenter, string.Empty);
             Assert.AreEqual(DefaultId, devAccount.Id);
             Assert.AreEqual(DefaultName, devAccount.Name);
             Assert.AreEqual(DefaultAccountId, devAccount.AccountId);
             Assert.AreEqual(DefaultMoniker, devAccount.AccountMoniker);
             Assert.AreEqual(DefaultAccountType, devAccount.AccountType);
-            Assert.AreEqual(DevAccountSource.UniversalDeveloeprCenter, devAccount.AccountSource);
+            Assert.AreEqual(DevAccountSource.UniversalDeveloperCenter, devAccount.AccountSource);
             Assert.IsTrue(Auth.HasAuthInfo);
 
             var token2 = await Auth.GetETokenSilentlyAsync(DefaultEScid, DefaultESandbox);
@@ -123,7 +123,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             try
             {
-                await Auth.SignIn(DevAccountSource.UniversalDeveloeprCenter, string.Empty);
+                await Auth.SignIn(DevAccountSource.UniversalDeveloperCenter, string.Empty);
             }
             catch (XboxLiveException ex)
             {
@@ -159,14 +159,14 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloeprCenter, string.Empty);
+            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloperCenter, string.Empty);
 
             Assert.AreEqual(devAccount.Id, DefaultId);
             Assert.AreEqual(devAccount.Name, DefaultName);
             Assert.AreEqual(devAccount.AccountId, DefaultAccountId);
             Assert.AreEqual(devAccount.AccountMoniker, DefaultMoniker);
             Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
-            Assert.AreEqual(devAccount.AccountSource, DevAccountSource.UniversalDeveloeprCenter);
+            Assert.AreEqual(devAccount.AccountSource, DevAccountSource.UniversalDeveloperCenter);
             Assert.IsTrue(Auth.HasAuthInfo);
 
             var token = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
@@ -194,14 +194,14 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloeprCenter, string.Empty);
+            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloperCenter, string.Empty);
 
             Assert.AreEqual(devAccount.Id, DefaultId);
             Assert.AreEqual(devAccount.Name, DefaultName);
             Assert.AreEqual(devAccount.AccountId, DefaultAccountId);
             Assert.AreEqual(devAccount.AccountMoniker, DefaultMoniker);
             Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
-            Assert.AreEqual(devAccount.AccountSource, DevAccountSource.UniversalDeveloeprCenter);
+            Assert.AreEqual(devAccount.AccountSource, DevAccountSource.UniversalDeveloperCenter);
             Assert.IsTrue(Auth.HasAuthInfo);
 
             var token = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
