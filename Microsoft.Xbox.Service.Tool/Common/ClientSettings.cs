@@ -61,7 +61,8 @@ namespace Microsoft.Xbox.Services.Tool
                 this.WindowsLiveAuthenticationType = "uri:WindowsLiveIDINT";
                 this.OmegaResetToolEndpoint = "https://eraser.dnet.xboxlive.com";
                 this.UDCAuthEndpoint = "https://devx.microsoft-tst.com/xdts/authorize";
-            }
+                this.XmintAuthEndpoint = "https://xmint.xboxlive.dnet.com/adfs/authorize?rp=https%3A%2F%2Fxdp.dnet.xboxlive.com%2F";
+    }
 
             this.XdpBaseUri = new Uri(xdpBaseEndpoint);
             this.WindowsLiveUri = new Uri(windowsLiveUriEndpoint);
@@ -87,5 +88,8 @@ namespace Microsoft.Xbox.Services.Tool
         public string AADApplicationId { get; private set; } = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1";
         public string AADResource { get; private set; } = "https://developer.microsoft.com/";
         public string UDCAuthEndpoint{ get; private set; } = "https://developer.microsoft.com/xdts/authorize";
+
+        public string MsalXboxLiveClientId = "b1eab458-325b-45a5-9692-ad6079c1eca8";
+        public string XmintAuthEndpoint { get; private set; } = "https://xmint.xboxlive.com/adfs/authorize?rp=https%3A%2F%2Fxdp.dnet.xboxlive.com%2F";
     }
 }

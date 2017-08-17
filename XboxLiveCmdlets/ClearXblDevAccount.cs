@@ -13,27 +13,20 @@ namespace XboxLiveCmdlet
     using System;
     using System.Management.Automation;
     using System.Security;
+    using Microsoft.Xbox.Services.Tool;
 
-    [Cmdlet(VerbsCommon.Set, "XblDevUDCAccount")]
-    public class SetXblDevUDCAccount: XboxliveCmdlet
+    [Cmdlet(VerbsCommon.Clear, "XblDevAccount")]
+    public class ClearXblDevAccount: XboxliveCmdlet
     {
-        [Parameter(Mandatory = true, Position = 0)]
-        public string UserName { get; set; }
-
-        [Parameter(Position = 1)]
-        public SecureString Password { set; get; }
-
         protected override void ProcessRecord()
         {
             try
             {
-                var task = Microsoft.Xbox.Services.Tool.Auth.GetUDCEToken(this.UserName, this.Password);
-                task.Wait();
+                Microsoft.Xbox.Services.Tool.Auth.SignOut();
             }
-            catch (AggregateException e)
+            catch (Exception e)
             {
-                var innerEx = e.InnerException;
-                WriteError(new ErrorRecord(innerEx, "Set-XBLDevUDCAccount failed", ErrorCategory.SecurityError, null));
+                WriteError(new ErrorRecord(e, "Clear-XBLDevAccount failed", ErrorCategory.SecurityError, null));
             }
         }
 

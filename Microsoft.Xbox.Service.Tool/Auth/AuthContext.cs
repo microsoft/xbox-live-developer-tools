@@ -10,14 +10,18 @@
 
 namespace Microsoft.Xbox.Services.Tool
 {
-    internal class XdpETokenResponse
+    using System.Threading.Tasks;
+
+    internal interface IAuthContext
     {
-        public string Message { get; set; }
+        string XtdsEndpoint { get; set; }
 
-        public bool IsError { get; set; }
+        bool HasCredential { get; }
 
-        public XdtsTokenResponse Data { get; set; }
+        Task<string> AcquireTokenSilentAsync();
 
-        public string CorrelationId { get; set; }
+        Task<string> AcquireTokenAsync(string userName);
+
+        DevAccountSource AccountSource { get; }
     }
 }

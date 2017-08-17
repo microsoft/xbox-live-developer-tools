@@ -1,13 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+﻿////*********************************************************
+////
+//// Copyright (c) Microsoft. All rights reserved.
+//// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+//// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+//// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+//// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
+////
+////*********************************************************
 
 namespace Microsoft.Xbox.Services.Tool
 {
+    using System;
+    using System.Net;
+    using System.Net.Http;
+
     public enum XboxLiveErrorStatus
     {
         /// <summary>
