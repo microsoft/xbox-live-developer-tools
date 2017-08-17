@@ -17,37 +17,42 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
         private const string DefaultEToken = "defaultEToken";
         private const string DefaultEScid = "scid";
         private const string DefaultESandbox = "sandbox";
+        private const string DefaultXtdsEndpoint = "http://XtdsEndpoint.com";
+        private const string DefaultId = "id";
+        private const string DefaultName = "name";
+        private const string DefaultAccountId = "accountid";
+        private const string DefaultAccountType = "accounttype";
+        private const string DefaultMoniker = "moniker";
 
         public void ComposeETokenPayload(TimeSpan expireTime, string scid, string sandbox, out string request, out string response)
         {
-            request = JsonConvert.SerializeObject(new XDTSTokenRequest(scid, sandbox));
+            request = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandbox));
 
             var utcNowString = DateTime.UtcNow.ToString();
             var expiredTimeString = (DateTime.UtcNow + expireTime).ToString();
 
-            response = $"{{'IssueInstant':'{utcNowString}','NotAfter':'{expiredTimeString}','Token':'{DefaultEToken+scid+sandbox}','DisplayClaims':null}}";
+            response = $"{{'IssueInstant':'{utcNowString}','NotAfter':'{expiredTimeString}','Token':'{DefaultEToken+scid+sandbox}','DisplayClaims':{{'eid':'{DefaultId}','enm':'{DefaultName}','eai':'{DefaultAccountId}','eam':'{DefaultMoniker}','eat':'{DefaultAccountType}'}}}}";
         }
 
         private static void SetupMockAad()
         {
             bool hasCredential = false;
-            var aadAuthMock = new Mock<AadAuthContext>();
-            aadAuthMock.Setup(o => o.AcquireTokenSilentAsync(It.IsAny<string>(), It.IsAny<string>()))
+            var authMock = new Mock<IAuthContext>();
+            authMock.Setup(o => o.AcquireTokenSilentAsync())
                 .Callback(()=> hasCredential = true)
                 .ReturnsAsync("aadtoken");
 
-            aadAuthMock.Setup(o => o.AcquireTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<UserCredential>()))
+            authMock.Setup(o => o.AcquireTokenAsync(It.IsAny<string>()))
                 .Callback(() =>hasCredential = true)
                 .ReturnsAsync("aadtoken");
 
-            aadAuthMock.Setup(o => o.AcquireTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(),
-                    It.IsAny<IPlatformParameters>(), It.IsAny<UserIdentifier>()))
-                .Callback(() =>hasCredential = true)
-                .ReturnsAsync("aadtoken");
+            authMock.Setup(o => o.AccountSource).Returns(DevAccountSource.UniversalDeveloeprCenter);
 
-            aadAuthMock.Setup(o => o.HasCredential).Returns(() => hasCredential);
+            authMock.Setup(o => o.XtdsEndpoint).Returns(DefaultXtdsEndpoint);
 
-            Auth.Client = new UDCAuthClient(aadAuthMock.Object);
+            authMock.Setup(o => o.HasCredential).Returns(() => hasCredential);
+
+            Auth.Client = new AuthClient(authMock.Object);
         }
 
         [TestInitialize]
@@ -64,9 +69,8 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
         }
 
         [TestMethod]
-        public async Task GetUDCETokenTest()
+        public async Task GetETokenTest()
         {
-
             var mockHttp = new MockHttpMessageHandler();
 
             string defaultRequest, defaultXdtsResponse, sandboxRequest, sandboxResponse;
@@ -76,18 +80,23 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             ComposeETokenPayload(new TimeSpan(1, 0, 0), DefaultEScid, DefaultESandbox, out sandboxRequest,
                 out sandboxResponse);
 
-            mockHttp.Expect(ClientSettings.Singleton.UDCAuthEndpoint)
+            mockHttp.Expect(DefaultXtdsEndpoint)
                 .WithContent(defaultRequest)
                 .Respond("application/json", defaultXdtsResponse);
 
-            mockHttp.Expect(ClientSettings.Singleton.UDCAuthEndpoint)
+            mockHttp.Expect(DefaultXtdsEndpoint)
                 .WithContent(sandboxRequest)
                 .Respond("application/json", sandboxResponse);
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var token = await Auth.GetUDCEToken("userName", new SecureString());
-            Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
+            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloeprCenter, string.Empty);
+            Assert.AreEqual(DefaultId, devAccount.Id);
+            Assert.AreEqual(DefaultName, devAccount.Name);
+            Assert.AreEqual(DefaultAccountId, devAccount.AccountId);
+            Assert.AreEqual(DefaultMoniker, devAccount.AccountMoniker);
+            Assert.AreEqual(DefaultAccountType, devAccount.AccountType);
+            Assert.AreEqual(DevAccountSource.UniversalDeveloeprCenter, devAccount.AccountSource);
             Assert.IsTrue(Auth.HasAuthInfo);
 
             var token2 = await Auth.GetETokenSilentlyAsync(DefaultEScid, DefaultESandbox);
@@ -96,7 +105,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
 
         [TestMethod]
-        public async Task GetUDCETokenFailTest()
+        public async Task GetETokenFailTest()
         {
             SetupMockAad();
 
@@ -106,7 +115,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out defaultRequest,
                 out defaultXdtsResponse);
 
-            mockHttp.Expect(ClientSettings.Singleton.UDCAuthEndpoint)
+            mockHttp.Expect(DefaultXtdsEndpoint)
                 .WithContent(defaultRequest)
                 .Respond(HttpStatusCode.BadRequest);
 
@@ -114,8 +123,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             try
             {
-                var token = await Auth.GetUDCEToken("userName", new SecureString());
-                Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
+                await Auth.SignIn(DevAccountSource.UniversalDeveloeprCenter, string.Empty);
             }
             catch (XboxLiveException ex)
             {
@@ -141,21 +149,28 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
                 out defaultXdtsResponse);
 
             // Excepct to be hit twice
-            mockHttp.Expect(ClientSettings.Singleton.UDCAuthEndpoint)
+            mockHttp.Expect(DefaultXtdsEndpoint)
                 .WithContent(defaultRequest)
                 .Respond("application/json", defaultXdtsResponse);
 
-            mockHttp.Expect(ClientSettings.Singleton.UDCAuthEndpoint)
+            mockHttp.Expect(DefaultXtdsEndpoint)
                 .WithContent(defaultRequest)
                 .Respond("application/json", defaultXdtsResponse);
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var token = await Auth.GetUDCEToken("userName", new SecureString());
-            Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
+            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloeprCenter, string.Empty);
 
-            var token1 = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
-            Assert.AreEqual(token, token1);
+            Assert.AreEqual(devAccount.Id, DefaultId);
+            Assert.AreEqual(devAccount.Name, DefaultName);
+            Assert.AreEqual(devAccount.AccountId, DefaultAccountId);
+            Assert.AreEqual(devAccount.AccountMoniker, DefaultMoniker);
+            Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
+            Assert.AreEqual(devAccount.AccountSource, DevAccountSource.UniversalDeveloeprCenter);
+            Assert.IsTrue(Auth.HasAuthInfo);
+
+            var token = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
+            Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
 
             mockHttp.VerifyNoOutstandingExpectation();
 
@@ -173,17 +188,24 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
                 out defaultXdtsResponse);
 
             // Excepct to be hit twice, the second call for token will be fetched from cache
-            mockHttp.Expect(ClientSettings.Singleton.UDCAuthEndpoint)
+            mockHttp.Expect(DefaultXtdsEndpoint)
                 .WithContent(defaultRequest)
                 .Respond("application/json", defaultXdtsResponse);
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var token = await Auth.GetUDCEToken("userName", new SecureString());
-            Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
+            var devAccount = await Auth.SignIn(DevAccountSource.UniversalDeveloeprCenter, string.Empty);
 
-            var token1 = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
-            Assert.AreEqual(token, token1);
+            Assert.AreEqual(devAccount.Id, DefaultId);
+            Assert.AreEqual(devAccount.Name, DefaultName);
+            Assert.AreEqual(devAccount.AccountId, DefaultAccountId);
+            Assert.AreEqual(devAccount.AccountMoniker, DefaultMoniker);
+            Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
+            Assert.AreEqual(devAccount.AccountSource, DevAccountSource.UniversalDeveloeprCenter);
+            Assert.IsTrue(Auth.HasAuthInfo);
+
+            var token = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
+            Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
 
             mockHttp.VerifyNoOutstandingExpectation();
 

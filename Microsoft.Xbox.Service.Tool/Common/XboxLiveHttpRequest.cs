@@ -14,7 +14,6 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Collections.Generic;
     using System.Linq;
     using System.Net.Http;
-    using System.Text;
     using System.Threading.Tasks;
 
     internal class XboxLiveHttpContent

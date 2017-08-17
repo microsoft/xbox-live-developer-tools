@@ -11,17 +11,26 @@
 
 namespace Microsoft.Xbox.Services.Tool
 {
+    using Newtonsoft.Json;
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Security;
-    using System.Text;
+    using System.Net.Http;
     using System.Threading.Tasks;
 
-    internal abstract class AuthClient
+    internal class AuthClient
     {
-        protected ConcurrentDictionary<string, XdtsTokenResponse> cachedTokens = new ConcurrentDictionary<string, XdtsTokenResponse>();
+        private ConcurrentDictionary<string, XdtsTokenResponse> cachedTokens = new ConcurrentDictionary<string, XdtsTokenResponse>();
+        private IAuthContext authContext;
+
+        public AuthClient(IAuthContext context)
+        {
+            this.authContext = context;
+        }
+
+        public bool HasCredential
+        {
+            get { return authContext.HasCredential; }
+        }
 
         protected bool TryGetCachedToken(string key, out string token)
         {
@@ -39,11 +48,49 @@ namespace Microsoft.Xbox.Services.Tool
             return false;
         }
 
-        public abstract bool HasCredential { get; }
+        public async Task<string> GetETokenAsync(string scid, string sandbox)
+        {
+            string eToken;
+            // return cachaed token if we have one and didn't expire
+            if (!this.TryGetCachedToken(scid + sandbox, out eToken)
+                && (this.authContext != null))
+            {
+                var aadToken = await this.authContext.AcquireTokenSilentAsync();
+                var xtdsToken = await FetchXdtsToken(aadToken, scid, sandbox);
+                eToken = xtdsToken.Token;
+            }
 
-        public abstract Task<string> GetETokenAsync(string scid, string sandbox);
+            return eToken;
+        }
 
-        public abstract Task<string> SignInAsync(string emailaddress, SecureString password);
+        public async Task<DevAccount> SignInAsync(string userName)
+        {
+            string aadToken = await authContext.AcquireTokenAsync(userName);
+            XdtsTokenResponse token = await FetchXdtsToken(aadToken, string.Empty, string.Empty);
 
+            return new DevAccount(token, this.authContext.AccountSource);
+        }
+
+
+        protected async Task<XdtsTokenResponse> FetchXdtsToken(string aadToken, string scid, string sandbox)
+        {
+            var tokenRequest = new XboxLiveHttpRequest();
+            var requestMsg = new HttpRequestMessage(HttpMethod.Post, this.authContext.XtdsEndpoint);
+
+            var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandbox));
+            requestMsg.Content = new StringContent(requestContent);
+
+            // Add the aadToken header without validation as the framework
+            // does not like the values returned for aadTokens for MSA accounts.
+            requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken);
+
+            var responseContent = await tokenRequest.SendAsync(requestMsg);
+            Log.WriteLog("Fetch xdts Token succeeded.");
+
+            var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(responseContent.Content);
+            this.cachedTokens[scid + sandbox] = token;
+
+            return token;
+        }
     }
 }

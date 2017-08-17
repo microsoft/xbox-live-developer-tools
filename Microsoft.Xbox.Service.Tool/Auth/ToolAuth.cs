@@ -8,10 +8,12 @@
 //
 //*********************************************************
 
+
 namespace Microsoft.Xbox.Services.Tool
 {
-    using System.Security;
     using System.Threading.Tasks;
+
+
 
     public class Auth
     {
@@ -50,53 +52,39 @@ namespace Microsoft.Xbox.Services.Tool
             return PrepareForAuthHeader(etoken);
         }
 
-        public static async Task<string> GetXDPEToken(string username, SecureString password)
+        public static async Task<DevAccount> SignIn(DevAccountSource accountType, string userName)
         {
-            Log.WriteLog($"GetXDPEToken start, username:{username}");
             lock (initLock)
             {
                 if (Client == null)
                 {
-                    Client = new XdpAuthClient();
+                    switch (accountType)
+                    {
+                        case DevAccountSource.UniversalDeveloeprCenter:
+                            Client = new AuthClient(new AadAuthContext());
+                            break;
+                        case DevAccountSource.XboxDeveloperPortal:
+                            Client = new AuthClient(new MsalAuthContext());
+                            break;
+                        default:
+                            throw new XboxLiveException("Unsupported developer type");
+                    }
+                }
+                else if (Client.HasCredential)
+                {
+                    throw new XboxLiveException("Dev account already signed in");
                 }
             }
 
-            string token = string.Empty;
-            try
-            {
-                token = await Client.GetETokenAsync("", "");
-            }
-            catch (XboxLiveException)
-            {
-                token = await Client.SignInAsync(username, password);
-            }
-
-            return PrepareForAuthHeader(token);
+            return await Client.SignInAsync(userName);
         }
 
-        public static async Task<string> GetUDCEToken(string username, SecureString password)
+        public static void SignOut()
         {
-            Log.WriteLog($"GetXDPEToken start, username:{username}");
             lock (initLock)
             {
-                if (Client == null)
-                {
-                    Client = new UDCAuthClient(null);
-                }
+                Client = null;
             }
-
-            string token = string.Empty;
-            if (Client.HasCredential)
-            {
-                token = await Client.GetETokenAsync("", "");
-            }
-            else
-            {
-                token = await Client.SignInAsync(username, password);
-            }
-
-            return PrepareForAuthHeader(token);
         }
-
     }
 }
