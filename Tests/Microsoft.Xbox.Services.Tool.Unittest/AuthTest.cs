@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Security;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using RichardSzalay.MockHttp;
 using Moq;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Newtonsoft.Json;
+using RichardSzalay.MockHttp;
+using System;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Microsoft.Xbox.Services.Tool.Unittest
 {

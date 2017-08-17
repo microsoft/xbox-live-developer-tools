@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XboxLiveCmdlet
 {
     using System;
+    using System.Collections.Generic;
     using System.Management.Automation;
 
     [Cmdlet(VerbsCommon.Reset, "XblPlayerData")]
