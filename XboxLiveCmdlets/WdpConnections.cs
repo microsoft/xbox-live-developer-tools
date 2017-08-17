@@ -1,14 +1,13 @@
-﻿using Microsoft.Tools.WindowsDevicePortal;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Management.Automation.Language;
-using System.Net;
-using System.Threading.Tasks;
-//using Windows.Security.Credentials;
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XboxLiveCmdlet
 {
+    using Microsoft.Tools.WindowsDevicePortal;
+    using System.Collections.Concurrent;
+    using System.Net;
+    using System.Threading.Tasks;
+
     class WdpConnections
     {
         static private ConcurrentDictionary<string, DevicePortal> connections = new ConcurrentDictionary<string, DevicePortal>();

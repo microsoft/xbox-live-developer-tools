@@ -1,4 +1,7 @@
-﻿namespace Microsoft.Xbox.Services.Tool
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+namespace Microsoft.Xbox.Services.Tool
 {
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using System;
