@@ -1,18 +1,15 @@
 ## Welcome!
 
-The Microsoft Xbox Live Powershell Module provides a way to
+The Microsoft Xbox Live PowerShell Module provides a way to:
 
 * Get/Set sandboxes on PC and Xbox console.
 
-To get access to the Xbox Live service, you can join the Xbox Live Creators Program at https://aka.ms/xblcp, or apply to the ID@Xbox program at http://www.xbox.com/en-us/Developers/id
-
-To learn more about these programs, please refer to the [developer program overview](
-https://developer.microsoft.com/en-us/games/xbox/docs/xboxlive/get-started/developer-program-overview).
+To get access to the Xbox Live service you must be a managed developer, enrolled in the [ID@Xbox](http://www.xbox.com/Developers/id) program or participating in the [Xbox Live Creators Program](https://aka.ms/xblcp). To learn more about these programs, please refer to the [developer program overview](https://docs.microsoft.com/windows/uwp/xbox-live/developer-program-overview).
 
 
 ## Getting Start using Xbox Live PowerShell Module
 
-* Install xbox live PS module from the [PowerShell Gallery](https://powershellgallery.com):
+* Install Xbox Live PowerShell module from the [PowerShell Gallery](https://powershellgallery.com):
 
 ```powershell
 Install-Module XboxlivePSModule -Scope CurrentUser
@@ -30,12 +27,12 @@ Update-Module XboxlivePSModule
 
 ## Repo Structure
 * [/docs/](docs): Cmdlets documents.
-* [/Microsoft.Xbox.Service.Tool/](Microsoft.Xbox.Service.Tool): XBL cloud tooling dll, contains code for talking to xbl service tooling endpoints. Being consumed by cmdlets. [TODO: to be released as seprate nuget package, to be consumed by externally]
+* [/Microsoft.Xbox.Service.Tool/](Microsoft.Xbox.Service.Tool): XBL cloud tooling dll, contains code for talking to xbl service tooling endpoints. Being consumed by cmdlets.
 * [/XboxLiveCmdlets/](XboxLiveCmdlets): Code for xbl cmdlets, warpper for consuming Microsoft.Xbox.Service.Tool.dll, also contains client only code for tooling like sandbox utilities.  
 * [/XboxlivePSModule/](XboxlivePSModule): Manifest and building script for Xbl PS module.
 
 ## Documentation
-You can also learn how to use xboxlive powershell module by reading our documentation:
+You can also learn how to use Xbox Live PowerShell module by reading our documentation:
 
 - [Cmdlet Documentation](docs/XboxLivePsModule.md)
 
@@ -47,7 +44,7 @@ Is there a feature missing that you'd like to see, or found a bug that you have 
 [Contrubute guidance](CONTRIBUTING.md)
 [Develop guidance](DEVELOP.md)
 
-Big or small we'd like to take your contributions back to help improve the Xbox Live Powershell Module for everyone. 
+Big or small we'd like to take your contributions back to help improve the Xbox Live PowerShell Module for everyone. 
 
 ## Having Trouble?
 
@@ -59,6 +56,6 @@ We'd love to get your review score, whether good or bad, but even more than that
 *   [Xbox Live Unity Plugin](https://github.com/Microsoft/xbox-live-unity-plugin)
 *   [Xbox Live Resiliency Fiddler Plugin](https://github.com/Microsoft/xbox-live-resiliency-fiddler-plugin)
 *   [Xbox Live Trace Analyzer](https://github.com/Microsoft/xbox-live-trace-analyzer)
-*   [Xbox Live Powershell Cmdlets](https://github.com/Microsoft/xbox-live-powershell-module)
+*   [Xbox Live PowerShell Cmdlets](https://github.com/Microsoft/xbox-live-powershell-module)
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.

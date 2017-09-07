@@ -7,7 +7,7 @@ schema: 2.0.0
 # Set-XblSandbox
 
 ## SYNOPSIS
-Set sandbox for current machine or xbox console.
+Set sandbox for current machine or Xbox console.
 
 ## SYNTAX
 
@@ -17,8 +17,8 @@ Set-XblSandbox [-SandboxId] <String> [-ConsoleName <String>] [-UserName <String>
 ```
 
 ## DESCRIPTION
-The cmdlet let you set the sandbox for current machine or a remote xbox console.
-If no ConsoleName parameter has specified, it sets the sandbox for local machine.
+The cmdlet lets you set the sandbox for current machine or a remote Xbox console.
+If no ConsoleName parameter is specified, it sets the sandbox for local machine.
 
 ## EXAMPLES
 
@@ -34,9 +34,9 @@ Set current machine&#39;s sandbox to XDKS.1
 Set-XblSandbox XDKS.1 -ConsoleName console -UserName username -Password password
 ```
 
-Set remote xbox console sandbox id to XDKS.1 via Windows Device Portal . 
+Set the remote Xbox console sandbox id to XDKS.1 via Windows Device Portal . 
 Please make sure the console is in Dev mode and Xbox Device Portal is enabled. 
-If Xbox Device Portal does not require authentication, then don't need to pass in Username and Passeword
+If Xbox Device Portal does not require authentication, then don't pass in the username or password.
 
 ## PARAMETERS
 
@@ -100,7 +100,7 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### CommonParameters
+### Common Parameters
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS

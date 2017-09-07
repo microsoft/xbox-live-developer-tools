@@ -6,12 +6,12 @@ Locale: en-US
 
 # XboxLivePsModule Module
 ## Description
-Powershell Module for xbox live tooling. 
+Powershell Module for Xbox Live tooling. 
 
 ## XboxLivePsModule Cmdlets
 ### [Get-XblSandbox](Get-XblSandbox.md)
-Get sandbox for current machine or xbox console.
+Get sandbox for current machine or Xbox console.
 
 ### [Set-XblSandbox](Set-XblSandbox.md)
-Set sandbox for current machine or xbox console.
+Set sandbox for current machine or Xbox console.
 
