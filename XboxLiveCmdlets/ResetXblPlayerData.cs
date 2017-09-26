@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XboxLiveCmdlet
 {
     using System;
+    using System.Collections.Generic;
     using System.Management.Automation;
 
     [Cmdlet(VerbsCommon.Reset, "XblPlayerData")]
@@ -24,7 +21,7 @@ namespace XboxLiveCmdlet
 
         protected override void BeginProcessing()
         {
-            if (!Microsoft.Xbox.Services.Tool.Auth.HasAuthInfo())
+            if (!Microsoft.Xbox.Services.Tool.Auth.HasAuthInfo)
             {
                 var errorRecord = new ErrorRecord(new Exception("User did not sign in, use Add-XBLDevXDPAccount command."), "", ErrorCategory.AuthenticationError, null);
                 ThrowTerminatingError(errorRecord);

@@ -1,25 +1,24 @@
-﻿//*********************************************************
-//
-// Copyright (c) Microsoft. All rights reserved.
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//*********************************************************
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XboxLiveCmdlet
 {
-    using System;
-    using System.Management.Automation;
     using Microsoft.Tools.WindowsDevicePortal;
     using Microsoft.Win32;
-    using System.Collections.Generic;
+    using System;
+    using System.Management.Automation;
 
     [Cmdlet(VerbsCommon.Get, "XblSandbox")]
     public class GetXblSandbox : XboxliveCmdlet
     {
-        public string MachineName { get; set; }
+        [Parameter]
+        public string ConsoleName { get; set; }
+
+        [Parameter]
+        public string UserName { get; set; }
+
+        [Parameter]
+        public string Password { get; set; }
 
         internal static PSObject GetLocalSandboxObject()
         {
@@ -42,19 +41,14 @@ namespace XboxLiveCmdlet
         {
             try
             {
-                if (string.IsNullOrEmpty(MachineName))
+                if (string.IsNullOrEmpty(ConsoleName))
                 {
                     WriteObject(GetLocalSandboxObject());
                 }
                 else
                 {
-                    string url = "https://" + MachineName + ":11443";
-                    IDevicePortalConnection connection = new DefaultDevicePortalConnection(url, string.Empty, string.Empty);
-                    DevicePortal portal = new DevicePortal(connection);
-
-                    var task = portal.GetXboxLiveSandboxAsync();
-                    task.Wait();
-                    var result = task.Result;
+                    string url = "https://" + ConsoleName + ":11443";
+                    var result = WdpConnections.GetXboxLiveSandboxAsync(url, UserName, Password).Result;
 
                     WriteObject(result, false);
                 }
@@ -62,7 +56,17 @@ namespace XboxLiveCmdlet
             catch (AggregateException ex)
             {
                 var innerEx = ex.InnerException;
-                WriteError(new ErrorRecord(innerEx, "Get-XblSandbox failed: " + innerEx.Message, ErrorCategory.InvalidOperation, null));
+                var deviceEx = innerEx as DevicePortalException;
+                if (deviceEx != null)
+                {
+                    WriteError(new ErrorRecord(ex, $"Get-XblSandbox failed, reason: {deviceEx.Reason}, code: {deviceEx.StatusCode}", ErrorCategory.InvalidOperation, null));
+                }
+                else
+                {
+                    WriteError(new ErrorRecord(innerEx, "Get-XblSandbox failed: " + innerEx.Message,
+                        ErrorCategory.InvalidOperation, null));
+                }
+                
             }
             catch (Exception ex)
             {

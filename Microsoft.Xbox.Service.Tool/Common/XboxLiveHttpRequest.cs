@@ -1,12 +1,5 @@
-﻿//*********************************************************
-//
-// Copyright (c) Microsoft. All rights reserved.
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//*********************************************************
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace Microsoft.Xbox.Services.Tool
 {
@@ -14,7 +7,6 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Collections.Generic;
     using System.Linq;
     using System.Net.Http;
-    using System.Text;
     using System.Threading.Tasks;
 
     internal class XboxLiveHttpContent
@@ -25,12 +17,11 @@ namespace Microsoft.Xbox.Services.Tool
 
     internal class XboxLiveHttpRequest : IDisposable
     {
-        private HttpClient httpClient;
-        private HttpMessageHandler requestHandler;
+        private readonly HttpClient httpClient;
 
         public XboxLiveHttpRequest()
         {
-            this.requestHandler = /*TestHook.MockHttpHandler ??*/ new WebRequestHandler();
+            var requestHandler = TestHook.MockHttpHandler ?? new WebRequestHandler();
             httpClient = new HttpClient(requestHandler);
         }
 

@@ -1,37 +1,35 @@
-﻿//*********************************************************
-//
-// Copyright (c) Microsoft. All rights reserved.
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//*********************************************************
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XboxLiveCmdlet
 {
-    using System;
-    using System.Management.Automation;
-    using System.ServiceProcess;
     using Microsoft.Tools.WindowsDevicePortal;
     using Microsoft.Win32;
-    using System.Collections.Generic;
-    using System.IO;
+    using System;
+    using System.Management.Automation;
     using System.Reflection;
+    using System.ServiceProcess;
 
     [Cmdlet(VerbsCommon.Set, "XblSandbox")]
     public class SetXblSandbox : XboxliveCmdlet
     {
-        public string MachineName { get; set; }
-
-        [Parameter(Mandatory = true)]
+        [Parameter(Mandatory = true, Position = 0)]
         public string SandboxId { get; set; }
+
+        [Parameter]
+        public string ConsoleName { get; set; }
+
+        [Parameter]
+        public string UserName { get; set; }
+
+        [Parameter]
+        public string Password { get; set; }
 
         protected override void ProcessRecord()
         {
             try
             {
-                if (string.IsNullOrEmpty(MachineName))
+                if (string.IsNullOrEmpty(ConsoleName))
                 {
                     // Check if running as admin
                     // Get the ID and security principal of the current user account
@@ -61,12 +59,21 @@ namespace XboxLiveCmdlet
                         // launch a elevated powershell session and re-call the command 
                         var assembly = Assembly.GetExecutingAssembly();
 
-                        string command = "Import-Module " + assembly.Location + ";";
-                        command += this.MyInvocation.Line;
+                        string commands = "Import-Module " + assembly.Location + ";";
+                        string setSandboxCmd = this.MyInvocation.InvocationName;
+                        foreach (var param in this.MyInvocation.BoundParameters)
+                        {
+                            setSandboxCmd += " -" + param.Key;
+                            if (param.Value.GetType() != typeof(SwitchParameter))
+                            {
+                                setSandboxCmd += " " + param.Value;
+                            }
+                        }
+                        commands += setSandboxCmd;
 
                         // launch powershell in admin
                         var newProcessInfo = new System.Diagnostics.ProcessStartInfo("Powershell");
-                        newProcessInfo.Arguments = $"-command \" &{{ {command} }}";
+                        newProcessInfo.Arguments = $" -command \" &{{ {commands} }}";
                         newProcessInfo.Verb = "runas";
 
                         var process = System.Diagnostics.Process.Start(newProcessInfo);
@@ -78,12 +85,8 @@ namespace XboxLiveCmdlet
                 }
                 else
                 {
-                    string url = "https://" + MachineName + ":11443";
-                    IDevicePortalConnection connection = new DefaultDevicePortalConnection(url, string.Empty, string.Empty);
-                    DevicePortal portal = new DevicePortal(connection);
-
-                    portal.SetXboxLiveSandboxAsync(SandboxId).Wait();
-                    portal.RebootAsync().Wait();
+                    string url = "https://" + ConsoleName + ":11443";
+                    WdpConnections.SetXboxLiveSandboxAsync(url, SandboxId, UserName, Password).Wait();
                 }
             }
             catch (AggregateException ex)
@@ -97,5 +100,9 @@ namespace XboxLiveCmdlet
             }
         }
 
+        private bool Portal_UnvalidatedCert(DevicePortal sender, System.Security.Cryptography.X509Certificates.X509Certificate certificate, System.Security.Cryptography.X509Certificates.X509Chain chain, System.Net.Security.SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
     }
 }
