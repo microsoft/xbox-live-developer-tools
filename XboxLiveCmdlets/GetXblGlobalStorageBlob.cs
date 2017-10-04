@@ -12,8 +12,8 @@ namespace XboxLiveCmdlet
     using System.Management.Automation;
     using Microsoft.Xbox.Services.Tool;
 
-    [Cmdlet(VerbsCommon.Set, "XblGlobalStoragBlob")]
-    public class SetXblGlobalStoragBlob : XboxliveCmdlet
+    [Cmdlet(VerbsCommon.Get, "XblGlobalStorageBlob")]
+    public class GetXblGlobalStorageBlob : XboxliveCmdlet
     {
         [Parameter(Mandatory = true, Position = 0)]
         public string ServiceeConfigurationId { get; set; }
@@ -22,14 +22,17 @@ namespace XboxLiveCmdlet
         public string Sandbox { get; set; }
 
         [Parameter(Mandatory = true, Position = 2)]
-        public string SourceFile { get; set; }
-
-        [Parameter(Mandatory = true, Position = 3)]
-        public string DestPathAndFileName { get; set; }
+        public string PathAndFileName { get; set; }
 
         [ValidateSet("Binary", "Json", "Config", IgnoreCase = true)]
-        [Parameter(Mandatory = true, Position = 4)]
+        [Parameter(Mandatory = true, Position = 3)]
         public string FileType { get; set; }
+
+        [Parameter(Mandatory = true, Position = 4)]
+        public string OutFile { get; set; }
+
+        [Parameter]
+        public SwitchParameter ForceOverwrite { get; set; }
 
         protected override void ProcessRecord()
         {
@@ -39,11 +42,19 @@ namespace XboxLiveCmdlet
                 if (!Enum.TryParse(this.FileType, true, out fileBlobType))
                 {
                     WriteError(new ErrorRecord(new InvalidEnumArgumentException(), "Invalid FileType", ErrorCategory.InvalidArgument, null));
+                    return;
                 }
 
-                byte[] blobData = File.ReadAllBytes(this.SourceFile);
+                //Check if file exist if no ForceOverWrite present. 
+                if (!this.ForceOverwrite.IsPresent && File.Exists(this.OutFile))
+                {
+                    WriteError(new ErrorRecord(new IOException(), $"OutFile {this.OutFile} already exsit, pass in ForceOverwrite if you would like to overwrite", ErrorCategory.WriteError, null));
+                    return;
+                }
 
-                Microsoft.Xbox.Services.Tool.TitleStorage.UploadGlobalStorageBlob(this.ServiceeConfigurationId, this.Sandbox, this.DestPathAndFileName, fileBlobType, blobData).Wait();
+                byte[] data = Microsoft.Xbox.Services.Tool.TitleStorage.DownloadGlobalStorageBlob(this.ServiceeConfigurationId, this.Sandbox, this.PathAndFileName, fileBlobType).Result;
+                
+                File.WriteAllBytes(this.OutFile, data);
             }
             catch (AggregateException ex)
             {

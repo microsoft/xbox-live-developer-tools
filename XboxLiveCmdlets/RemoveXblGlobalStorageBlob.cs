@@ -12,8 +12,8 @@ namespace XboxLiveCmdlet
     using System.Management.Automation;
     using Microsoft.Xbox.Services.Tool;
 
-    [Cmdlet(VerbsCommon.Remove, "XblGlobalStoragBlob")]
-    public class RemoveXblGlobalStoragBlob : XboxliveCmdlet
+    [Cmdlet(VerbsCommon.Remove, "XblGlobalStorageBlob")]
+    public class RemoveXblGlobalStorageBlob : XboxliveCmdlet
     {
         [Parameter(Mandatory = true, Position = 0)]
         public string ServiceeConfigurationId { get; set; }
