@@ -7,7 +7,6 @@ namespace Microsoft.Xbox.Services.Tool
 
     internal class ClientSettings
     {
-
         public static ClientSettings Singleton
         {
             get
@@ -55,7 +54,8 @@ namespace Microsoft.Xbox.Services.Tool
                 this.OmegaResetToolEndpoint = "https://eraser.dnet.xboxlive.com";
                 this.UDCAuthEndpoint = "https://devx.microsoft-tst.com/xdts/authorize";
                 this.XmintAuthEndpoint = "https://xmint.xboxlive.dnet.com/adfs/authorize?rp=https%3A%2F%2Fxdp.dnet.xboxlive.com%2F";
-    }
+                this.TitleStorageEndpoint = "https://titlestorage.dnet.xboxlive.com";
+            }
 
             this.XdpBaseUri = new Uri(xdpBaseEndpoint);
             this.WindowsLiveUri = new Uri(windowsLiveUriEndpoint);
@@ -73,6 +73,8 @@ namespace Microsoft.Xbox.Services.Tool
         public string WindowsLiveAuthenticationType { get; private set; }
 
         public string OmegaResetToolEndpoint { get; private set; }
+
+        public string TitleStorageEndpoint { get; private set; } = "https://titlestorage.xboxlive.com";
 
         public string XDTSToolTokenType { get; private set; } = "http://oauth.net/grant_type/jwt/1.0/bearer";
 

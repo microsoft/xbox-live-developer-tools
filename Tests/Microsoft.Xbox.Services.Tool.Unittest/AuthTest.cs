@@ -15,8 +15,8 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
     public class AuthTest
     {
         private const string DefaultEToken = "defaultEToken";
-        private const string DefaultEScid = "scid";
-        private const string DefaultESandbox = "sandbox";
+        private const string DefaultScid = "scid";
+        private const string DefaultSandbox = "sandbox";
         private const string DefaultXtdsEndpoint = "http://XtdsEndpoint.com";
         private const string DefaultId = "id";
         private const string DefaultName = "name";
@@ -36,21 +36,16 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
         private static void SetupMockAad()
         {
-            bool hasCredential = false;
             var authMock = new Mock<IAuthContext>();
             authMock.Setup(o => o.AcquireTokenSilentAsync())
-                .Callback(()=> hasCredential = true)
                 .ReturnsAsync("aadtoken");
 
             authMock.Setup(o => o.AcquireTokenAsync(It.IsAny<string>()))
-                .Callback(() =>hasCredential = true)
                 .ReturnsAsync("aadtoken");
 
             authMock.Setup(o => o.AccountSource).Returns(DevAccountSource.UniversalDeveloperCenter);
 
             authMock.Setup(o => o.XtdsEndpoint).Returns(DefaultXtdsEndpoint);
-
-            authMock.Setup(o => o.HasCredential).Returns(() => hasCredential);
 
             Auth.Client = new AuthClient(authMock.Object);
         }
@@ -77,7 +72,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out defaultRequest,
                 out defaultXdtsResponse);
 
-            ComposeETokenPayload(new TimeSpan(1, 0, 0), DefaultEScid, DefaultESandbox, out sandboxRequest,
+            ComposeETokenPayload(new TimeSpan(1, 0, 0), DefaultScid, DefaultSandbox, out sandboxRequest,
                 out sandboxResponse);
 
             mockHttp.Expect(DefaultXtdsEndpoint)
@@ -99,8 +94,8 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             Assert.AreEqual(DevAccountSource.UniversalDeveloperCenter, devAccount.AccountSource);
             Assert.IsTrue(Auth.HasAuthInfo);
 
-            var token2 = await Auth.GetETokenSilentlyAsync(DefaultEScid, DefaultESandbox);
-            Assert.AreEqual(token2, Auth.PrepareForAuthHeader(DefaultEToken+DefaultEScid+DefaultESandbox));
+            var token2 = await Auth.GetETokenSilentlyAsync(DefaultScid, DefaultSandbox);
+            Assert.AreEqual(token2, Auth.PrepareForAuthHeader(DefaultEToken+DefaultScid+DefaultSandbox));
         }
 
 
@@ -129,7 +124,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             {
                 Assert.IsFalse(string.IsNullOrEmpty(ex.Message));
                 Assert.AreEqual(ex.Response.StatusCode, HttpStatusCode.BadRequest);
-                Assert.IsTrue(Auth.HasAuthInfo);
+                Assert.IsFalse(Auth.HasAuthInfo);
 
                 return;
             }

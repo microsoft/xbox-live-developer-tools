@@ -25,6 +25,11 @@ namespace Microsoft.Xbox.Services.Tool
         Forbidden,
 
         /// <summary>
+        /// The client didn't find particular resource, non-transient
+        /// </summary>
+        NotFound,
+
+        /// <summary>
         /// Invalid client request, non-transient
         /// </summary>
         BadRequest,
@@ -93,6 +98,11 @@ namespace Microsoft.Xbox.Services.Tool
             else if (httpStatus == HttpStatusCode.Forbidden)
             {
                 this.ErrorStatus = XboxLiveErrorStatus.Forbidden;
+                this.IsTransient = false;
+            }
+            else if (httpStatus == HttpStatusCode.NotFound)
+            {
+                this.ErrorStatus = XboxLiveErrorStatus.NotFound;
                 this.IsTransient = false;
             }
             else if (httpStatus == HttpStatusCode.RequestTimeout)

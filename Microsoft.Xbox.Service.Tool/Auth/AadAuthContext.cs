@@ -45,7 +45,7 @@ namespace Microsoft.Xbox.Services.Tool
                 result = await this.authContext.AcquireTokenAsync(
                     ClientSettings.Singleton.AADResource,
                     ClientSettings.Singleton.AADApplicationId, new Uri("urn:ietf:wg:oauth:2.0:oob"),
-                    new PlatformParameters(PromptBehavior.Always),
+                    new PlatformParameters(PromptBehavior.Auto),
                     new UserIdentifier(userName, UserIdentifierType.RequiredDisplayableId));
             }
 
