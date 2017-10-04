@@ -9,12 +9,6 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Net.Http;
     using System.Threading.Tasks;
 
-    internal class XboxLiveHttpContent
-    {
-        public string Content { get; set; }
-        public string CollrelationId { get; set; }
-    }
-
     internal class XboxLiveHttpRequest : IDisposable
     {
         private readonly HttpClient httpClient;
@@ -33,7 +27,7 @@ namespace Microsoft.Xbox.Services.Tool
 
             if (response != null && response.IsSuccessStatusCode)
             {
-                content.Content = await response.Content?.ReadAsStringAsync();
+                content.Content = response.Content;
                 IEnumerable<string> correlationIds = null;
                 if (response.Headers.TryGetValues("X-XblCorrelationId", out correlationIds))
                 {

@@ -3,13 +3,6 @@
 
 namespace Microsoft.Xbox.Services.Tool
 {
-    public enum DevAccountSource
-    {
-        XboxDeveloperPortal,
-
-        UniversalDeveloperCenter
-    }
-
     public class DevAccount
     {
         internal DevAccount(XdtsTokenResponse etoken, DevAccountSource accountSource)

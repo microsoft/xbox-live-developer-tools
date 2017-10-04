@@ -14,6 +14,13 @@ namespace Microsoft.Xbox.Services.Tool
         private ConcurrentDictionary<string, XdtsTokenResponse> cachedTokens = new ConcurrentDictionary<string, XdtsTokenResponse>();
         private IAuthContext authContext;
 
+        public DevAccount Account { get; private set; }
+
+        public DevAccountSource AccountSource
+        {
+            get { return this.authContext.AccountSource; }
+        }
+
         public AuthClient(IAuthContext context)
         {
             this.authContext = context;
@@ -21,7 +28,7 @@ namespace Microsoft.Xbox.Services.Tool
 
         public bool HasCredential
         {
-            get { return authContext.HasCredential; }
+            get { return this.Account != null; }
         }
 
         protected bool TryGetCachedToken(string key, out string token)
@@ -40,7 +47,7 @@ namespace Microsoft.Xbox.Services.Tool
             return false;
         }
 
-        public async Task<string> GetETokenAsync(string scid, string sandbox)
+        public virtual async Task<string> GetETokenAsync(string scid, string sandbox)
         {
             string eToken;
             // return cachaed token if we have one and didn't expire
@@ -60,7 +67,9 @@ namespace Microsoft.Xbox.Services.Tool
             string aadToken = await authContext.AcquireTokenAsync(userName);
             XdtsTokenResponse token = await FetchXdtsToken(aadToken, string.Empty, string.Empty);
 
-            return new DevAccount(token, this.authContext.AccountSource);
+            this.Account = new DevAccount(token, this.authContext.AccountSource);
+
+            return this.Account;
         }
 
 
@@ -79,7 +88,8 @@ namespace Microsoft.Xbox.Services.Tool
             var responseContent = await tokenRequest.SendAsync(requestMsg);
             Log.WriteLog("Fetch xdts Token succeeded.");
 
-            var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(responseContent.Content);
+            string content = await responseContent.Content.ReadAsStringAsync();
+            var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(content);
             this.cachedTokens[scid + sandbox] = token;
 
             return token;

@@ -210,11 +210,12 @@ namespace Microsoft.Xbox.Services.Tool
                 string eToken = await Auth.GetETokenSilentlyAsync(scid, sandbox);
                 AddRequestHeaders(ref requestMsg, eToken);
 
-                var responseContent = await submitRequest.SendAsync(requestMsg);
+                var response = await submitRequest.SendAsync(requestMsg);
 
                 // remove "" if found one.
-                job.JobId = responseContent.Content.Trim(new char[] { '\\', '\"' });
-                job.CorrelationId = responseContent.CollrelationId;
+                string responseContent = await response.Content.ReadAsStringAsync();
+                job.JobId = responseContent.Trim(new char[] { '\\', '\"' });
+                job.CorrelationId = response.CollrelationId;
 
                 Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} succeeded. Jobid: {job.JobId}");
             }
@@ -236,7 +237,8 @@ namespace Microsoft.Xbox.Services.Tool
                 AddRequestHeaders(ref requestMsg, eToken);
 
                 var response = await submitRequest.SendAsync(requestMsg);
-                var jobstatus =  JsonConvert.DeserializeObject<JobStatusResponse>(response.Content);
+                string responseConent = await response.Content.ReadAsStringAsync();
+                var jobstatus =  JsonConvert.DeserializeObject<JobStatusResponse>(responseConent);
 
                 Log.WriteLog($"Checking {job.JobId} job stauts: {jobstatus.Status}");
 

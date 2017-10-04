@@ -69,6 +69,7 @@
   <ItemGroup>
     <Compile Include="AuthTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="GlobalStorageTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
