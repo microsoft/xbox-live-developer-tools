@@ -13,7 +13,7 @@ namespace XboxLiveCmdlet
     public class GetXblGlobalStorageBlobMetadata : XboxliveCmdlet
     {
         [Parameter(Mandatory = true, Position = 0)]
-        public string ServiceeConfigurationId { get; set; }
+        public string ServiceConfigurationId { get; set; }
 
         [Parameter(Mandatory = true, Position = 1)]
         public string Sandbox { get; set; }
@@ -31,7 +31,7 @@ namespace XboxLiveCmdlet
         {
             try
             {
-                var metadataResult = Microsoft.Xbox.Services.Tool.TitleStorage.GetGlobalStorageBlobMetaData(this.ServiceeConfigurationId, this.Sandbox, this.Path, this.MaxItem, this.SkipItem).Result;
+                var metadataResult = Microsoft.Xbox.Services.Tool.TitleStorage.GetGlobalStorageBlobMetaData(this.ServiceConfigurationId, this.Sandbox, this.Path, this.MaxItem, this.SkipItem).Result;
                 Console.WriteLine("");
                 Console.WriteLine($"Total item count {metadataResult.TotalItems}, HasNext: {metadataResult.HasNext}");
                 Console.WriteLine("");

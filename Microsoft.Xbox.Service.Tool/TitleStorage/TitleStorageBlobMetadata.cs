@@ -9,12 +9,24 @@ namespace Microsoft.Xbox.Services.Tool
 
     public partial class TitleStorage
     {
+        /// <summary>
+        /// Metadata of a title storage blob.
+        /// </summary>
         public class TitleStorageBlobMetadata
         {
+            /// <summary>
+            /// Blob path that conforms to a SubPath\file format (example: "foo\bar\blob.txt").
+            /// </summary>
             public string Path { get; internal set; }
 
+            /// <summary>
+            /// Type of blob data. Possible values are: Binary, Json, and Config.
+            /// </summary>
             public TitleStorageBlobType Type { get; internal set; }
 
+            /// <summary>
+            /// Gets the number of bytes of the blob data.
+            /// </summary>
             public UInt64 Size { get; internal set; }
         }
     }

@@ -16,7 +16,7 @@ namespace XboxLiveCmdlet
     public class RemoveXblGlobalStorageBlob : XboxliveCmdlet
     {
         [Parameter(Mandatory = true, Position = 0)]
-        public string ServiceeConfigurationId { get; set; }
+        public string ServiceConfigurationId { get; set; }
 
         [Parameter(Mandatory = true, Position = 1)]
         public string Sandbox { get; set; }
@@ -38,7 +38,7 @@ namespace XboxLiveCmdlet
                     WriteError(new ErrorRecord(new InvalidEnumArgumentException(), "Invalid FileType", ErrorCategory.InvalidArgument, null));
                 }
 
-                Microsoft.Xbox.Services.Tool.TitleStorage.DeleteGlobalStorageBlob(this.ServiceeConfigurationId, this.Sandbox, this.PathAndFileName, fileBlobType).Wait();
+                Microsoft.Xbox.Services.Tool.TitleStorage.DeleteGlobalStorageBlob(this.ServiceConfigurationId, this.Sandbox, this.PathAndFileName, fileBlobType).Wait();
             }
             catch (AggregateException ex)
             {

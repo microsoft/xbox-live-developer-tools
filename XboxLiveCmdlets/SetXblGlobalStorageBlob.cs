@@ -16,7 +16,7 @@ namespace XboxLiveCmdlet
     public class SetXblGlobalStorageBlob : XboxliveCmdlet
     {
         [Parameter(Mandatory = true, Position = 0)]
-        public string ServiceeConfigurationId { get; set; }
+        public string ServiceConfigurationId { get; set; }
 
         [Parameter(Mandatory = true, Position = 1)]
         public string Sandbox { get; set; }
@@ -43,7 +43,7 @@ namespace XboxLiveCmdlet
 
                 byte[] blobData = File.ReadAllBytes(this.SourceFile);
 
-                Microsoft.Xbox.Services.Tool.TitleStorage.UploadGlobalStorageBlob(this.ServiceeConfigurationId, this.Sandbox, this.DestPathAndFileName, fileBlobType, blobData).Wait();
+                Microsoft.Xbox.Services.Tool.TitleStorage.UploadGlobalStorageBlob(this.ServiceConfigurationId, this.Sandbox, this.DestPathAndFileName, fileBlobType, blobData).Wait();
             }
             catch (AggregateException ex)
             {

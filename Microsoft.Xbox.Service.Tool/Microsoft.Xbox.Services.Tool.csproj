@@ -63,7 +63,14 @@
     <Compile Include="Common\XboxLiveException.cs" />
     <Compile Include="Common\XboxLiveHttpContent.cs" />
     <Compile Include="Common\XboxLiveHttpRequest.cs" />
+    <Compile Include="ProgressReset\JobProviderStatus.cs" />
+    <Compile Include="ProgressReset\JobStatusResponse.cs" />
+    <Compile Include="ProgressReset\JobSubmitReqeust.cs" />
     <Compile Include="ProgressReset\ProgressResetter.cs" />
+    <Compile Include="ProgressReset\ResetOverallStatus.cs" />
+    <Compile Include="ProgressReset\ResetProviderStatus.cs" />
+    <Compile Include="ProgressReset\UserResetJob.cs" />
+    <Compile Include="ProgressReset\UserResetResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Common\ClientSettings.cs" />
     <Compile Include="Auth\XdtsTokenResponse.cs" />

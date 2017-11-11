@@ -7,6 +7,9 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Net;
     using System.Net.Http;
 
+    /// <summary>
+    /// Enum type of XboxLive error status.
+    /// </summary>
     public enum XboxLiveErrorStatus
     {
         /// <summary>
@@ -50,20 +53,32 @@ namespace Microsoft.Xbox.Services.Tool
         NetworkError,
     }
 
+    /// <summary>
+    /// The XboxLive Exception.
+    /// </summary>
     public class XboxLiveException : Exception
     {
+        /// <summary>
+        ///  The http response caused the exception, could be null if no http related.
+        /// </summary>
         public HttpResponseMessage Response;
 
+        /// <summary>
+        ///  The errro status of the exception
+        /// </summary>
         public XboxLiveErrorStatus ErrorStatus { get; private set; } = XboxLiveErrorStatus.UnExpectedError;
 
+        /// <summary>
+        /// Whether or not if the exception is transient.
+        /// </summary>
         public bool IsTransient { get; private set; } = true;
 
-        public XboxLiveException(string message):
+        internal XboxLiveException(string message):
             base(message)
         {
         }
 
-        public XboxLiveException(string message, HttpResponseMessage response, Exception innerException)
+        internal  XboxLiveException(string message, HttpResponseMessage response, Exception innerException)
             : base(message, innerException)
         {
             Response = response;
