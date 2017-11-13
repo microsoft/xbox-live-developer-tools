@@ -92,7 +92,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             Assert.AreEqual(DefaultMoniker, devAccount.AccountMoniker);
             Assert.AreEqual(DefaultAccountType, devAccount.AccountType);
             Assert.AreEqual(DevAccountSource.UniversalDeveloperCenter, devAccount.AccountSource);
-            Assert.IsTrue(Auth.HasAuthInfo);
+            Assert.IsTrue(Auth.IsSignedIn);
 
             var token2 = await Auth.GetETokenSilentlyAsync(DefaultScid, DefaultSandbox);
             Assert.AreEqual(token2, Auth.PrepareForAuthHeader(DefaultEToken+DefaultScid+DefaultSandbox));
@@ -124,7 +124,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             {
                 Assert.IsFalse(string.IsNullOrEmpty(ex.Message));
                 Assert.AreEqual(ex.Response.StatusCode, HttpStatusCode.BadRequest);
-                Assert.IsFalse(Auth.HasAuthInfo);
+                Assert.IsFalse(Auth.IsSignedIn);
 
                 return;
             }
@@ -162,7 +162,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             Assert.AreEqual(devAccount.AccountMoniker, DefaultMoniker);
             Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
             Assert.AreEqual(devAccount.AccountSource, DevAccountSource.UniversalDeveloperCenter);
-            Assert.IsTrue(Auth.HasAuthInfo);
+            Assert.IsTrue(Auth.IsSignedIn);
 
             var token = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
             Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
@@ -197,7 +197,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             Assert.AreEqual(devAccount.AccountMoniker, DefaultMoniker);
             Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
             Assert.AreEqual(devAccount.AccountSource, DevAccountSource.UniversalDeveloperCenter);
-            Assert.IsTrue(Auth.HasAuthInfo);
+            Assert.IsTrue(Auth.IsSignedIn);
 
             var token = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
             Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));

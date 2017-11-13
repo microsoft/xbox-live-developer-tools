@@ -12,7 +12,7 @@ namespace XboxLiveCmdlet
     public class GetXblGlobalStorageQuota : XboxliveCmdlet
     {
         [Parameter(Mandatory = true, Position = 0)]
-        public string ServiceeConfigurationId { get; set; }
+        public string ServiceConfigurationId { get; set; }
 
         [Parameter(Mandatory = true, Position = 1)]
         public string Sandbox { get; set; }
@@ -21,7 +21,7 @@ namespace XboxLiveCmdlet
         {
             try
             {
-                var quote = Microsoft.Xbox.Services.Tool.TitleStorage.GetGlobalStorageQuotaAsync(this.ServiceeConfigurationId, this.Sandbox).Result;
+                var quote = Microsoft.Xbox.Services.Tool.TitleStorage.GetGlobalStorageQuotaAsync(this.ServiceConfigurationId, this.Sandbox).Result;
                 WriteObject(quote, false);
             }
             catch (AggregateException ex)

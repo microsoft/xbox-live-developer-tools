@@ -4,6 +4,9 @@
 
 namespace Microsoft.Xbox.Services.Tool
 {
+    /// <summary>
+    /// Defines values used to indicate title storage blob type.
+    /// </summary>
     public enum TitleStorageBlobType
     {
         /// <summary>Binary blob type.</summary>

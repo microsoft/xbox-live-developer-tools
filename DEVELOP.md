@@ -17,7 +17,7 @@ Usage for adding or updating cmdlet:
 * Finish coding new cmdlet, export it in XboxLivePsModule.psd1 if it's a new cmdlet.
 * Run powershell from root folder, load the lastest XboxLivePsModule locally: 
 ```powershell
-Import-Module .\XboxLiveCmdlets\bin\Debug\XboxLivePsModule.psd1.
+Import-Module .\XboxLiveCmdlets\bin\Debug\XboxLivePsModule.psd1
 ```
 * From root folder, run 
 ```powershell
