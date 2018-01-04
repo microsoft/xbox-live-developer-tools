@@ -4,6 +4,7 @@
 namespace Microsoft.Xbox.Services.Tool
 {
     using System;
+    using System.IO;
 
     internal class ClientSettings
     {
@@ -26,7 +27,6 @@ namespace Microsoft.Xbox.Services.Tool
         private static object singletonLock = new object();
         private static ClientSettings singleton;
 
-
         private ClientSettings(string environment)
         {
             if (string.IsNullOrEmpty(environment))
@@ -40,7 +40,7 @@ namespace Microsoft.Xbox.Services.Tool
             string xdpBaseEndpoint = "https://xdp.xboxlive.com";
             string windowsLiveUriEndpoint = "https://login.live.com";
             string stsAdfsAuthenticationEndpoint = "https://edadfs.partners.extranet.microsoft.com/adfs/ls/";
-            this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/";
+            this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/common";
             this.WindowsLiveAuthenticationType = "uri:WindowsLiveID";
             this.OmegaResetToolEndpoint = "https://eraser.xboxlive.com";
             
@@ -60,7 +60,13 @@ namespace Microsoft.Xbox.Services.Tool
             this.XdpBaseUri = new Uri(xdpBaseEndpoint);
             this.WindowsLiveUri = new Uri(windowsLiveUriEndpoint);
             this.StsAdfsAuthenticationUri = new Uri(stsAdfsAuthenticationEndpoint);
+
+            // Cache folder
+            CacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Microsoft/XboxLiveTool/"+ environment);
         }
+
+        public string CacheFolder { get; set; } 
 
         public Uri XdpBaseUri { get; private set; }
 

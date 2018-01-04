@@ -18,6 +18,6 @@ namespace Microsoft.Xbox.Services.Tool
         /// <summary>
         /// A collection of player reset provider status. 
         /// </summary>
-        public List<JobProviderStatus> ProviderStatus { get; internal set; }
+        public List<JobProviderStatus> ProviderStatus { get; internal set; } = new List<JobProviderStatus>();
     }
 }

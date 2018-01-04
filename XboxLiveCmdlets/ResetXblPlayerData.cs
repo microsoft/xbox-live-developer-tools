@@ -19,22 +19,11 @@ namespace XboxLiveCmdlet
         [Parameter(Mandatory = true )]
         public string XboxUserId { get; set; }
 
-        protected override void BeginProcessing()
-        {
-            if (!Microsoft.Xbox.Services.Tool.Auth.IsSignedIn)
-            {
-                var errorRecord = new ErrorRecord(new Exception("User did not sign in, use Add-XBLDevXDPAccount command."), "", ErrorCategory.AuthenticationError, null);
-                ThrowTerminatingError(errorRecord);
-            }
-
-            base.BeginProcessing();
-        }
-
         protected override void ProcessRecord()
         {
             try
             {
-                var task = Microsoft.Xbox.Services.Tool.PlayerResetter.ResetPlayerDataAsync(SandboxId, ServiceConfigId, XboxUserId);
+                var task = Microsoft.Xbox.Services.Tool.PlayerReset.ResetPlayerDataAsync(ServiceConfigId, SandboxId, XboxUserId);
                 task.Wait();
                 var result = task.Result;
 

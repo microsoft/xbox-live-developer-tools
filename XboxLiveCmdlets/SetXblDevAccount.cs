@@ -21,12 +21,13 @@ namespace XboxLiveCmdlet
         {
             try
             {
-                DevAccountSource accountType = DevAccountSource.UniversalDeveloperCenter;
+                DevAccountSource accountType = DevAccountSource.WindowsDeveloperCenter;
                 if (AccountSource.Equals("XboxDeveloperPortal", StringComparison.OrdinalIgnoreCase)  || AccountSource.Equals("XDP", StringComparison.OrdinalIgnoreCase))
                 {
                     accountType = DevAccountSource.XboxDeveloperPortal;
                 }
-                DevAccount account = Microsoft.Xbox.Services.Tool.Auth.SignIn(accountType, UserName).Result;
+                Microsoft.Xbox.Services.Tool.Auth.SetAuthInfo(UserName, accountType);
+                DevAccount account = Microsoft.Xbox.Services.Tool.Auth.SignIn().Result;
 
                 WriteObject(account);
             }

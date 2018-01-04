@@ -14,6 +14,6 @@ namespace Microsoft.Xbox.Services.Tool
         public string Status { get; set; }
 
         [JsonProperty("providerStatus")]
-        public List<JobProviderStatus> ProviderStatus { get; set; }
+        public List<JobProviderStatus> ProviderStatus { get; set; } = new List<JobProviderStatus>();
     }
 }
