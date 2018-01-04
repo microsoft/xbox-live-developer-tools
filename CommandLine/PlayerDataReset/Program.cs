@@ -121,7 +121,7 @@ namespace PlayerDataReset
                     {
                         case HttpStatusCode.Unauthorized:
                             Console.WriteLine(
-                                "Unable to authorize the account with XboxLive service, please contact your administrator.");
+                                $"Unable to authorize the account with XboxLive service with scid : {options.ServiceConfigurationId} and sandbox : {options.Sandbox}, please contact your administrator.");
                             break;
 
                         case HttpStatusCode.Forbidden:
@@ -133,6 +133,10 @@ namespace PlayerDataReset
                             Console.WriteLine(ex.Message);
                             break;
                     }
+                }
+                else
+                {
+                    Console.WriteLine(ex.Message);
                 }
                 return -1;
             }
