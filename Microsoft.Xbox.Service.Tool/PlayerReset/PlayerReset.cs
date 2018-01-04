@@ -9,10 +9,14 @@ namespace Microsoft.Xbox.Services.Tool
     using System.Net.Http;
     using System.Threading.Tasks;
 
-    public class PlayerResetter
+    /// <summary>
+    /// Class for PlayerReset tooling functionality.
+    /// </summary>
+    public class PlayerReset
     {
         private static Uri baseUri = new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint);
-        private const int MaxPollingAttempts = 4;
+        internal const int MaxPollingAttempts = 4;
+        internal static int RetryDelay { get; set; } = 3000;
 
         /// <summary>
         /// Reset one player's data in test sandboxes, includes: achievements, leaderboards, player stats and title history. 
@@ -45,7 +49,7 @@ namespace Microsoft.Xbox.Services.Tool
                     for (int i = 0; i < MaxPollingAttempts; i++)
                     {
                         // Wait for 3 seconds for each interval
-                        await Task.Delay(3000);
+                        await Task.Delay(RetryDelay);
 
                         try
                         {
@@ -74,11 +78,13 @@ namespace Microsoft.Xbox.Services.Tool
                         if (jobStatus.Status == "CompletedSuccess")
                         {
                             result.OverallStatus = ResetOverallStatus.Succeeded;
+                            result.ProviderStatus = jobStatus.ProviderStatus;
                             break;
                         }
                         else if (jobStatus.Status == "CompletedError")
                         {
                             result.OverallStatus = ResetOverallStatus.CompletedError;
+                            result.ProviderStatus = jobStatus.ProviderStatus;
                             break;
                         }
                     }
@@ -86,6 +92,7 @@ namespace Microsoft.Xbox.Services.Tool
                     if (jobStatus.Status == "InProgress" || jobStatus.Status == "Queued")
                     {
                         result.OverallStatus = ResetOverallStatus.Timeout;
+                        result.ProviderStatus = jobStatus.ProviderStatus;
                     }
 
                 }
@@ -113,23 +120,21 @@ namespace Microsoft.Xbox.Services.Tool
 
         private static void AddRequestHeaders(ref HttpRequestMessage request, string eToken)
         {
-            request.Headers.Add("x-xbl-contract-version", "100");
-            request.Headers.Add("Authorization", eToken);
+            
         }
 
         private static async Task<UserResetJob> SubmitJobAsync(string sandbox, string scid, string xuid)
         {
             var job = new UserResetJob{Sandbox = sandbox, Scid = scid};
 
-            using (var submitRequest = new XboxLiveHttpRequest())
+            using (var submitRequest = new XboxLiveHttpRequest(true, scid, sandbox))
             {
                 var requestMsg = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "submitJob"));
 
                 var requestContent = JsonConvert.SerializeObject(new JobSubmitReqeust(scid, xuid));
                 requestMsg.Content = new StringContent(requestContent);
 
-                string eToken = await Auth.GetETokenSilentlyAsync(scid, sandbox);
-                AddRequestHeaders(ref requestMsg, eToken);
+                requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
                 var response = await submitRequest.SendAsync(requestMsg);
 
@@ -146,7 +151,7 @@ namespace Microsoft.Xbox.Services.Tool
 
         private static async Task<JobStatusResponse> CheckJobStatus(UserResetJob userResetJob)
         {
-            using (var submitRequest = new XboxLiveHttpRequest())
+            using (var submitRequest = new XboxLiveHttpRequest(true, userResetJob.Scid, userResetJob.Sandbox))
             {
                 var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "jobs/" + userResetJob.JobId));
                 if (!string.IsNullOrEmpty(userResetJob.CorrelationId))

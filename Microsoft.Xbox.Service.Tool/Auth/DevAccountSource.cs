@@ -3,10 +3,19 @@
 
 namespace Microsoft.Xbox.Services.Tool
 {
+    /// <summary>
+    /// Enum type of XboxLive dev account source.
+    /// </summary>
     public enum DevAccountSource
     {
+        /// <summary>
+        /// Account is from Xbox developer portal: xdp.xboxlive.com
+        /// </summary>
         XboxDeveloperPortal,
 
-        UniversalDeveloperCenter
+        /// <summary>
+        /// Account is from Windows Dev Center: developer.microsoft.com/windows
+        /// </summary>
+        WindowsDevCenter
     }
 }

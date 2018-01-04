@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Net;
+
 namespace Microsoft.Xbox.Services.Tool
 {
     using System;
@@ -11,10 +13,17 @@ namespace Microsoft.Xbox.Services.Tool
 
     internal class XboxLiveHttpRequest : IDisposable
     {
-        private readonly HttpClient httpClient;
+        private HttpClient httpClient;
+        private bool autoAttachAuthHeader = false;
+        public string scid = null;
+        private string sandbox = null;
 
-        public XboxLiveHttpRequest()
+        public XboxLiveHttpRequest(bool autoAttachAuthHeader, string scid, string sandbox)
         {
+            this.autoAttachAuthHeader = autoAttachAuthHeader;
+            this.scid = scid;
+            this.sandbox = sandbox;
+
             var requestHandler = TestHook.MockHttpHandler ?? new WebRequestHandler();
             httpClient = new HttpClient(requestHandler);
         }
@@ -23,22 +32,28 @@ namespace Microsoft.Xbox.Services.Tool
         public async Task<XboxLiveHttpContent> SendAsync(HttpRequestMessage request)
         {
             var content = new XboxLiveHttpContent();
-            var response = await this.httpClient.SendAsync(request);
+
+            HttpResponseMessage response = await this.SendInternalAsync(request, false);
 
             if (response != null && response.IsSuccessStatusCode)
             {
+                ExtractCollrelationId(response, ref content);
                 content.Content = response.Content;
-                IEnumerable<string> correlationIds = null;
-                if (response.Headers.TryGetValues("X-XblCorrelationId", out correlationIds))
-                {
-                    if (correlationIds != null && !string.IsNullOrEmpty(correlationIds.First()))
-                    {
-                        content.CollrelationId = correlationIds.First();
-                    }
-                }
                 return content;
             }
+            else if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                // Force refresh the token if gets 403, then resend the request.
+                response = await this.SendInternalAsync(request, true);
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    ExtractCollrelationId(response, ref content);
+                    content.Content = response.Content;
+                    return content;
+                }
+            }
 
+            // If final HTTP status is not success
             throw new XboxLiveException("Failed to call xbox live services", response, null);
         }
 
@@ -56,6 +71,38 @@ namespace Microsoft.Xbox.Services.Tool
             if (disposing)
             {
                 this.httpClient.Dispose();
+            }
+        }
+
+        private async Task<HttpResponseMessage> SendInternalAsync(HttpRequestMessage request, bool refreshToken)
+        {
+            if (this.autoAttachAuthHeader)
+            {
+                string eToken = await Auth.Client.GetETokenAsync(scid, sandbox, refreshToken);
+                request.Headers.Add("Authorization", "XBL3.0 x=-;" + eToken);
+            }
+
+            try
+            {
+                return await this.httpClient.SendAsync(request);
+            }
+            catch (Exception e)
+            {
+                throw new XboxLiveException("Failed to call xbox live services", null, e);
+            }
+        }
+
+        private static void ExtractCollrelationId(HttpResponseMessage response, ref XboxLiveHttpContent content)
+        {
+            if (response != null)
+            {
+                if (response.Headers.TryGetValues("X-XblCorrelationId", out IEnumerable<string> correlationIds))
+                {
+                    if (correlationIds != null && !string.IsNullOrEmpty(correlationIds.First()))
+                    {
+                        content.CollrelationId = correlationIds.First();
+                    }
+                }
             }
         }
     }

@@ -14,6 +14,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
     [TestClass]
     public class GlobalStorageTest
     {
+        private const string DefaultUserName = "username";
         private const string DefaultScid = "scid";
         private const string DefaultSandbox = "sandbox";
         private const string DefaultEtoken = "etoken";
@@ -25,6 +26,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
         private const string DefaultFileType = "config";
         private const uint ByteSize = 10;
         private byte[] defaultBytes;
+        
 
         private void SetupMockBytes()
         {
@@ -40,10 +42,16 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
         private void SetUpMockAuth()
         {
-            var mockAuth = new Mock<AuthClient>(null);
-            mockAuth.Setup(o => o.GetETokenAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(DefaultEtoken);
+            var mockAuth = new Mock<AuthClient>();
+            mockAuth.Setup(o => o.GetETokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .ReturnsAsync((string scid, string sandbox, bool refresh) => DefaultEtoken + scid + sandbox);
             Auth.Client = mockAuth.Object;
+            Auth.SetAuthInfo(DefaultUserName, DevAccountSource.WindowsDevCenter);
+        }
+
+        private string ExpectedToken(string scid, string sandbox)
+        {
+            return "XBL3.0 x=-;" + DefaultEtoken + scid + sandbox;
         }
 
         [TestMethod]
@@ -58,6 +66,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             var mockHttp = new MockHttpMessageHandler();
 
             mockHttp.Expect(uri.ToString())
+                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", quotaResponse);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -89,6 +98,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             var mockHttp = new MockHttpMessageHandler();
 
             mockHttp.Expect(uri.ToString())
+                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", response);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -102,6 +112,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             // GetNextAsync
             var nextPageUri = new Uri(new Uri(ClientSettings.Singleton.TitleStorageEndpoint), $"global/scids/{DefaultScid}/data/{DefaultGlobalStoragePath}?maxItems={DefaultMaxItems}&continuationToken=123456");
             mockHttp.Expect(nextPageUri.ToString())
+                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", response);
 
             var metaResult1 = await metadataResult.GetNextAsync(DefaultMaxItems);
@@ -119,6 +130,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             var mockHttp = new MockHttpMessageHandler();
             mockHttp.Expect(uri.ToString())
+                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond(HttpStatusCode.NotFound);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -140,6 +152,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             var mockHttp = new MockHttpMessageHandler();
 
             mockHttp.Expect(HttpMethod.Put, uri.ToString())
+                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", "{}");
 
             TestHook.MockHttpHandler = mockHttp;
@@ -161,6 +174,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             Stream stream = new MemoryStream(this.defaultBytes);
             mockHttp.Expect(HttpMethod.Get, uri.ToString())
+                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", stream);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -183,6 +197,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             var mockHttp = new MockHttpMessageHandler();
 
             mockHttp.Expect(HttpMethod.Delete, uri.ToString())
+                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", "{}");
 
             TestHook.MockHttpHandler = mockHttp;

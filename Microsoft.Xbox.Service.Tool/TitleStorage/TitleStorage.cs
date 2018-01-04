@@ -27,12 +27,12 @@ namespace Microsoft.Xbox.Services.Tool
         /// <returns>GlobalStorageQuotaInfo object contains quota info</returns>
         static public async Task<GlobalStorageQuotaInfo> GetGlobalStorageQuotaAsync(string serviceConfigurationId, string sandbox)
         {
-            using (var request = new XboxLiveHttpRequest())
+            using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
                 var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "/global/scids/" + serviceConfigurationId));
 
                 string eToken = await Auth.GetETokenSilentlyAsync(serviceConfigurationId, sandbox);
-                AddRequestHeaders(ref requestMsg, eToken);
+                requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
                 var response = await request.SendAsync(requestMsg);
                 string content = await response.Content.ReadAsStringAsync();
@@ -70,12 +70,12 @@ namespace Microsoft.Xbox.Services.Tool
         /// <param name="bloBytes">The byte array contains the blob data to upload.</param>
         static public async Task UploadGlobalStorageBlob(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType, byte[] bloBytes)
         {
-            using (var request = new XboxLiveHttpRequest())
+            using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
                 var requestMsg = new HttpRequestMessage(HttpMethod.Put, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
 
                 string eToken = await Auth.GetETokenSilentlyAsync(serviceConfigurationId, sandbox);
-                AddRequestHeaders(ref requestMsg, eToken);
+                requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
                 requestMsg.Content = new ByteArrayContent(bloBytes);
 
@@ -95,12 +95,12 @@ namespace Microsoft.Xbox.Services.Tool
         /// <returns>The byte array contains downloaded blob data</returns>
         static public async Task<byte[]> DownloadGlobalStorageBlob(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType)
         {
-            using (var request = new XboxLiveHttpRequest())
+            using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
                 var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
 
                 string eToken = await Auth.GetETokenSilentlyAsync(serviceConfigurationId, sandbox);
-                AddRequestHeaders(ref requestMsg, eToken);
+                requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
                 var response = await request.SendAsync(requestMsg);
 
@@ -121,13 +121,12 @@ namespace Microsoft.Xbox.Services.Tool
         /// <returns></returns>
         static public async Task DeleteGlobalStorageBlob(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType)
         {
-            using (var request = new XboxLiveHttpRequest())
+            using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
-
                 var requestMsg = new HttpRequestMessage(HttpMethod.Delete, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
 
                 string eToken = await Auth.GetETokenSilentlyAsync(serviceConfigurationId, sandbox);
-                AddRequestHeaders(ref requestMsg, eToken);
+                requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
                 var response = await request.SendAsync(requestMsg);
 
@@ -143,17 +142,19 @@ namespace Microsoft.Xbox.Services.Tool
         internal static async Task<TitleStorageBlobMetadataResult> GetGlobalStorageBlobMetaData(string serviceConfigurationId, string sandbox, string path, uint maxItems,
             uint skipItems, string continuationToken)
         {
-            using (var request = new XboxLiveHttpRequest())
+            using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
-                var uriBuilder = new UriBuilder(baseUri);
-                uriBuilder.Path = $"/global/scids/{serviceConfigurationId}/data/{path}";
+                var uriBuilder = new UriBuilder(baseUri)
+                { 
+                    Path = $"/global/scids/{serviceConfigurationId}/data/{path}"
+                };
 
                 AppendPagingInfo(ref uriBuilder, maxItems, skipItems, continuationToken);
 
                 var requestMsg = new HttpRequestMessage(HttpMethod.Get, uriBuilder.Uri);
 
                 string eToken = await Auth.GetETokenSilentlyAsync(serviceConfigurationId, sandbox);
-                AddRequestHeaders(ref requestMsg, eToken);
+                requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
                 XboxLiveHttpContent response;
                 try
@@ -197,8 +198,7 @@ namespace Microsoft.Xbox.Services.Tool
                     {
                         throw new XboxLiveException("Invalid file name format in TitleStorageBlobMetadata response");
                     }
-                    TitleStorageBlobType type;
-                    if (!Enum.TryParse(filePathAndTypeArray[1], true, out type))
+                    if (!Enum.TryParse(filePathAndTypeArray[1], true, out TitleStorageBlobType type))
                     {
                         throw new XboxLiveException("Invalid file type in TitleStorageBlobMetadata response");
                     }
@@ -241,12 +241,6 @@ namespace Microsoft.Xbox.Services.Tool
             }
 
             uriBuilder.Query = queries.ToString();
-        }
-
-        private static void AddRequestHeaders(ref HttpRequestMessage request, string eToken)
-        {
-            request.Headers.Add("x-xbl-contract-version", "1");
-            request.Headers.Add("Authorization", eToken);
         }
     }
 

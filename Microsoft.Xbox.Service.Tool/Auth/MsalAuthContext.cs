@@ -4,33 +4,55 @@
 namespace Microsoft.Xbox.Services.Tool
 {
     using Microsoft.Identity.Client;
+    using System;
     using System.Linq;
     using System.Threading.Tasks;
 
     internal class MsalAuthContext : IAuthContext
     {
         private readonly string[] Scopes = new[] { "User.Read" };
-        private readonly IPublicClientApplication PublicClientApplication = new PublicClientApplication(ClientSettings.Singleton.MsalXboxLiveClientId);
+        private MsalTokenCache tokenCache = new MsalTokenCache();
+        private IPublicClientApplication publicClientApplication;
+        private IUser cachedUser;
 
         public DevAccountSource AccountSource { get; } = DevAccountSource.XboxDeveloperPortal;
 
         public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.XmintAuthEndpoint;
 
+        public string UserName { get; }
+
+        public MsalAuthContext(string userName)
+        {
+            publicClientApplication = new PublicClientApplication(ClientSettings.Singleton.MsalXboxLiveClientId,
+                ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint,
+                tokenCache.TokenCache);
+            this.UserName = userName;
+            cachedUser = publicClientApplication.Users.SingleOrDefault(user => string.Compare(user.DisplayableId, userName, StringComparison.OrdinalIgnoreCase) == 0);
+        }
+
         public bool HasCredential
         {
-            get { return this.PublicClientApplication.Users.FirstOrDefault() != null; }
+            get { return this.publicClientApplication.Users.FirstOrDefault() != null; }
         }
 
         public async Task<string> AcquireTokenSilentAsync()
         {
+            if (cachedUser == null)
+            {
+                throw new XboxLiveException(XboxLiveErrorStatus.AuthenticationFailure, "No cached user found");
+            }
 
-            var result = await this.PublicClientApplication.AcquireTokenSilentAsync(Scopes, PublicClientApplication.Users.FirstOrDefault());
-            return result.AccessToken;
+            AuthenticationResult result = await this.publicClientApplication.AcquireTokenSilentAsync(Scopes, cachedUser);
+
+            return result?.AccessToken;
         }
 
-        public async Task<string> AcquireTokenAsync(string userName)
+        public async Task<string> AcquireTokenAsync()
         {
-            var result = await this.PublicClientApplication.AcquireTokenAsync(Scopes, userName);
+            AuthenticationResult result = string.IsNullOrEmpty(this.UserName)? 
+                await this.publicClientApplication.AcquireTokenAsync(Scopes) :
+                await this.publicClientApplication.AcquireTokenAsync(Scopes, UserName);
+            this.cachedUser = result.User;
             return result.AccessToken;
         }
     }

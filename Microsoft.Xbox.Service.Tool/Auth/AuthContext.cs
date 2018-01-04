@@ -13,8 +13,10 @@ namespace Microsoft.Xbox.Services.Tool
 
         Task<string> AcquireTokenSilentAsync();
 
-        Task<string> AcquireTokenAsync(string userName);
+        Task<string> AcquireTokenAsync();
 
         DevAccountSource AccountSource { get; }
+
+        string UserName { get; }
     }
 }

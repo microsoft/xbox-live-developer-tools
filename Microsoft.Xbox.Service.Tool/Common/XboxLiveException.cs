@@ -51,6 +51,11 @@ namespace Microsoft.Xbox.Services.Tool
         /// Client failed to establish communication with service, transient
         /// </summary>
         NetworkError,
+
+        /// <summary>
+        /// User cancelled the opertaion, non-transient
+        /// </summary>
+        UserCancelled,
     }
 
     /// <summary>
@@ -73,9 +78,25 @@ namespace Microsoft.Xbox.Services.Tool
         /// </summary>
         public bool IsTransient { get; private set; } = true;
 
+        public override string Message {
+            get { return this.Message + $", Status: {this.ErrorStatus}"; }
+        }
+
         internal XboxLiveException(string message):
             base(message)
         {
+        }
+
+        internal XboxLiveException(XboxLiveErrorStatus errorStatus, string message) :
+            base(message)
+        {
+            this.ErrorStatus = errorStatus;
+        }
+
+        internal XboxLiveException(string message, XboxLiveErrorStatus errorStatus, Exception innerException) :
+            base(message, innerException)
+        {
+            this.ErrorStatus = errorStatus;
         }
 
         internal  XboxLiveException(string message, HttpResponseMessage response, Exception innerException)
@@ -90,9 +111,7 @@ namespace Microsoft.Xbox.Services.Tool
             }
             else
             {
-                HttpRequestException httpEx = innerException as HttpRequestException;
-
-                if (httpEx != null)
+                if (innerException is HttpRequestException httpEx)
                 {
                     this.ErrorStatus = XboxLiveErrorStatus.NetworkError;
                     this.IsTransient = true;
@@ -144,11 +163,9 @@ namespace Microsoft.Xbox.Services.Tool
 
         private void CheckInnerWebException(Exception ex)
         {
-            WebException webEx = ex.InnerException as WebException;
-            if (webEx != null)
+            if (ex.InnerException is WebException webEx)
             {
-                HttpWebResponse wsResponse = webEx.Response as HttpWebResponse;
-                if (wsResponse != null)
+                if (webEx.Response is HttpWebResponse wsResponse)
                 {
                     ErrorStatusFromHttpStatus(wsResponse.StatusCode);
                 }
