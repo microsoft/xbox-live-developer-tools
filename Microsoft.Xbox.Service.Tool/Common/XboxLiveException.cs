@@ -78,8 +78,11 @@ namespace Microsoft.Xbox.Services.Tool
         /// </summary>
         public bool IsTransient { get; private set; } = true;
 
+        /// <summary>
+        /// Gets a message that describes the current exception.
+        /// </summary>
         public override string Message {
-            get { return this.Message + $", Status: {this.ErrorStatus}"; }
+            get { return base.Message + $", Status: {this.ErrorStatus}"; }
         }
 
         internal XboxLiveException(string message):
