@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 
 namespace XblDevAccount
 {
@@ -7,6 +9,7 @@ namespace XblDevAccount
     using Microsoft.Xbox.Services.Tool;
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading.Tasks;
 
     class Program
