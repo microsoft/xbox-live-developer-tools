@@ -118,11 +118,6 @@ namespace Microsoft.Xbox.Services.Tool
             return result;
         }
 
-        private static void AddRequestHeaders(ref HttpRequestMessage request, string eToken)
-        {
-            
-        }
-
         private static async Task<UserResetJob> SubmitJobAsync(string sandbox, string scid, string xuid)
         {
             var job = new UserResetJob{Sandbox = sandbox, Scid = scid};
@@ -160,7 +155,7 @@ namespace Microsoft.Xbox.Services.Tool
                 }
 
                 string eToken = await Auth.GetETokenSilentlyAsync(userResetJob.Scid, userResetJob.Sandbox);
-                AddRequestHeaders(ref requestMsg, eToken);
+                requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
                 var response = await submitRequest.SendAsync(requestMsg);
                 string responseConent = await response.Content.ReadAsStringAsync();
