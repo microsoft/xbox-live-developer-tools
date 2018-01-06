@@ -18,19 +18,19 @@ namespace XblDevAccount
         private enum AccountSourceOption
         {
             XDP = DevAccountSource.XboxDeveloperPortal,
-            WindowsDeveloperPortal = DevAccountSource.WindowsDevCenter,
+            WindowsDevCenter = DevAccountSource.WindowsDevCenter,
         }
 
 
         [Verb("signin", HelpText = "Sign in a xbox live develoepr account.")]
         private class SignInOptions
         {
-            [Option('s', "accountSource", Required = true,
+            [Option('s', "source", Required = true,
                 HelpText =
                     "The account source where the developer account was registered. Accept 'WindowsDevCenter' or 'XDP'")]
             public AccountSourceOption AccountSource { get; set; }
 
-            [Option('u', "userName", Required = true,
+            [Option('u', "name", Required = true,
                 HelpText = "The user name of the account.")]
             public string UserName { get; set; }
 
@@ -42,7 +42,7 @@ namespace XblDevAccount
                     yield return new Example("Sign In a XBOX Live developer account",
                         new SignInOptions
                         {
-                            AccountSource = AccountSourceOption.WindowsDeveloperPortal,
+                            AccountSource = AccountSourceOption.WindowsDevCenter,
                             UserName = "xxxx@xxx.com"
                         });
                 }
@@ -77,6 +77,7 @@ namespace XblDevAccount
 
         static async Task<int> Main(string[] args)
         {
+            int exitCode = 0;
             try
             {
                 string invokedVerb = string.Empty;
@@ -89,31 +90,27 @@ namespace XblDevAccount
                         invokedVerb = "signin";
                         signInOptions = options;
                     })
-                    .WithParsed<SignOutOptions>(options => OnSignOut())
-                    .WithParsed<ShowOptions>(options => OnShow());
+                    .WithParsed<SignOutOptions>(options => exitCode = OnSignOut())
+                    .WithParsed<ShowOptions>(options => exitCode = OnShow())
+                    .WithNotParsed(err => exitCode = -1);
 
-
-                if (result.Tag == ParserResultType.NotParsed)
-                {
-                    return -1;
-                }
 
                 if (invokedVerb == "signin" && signInOptions != null)
                 {
-                    await OnSignIn(signInOptions);
+                    exitCode = await OnSignIn(signInOptions);
                 }
-
-                return 0;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error: unexpected error found.");
                 Console.WriteLine(ex.Message);
-                return -1;
+                exitCode = - 1;
             }
+
+            return exitCode;
         }
 
-        private static async Task OnSignIn(SignInOptions signInOptions)
+        private static async Task<int> OnSignIn(SignInOptions signInOptions)
         {
             try
             {
@@ -121,6 +118,7 @@ namespace XblDevAccount
                 var devAccount = await Auth.SignIn();
                 Console.WriteLine($"Developer account {devAccount.Name} has successfully signed in. ");
                 DisplayDevAccount(devAccount, "\t");
+                return 0;
             }
             catch (XboxLiveException ex)
             {
@@ -133,6 +131,7 @@ namespace XblDevAccount
                 {
                     Console.WriteLine(ex.Message);
                 }
+                return -1;
             }
         }
 
@@ -145,31 +144,35 @@ namespace XblDevAccount
             Console.WriteLine($"{indent}AccountSource : {devAccount.AccountSource}");
         }
 
-        private static void OnSignOut()
+        private static int OnSignOut()
         {
             DevAccount account = Auth.LoadLastSignedInUser();
             if (account != null)
             {
                 Auth.SignOut();
                 Console.WriteLine($"Developer account {account.Name} from { account.AccountSource} has successfully signed out. ");
+                return 0;
             }
             else
             {
                 Console.WriteLine($"No signed in account found.");
+                return -1;
             }
         }
 
-        private static void OnShow()
+        private static int  OnShow()
         {
             DevAccount account = Auth.LoadLastSignedInUser();
             if (account != null)
             {
                 Console.WriteLine($"Developer account {account.Name} from { account.AccountSource} is currently signed in. ");
                 DisplayDevAccount(account, "\t");
+                return 0;
             }
             else
             {
                 Console.WriteLine($"No signed in account found.");
+                return -1;
             }
         }
     }

@@ -16,7 +16,7 @@
   <PropertyGroup Label="Version">
     <VersionMajor>1</VersionMajor>
     <VersionMinor>0</VersionMinor>
-    <VersionInfoProductName>Test Product</VersionInfoProductName>
+    <VersionInfoProductName>Xbox Live Tools</VersionInfoProductName>
   </PropertyGroup>
 
   <PropertyGroup>
