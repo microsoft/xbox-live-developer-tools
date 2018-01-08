@@ -7,7 +7,7 @@ The Microsoft Xbox Live PowerShell Module provides a way to:
 To get access to the Xbox Live service you must be a managed developer, enrolled in the [ID@Xbox](http://www.xbox.com/Developers/id) program or participating in the [Xbox Live Creators Program](https://aka.ms/xblcp). To learn more about these programs, please refer to the [developer program overview](https://docs.microsoft.com/windows/uwp/xbox-live/developer-program-overview).
 
 
-## Getting Start using Xbox Live PowerShell Module
+## Getting Started using Xbox Live PowerShell Module
 
 * Install Xbox Live PowerShell module from the [PowerShell Gallery](https://powershellgallery.com):
 
@@ -56,6 +56,6 @@ We'd love to get your review score, whether good or bad, but even more than that
 *   [Xbox Live Unity Plugin](https://github.com/Microsoft/xbox-live-unity-plugin)
 *   [Xbox Live Resiliency Fiddler Plugin](https://github.com/Microsoft/xbox-live-resiliency-fiddler-plugin)
 *   [Xbox Live Trace Analyzer](https://github.com/Microsoft/xbox-live-trace-analyzer)
-*   [Xbox Live PowerShell Cmdlets](https://github.com/Microsoft/xbox-live-powershell-module)
+*   [Xbox Live Developer Tools](https://github.com/Microsoft/xbox-live-developer-tools)
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.

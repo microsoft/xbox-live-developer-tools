@@ -4,10 +4,10 @@
 namespace Microsoft.Xbox.Services.Tool
 {
     using System;
+    using System.IO;
 
     internal class ClientSettings
     {
-
         public static ClientSettings Singleton
         {
             get
@@ -27,7 +27,6 @@ namespace Microsoft.Xbox.Services.Tool
         private static object singletonLock = new object();
         private static ClientSettings singleton;
 
-
         private ClientSettings(string environment)
         {
             if (string.IsNullOrEmpty(environment))
@@ -41,7 +40,7 @@ namespace Microsoft.Xbox.Services.Tool
             string xdpBaseEndpoint = "https://xdp.xboxlive.com";
             string windowsLiveUriEndpoint = "https://login.live.com";
             string stsAdfsAuthenticationEndpoint = "https://edadfs.partners.extranet.microsoft.com/adfs/ls/";
-            this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/";
+            this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/common";
             this.WindowsLiveAuthenticationType = "uri:WindowsLiveID";
             this.OmegaResetToolEndpoint = "https://eraser.xboxlive.com";
             
@@ -55,12 +54,19 @@ namespace Microsoft.Xbox.Services.Tool
                 this.OmegaResetToolEndpoint = "https://eraser.dnet.xboxlive.com";
                 this.UDCAuthEndpoint = "https://devx.microsoft-tst.com/xdts/authorize";
                 this.XmintAuthEndpoint = "https://xmint.xboxlive.dnet.com/adfs/authorize?rp=https%3A%2F%2Fxdp.dnet.xboxlive.com%2F";
-    }
+                this.TitleStorageEndpoint = "https://titlestorage.dnet.xboxlive.com";
+            }
 
             this.XdpBaseUri = new Uri(xdpBaseEndpoint);
             this.WindowsLiveUri = new Uri(windowsLiveUriEndpoint);
             this.StsAdfsAuthenticationUri = new Uri(stsAdfsAuthenticationEndpoint);
+
+            // Cache folder
+            CacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Microsoft/XboxLiveTool/"+ environment);
         }
+
+        public string CacheFolder { get; set; } 
 
         public Uri XdpBaseUri { get; private set; }
 
@@ -73,6 +79,8 @@ namespace Microsoft.Xbox.Services.Tool
         public string WindowsLiveAuthenticationType { get; private set; }
 
         public string OmegaResetToolEndpoint { get; private set; }
+
+        public string TitleStorageEndpoint { get; private set; } = "https://titlestorage.xboxlive.com";
 
         public string XDTSToolTokenType { get; private set; } = "http://oauth.net/grant_type/jwt/1.0/bearer";
 

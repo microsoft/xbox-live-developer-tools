@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Microsoft.Xbox.Services.Tool.Unittest")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HP Inc.")]
+[assembly: AssemblyCompany("Microsoft Corporation")]
 [assembly: AssemblyProduct("Microsoft.Xbox.Services.Tool.Unittest")]
-[assembly: AssemblyCopyright("Copyright © HP Inc. 2017")]
+[assembly: AssemblyCopyright("Copyright (c) Microsoft Corporation. All rights reserved")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

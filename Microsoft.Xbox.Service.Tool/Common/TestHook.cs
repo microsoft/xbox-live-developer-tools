@@ -5,8 +5,9 @@ namespace Microsoft.Xbox.Services.Tool
 {
     using System.Net.Http;
 
+    /// <summary>
     ///Internal test hook for mocking HttpClient's response
-    ///</summary>
+    /// </summary>
     internal class TestHook
     {
         public static HttpMessageHandler MockHttpHandler { set; get; }

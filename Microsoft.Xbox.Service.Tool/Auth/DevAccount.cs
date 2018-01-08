@@ -3,19 +3,48 @@
 
 namespace Microsoft.Xbox.Services.Tool
 {
-    public enum DevAccountSource
-    {
-        XboxDeveloperPortal,
-
-        UniversalDeveloperCenter
-    }
-
+    /// <summary>
+    ///  Class represents a developer account.
+    /// </summary>
     public class DevAccount
     {
+        /// <summary>
+        ///  ID of the developer account
+        /// </summary>
+        public string Id { get; set; }
+
+        /// <summary>
+        /// User name of the developer account
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// The Id of the account under which the developer is acting. Also known as publisher ID
+        /// </summary>
+        public string AccountId { get; set; }
+
+        /// <summary>
+        /// The account type under which the developer is acting.
+        /// </summary>
+        public string AccountType { get; set; }
+
+        /// <summary>
+        /// The moniker of the account for which the token is issued. 
+        /// </summary>
+        public string AccountMoniker { get; set; }
+
+        /// <summary>
+        /// The account source where the account was registered.
+        /// </summary>
+        public DevAccountSource AccountSource { get; set; }
+
+        internal DevAccount()
+        {
+        }
+
         internal DevAccount(XdtsTokenResponse etoken, DevAccountSource accountSource)
         {
-            object value;
-            if (etoken.DisplayClaims.TryGetValue("eid", out value))
+            if (etoken.DisplayClaims.TryGetValue("eid", out object value))
             {
                 this.Id = value.ToString();
             }
@@ -42,18 +71,5 @@ namespace Microsoft.Xbox.Services.Tool
 
             this.AccountSource = accountSource;
         }
-
-        public string Id { get; private set; }
-
-        public string Name { get; private set; }
-
-        public string AccountId { get; private set; }
-
-        public string AccountType { get; private set; }
-
-        public string AccountMoniker { get; private set; }
-
-        public DevAccountSource AccountSource { get; internal set; }
-
     }
 }

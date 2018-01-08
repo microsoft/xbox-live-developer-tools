@@ -4,114 +4,39 @@
 namespace Microsoft.Xbox.Services.Tool
 {
     using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
 
-    internal class JobSubmitReqeust
-    {
-        public JobSubmitReqeust(string scid, string xuid)
-        {
-            UserId = xuid;
-            Scid = scid;
-        }
-
-        [JsonProperty("userId", Required = Required.Always)]
-        public string UserId { get; set; } = "deletedata";
-
-        [JsonProperty("Scid", Required = Required.Always)]
-        public string Scid { get; set; }
-    }
-
-    internal class JobSubmitResponse
-    {
-        public string JobId { get; set; }
-        public string CorrelationId { get; set; }
-    }
-
-    public class JobProviderStatus
-    {
-        [JsonProperty("provider")]
-        public string Provider { get; set; }
-
-        [JsonProperty("status"),JsonConverter(typeof(StringEnumConverter))]
-        public ResetProviderStatus Status { get; set; }
-
-        [JsonProperty("errorMessage")]
-        public string ErrorMessage { get; set; }
-
-    }
-
-    internal class JobStatusResponse
-    {
-        [JsonProperty("jobId")]
-        public string JobId { get; set; }
-
-        [JsonProperty("overallStatus")]
-        public string Status { get; set; }
-
-        [JsonProperty("providerStatus")]
-        public List<JobProviderStatus> ProviderStatus { get; set; }
-    }
-
-    public enum ResetOverallStatus
-    {
-        Succeeded = 0,
-        CompletedError,
-        Timeout,
-        Unknown
-    }
-
-    public enum ResetProviderStatus
-    {
-        CompletedSuccess = 0,
-        CompletedError,
-        NotStarted,
-        InProgress,
-        NotImplemented,
-        Unknown
-    }
-
-    public class UserResetResult
-    {
-        public string XboxLiveUserId { get; internal set; }
-
-        public ResetOverallStatus OverallStatus { get; internal set; }
-
-        //public List<JobProviderStatus> ProviderStatus { get; internal set; }
-    }
-
-    public class ProgressResetter
+    /// <summary>
+    /// Class for PlayerReset tooling functionality.
+    /// </summary>
+    public class PlayerReset
     {
         private static Uri baseUri = new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint);
-        private const int MaxPollingAttempts = 4;
+        internal const int MaxPollingAttempts = 4;
+        internal static int RetryDelay { get; set; } = 3000;
 
-        static public async Task<IEnumerable<UserResetResult>> ResetProgressAsync(string sandbox, string scid, IEnumerable<string> xuids)
+        /// <summary>
+        /// Reset one player's data in test sandboxes, includes: achievements, leaderboards, player stats and title history. 
+        /// </summary>
+        /// <param name="serviceConfigurationId">The service configuration ID (SCID) of the title for player data resetting</param>
+        /// <param name="sandbox">The target sandbox id for player resetting</param>
+        /// <param name="xboxUserId">The xbox user id of the player to be reset</param>
+        /// <returns></returns>
+        static public async Task<UserResetResult> ResetPlayerDataAsync(string serviceConfigurationId, string sandbox, string xboxUserId)
         {
             // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
             // populate the auth error up-front.
-            await Auth.GetETokenSilentlyAsync(scid, sandbox);
+            await Auth.GetETokenSilentlyAsync(serviceConfigurationId, sandbox);
 
-            var tasks = new List<Task<UserResetResult>>();
-            foreach (string xuid in xuids)
-            {
-                tasks.Add(SubmitJobAndPollStatus(sandbox, scid, xuid));
-            }
-
-            await Task.WhenAll(tasks.ToArray());
-            return tasks.Select(task => task.Result).ToList(); ;
+            return await SubmitJobAndPollStatus(sandbox, serviceConfigurationId, xboxUserId);
         }
 
         private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid)
         {
-            UserResetResult result = new UserResetResult
-            {
-                XboxLiveUserId = xuid,
-                OverallStatus = ResetOverallStatus.Unknown,
-            };
+            UserResetResult result = new UserResetResult();
             JobStatusResponse jobStatus = null;
 
             try
@@ -124,7 +49,7 @@ namespace Microsoft.Xbox.Services.Tool
                     for (int i = 0; i < MaxPollingAttempts; i++)
                     {
                         // Wait for 3 seconds for each interval
-                        await Task.Delay(3000);
+                        await Task.Delay(RetryDelay);
 
                         try
                         {
@@ -153,11 +78,13 @@ namespace Microsoft.Xbox.Services.Tool
                         if (jobStatus.Status == "CompletedSuccess")
                         {
                             result.OverallStatus = ResetOverallStatus.Succeeded;
+                            result.ProviderStatus = jobStatus.ProviderStatus;
                             break;
                         }
                         else if (jobStatus.Status == "CompletedError")
                         {
                             result.OverallStatus = ResetOverallStatus.CompletedError;
+                            result.ProviderStatus = jobStatus.ProviderStatus;
                             break;
                         }
                     }
@@ -165,6 +92,7 @@ namespace Microsoft.Xbox.Services.Tool
                     if (jobStatus.Status == "InProgress" || jobStatus.Status == "Queued")
                     {
                         result.OverallStatus = ResetOverallStatus.Timeout;
+                        result.ProviderStatus = jobStatus.ProviderStatus;
                     }
 
                 }
@@ -190,31 +118,25 @@ namespace Microsoft.Xbox.Services.Tool
             return result;
         }
 
-        private static void AddRequestHeaders(ref HttpRequestMessage request, string eToken)
+        private static async Task<UserResetJob> SubmitJobAsync(string sandbox, string scid, string xuid)
         {
-            request.Headers.Add("x-xbl-contract-version", "100");
-            request.Headers.Add("Authorization", eToken);
-        }
+            var job = new UserResetJob{Sandbox = sandbox, Scid = scid};
 
-        private static async Task<JobSubmitResponse> SubmitJobAsync(string sandbox, string scid, string xuid)
-        {
-            var job = new JobSubmitResponse();
-
-            using (var submitRequest = new XboxLiveHttpRequest())
+            using (var submitRequest = new XboxLiveHttpRequest(true, scid, sandbox))
             {
                 var requestMsg = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "submitJob"));
 
                 var requestContent = JsonConvert.SerializeObject(new JobSubmitReqeust(scid, xuid));
                 requestMsg.Content = new StringContent(requestContent);
 
-                string eToken = await Auth.GetETokenSilentlyAsync(scid, sandbox);
-                AddRequestHeaders(ref requestMsg, eToken);
+                requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
-                var responseContent = await submitRequest.SendAsync(requestMsg);
+                var response = await submitRequest.SendAsync(requestMsg);
 
                 // remove "" if found one.
-                job.JobId = responseContent.Content.Trim(new char[] { '\\', '\"' });
-                job.CorrelationId = responseContent.CollrelationId;
+                string responseContent = await response.Content.ReadAsStringAsync();
+                job.JobId = responseContent.Trim(new char[] { '\\', '\"' });
+                job.CorrelationId = response.CollrelationId;
 
                 Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} succeeded. Jobid: {job.JobId}");
             }
@@ -222,23 +144,24 @@ namespace Microsoft.Xbox.Services.Tool
             return job;
         }
 
-        private static async Task<JobStatusResponse> CheckJobStatus(JobSubmitResponse job)
+        private static async Task<JobStatusResponse> CheckJobStatus(UserResetJob userResetJob)
         {
-            using (var submitRequest = new XboxLiveHttpRequest())
+            using (var submitRequest = new XboxLiveHttpRequest(true, userResetJob.Scid, userResetJob.Sandbox))
             {
-                var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "jobs/" + job.JobId));
-                if (!string.IsNullOrEmpty(job.CorrelationId))
+                var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "jobs/" + userResetJob.JobId));
+                if (!string.IsNullOrEmpty(userResetJob.CorrelationId))
                 {
-                    requestMsg.Headers.Add("X-XblCorrelationId", job.CorrelationId);
+                    requestMsg.Headers.Add("X-XblCorrelationId", userResetJob.CorrelationId);
                 }
 
-                string eToken = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
-                AddRequestHeaders(ref requestMsg, eToken);
+                string eToken = await Auth.GetETokenSilentlyAsync(userResetJob.Scid, userResetJob.Sandbox);
+                requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
                 var response = await submitRequest.SendAsync(requestMsg);
-                var jobstatus =  JsonConvert.DeserializeObject<JobStatusResponse>(response.Content);
+                string responseConent = await response.Content.ReadAsStringAsync();
+                var jobstatus =  JsonConvert.DeserializeObject<JobStatusResponse>(responseConent);
 
-                Log.WriteLog($"Checking {job.JobId} job stauts: {jobstatus.Status}");
+                Log.WriteLog($"Checking {userResetJob.JobId} job stauts: {jobstatus.Status}");
 
                 return jobstatus;
             }

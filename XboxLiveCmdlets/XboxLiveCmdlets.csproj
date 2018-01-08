@@ -49,11 +49,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClearXblDevAccount.cs" />
+    <Compile Include="GetXblGlobalStorageBlob.cs" />
+    <Compile Include="GetXblGlobalStorageBlobMetadata.cs" />
+    <Compile Include="GetXblGlobalStorageQuota.cs" />
     <Compile Include="GetXblSandbox.cs" />
+    <Compile Include="RemoveXblGlobalStorageBlob.cs" />
     <Compile Include="SetXblDevAccount.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResetXblPlayerData.cs" />
     <Compile Include="SetXblSandbox.cs" />
+    <Compile Include="SetXblGlobalStorageBlob.cs" />
     <Compile Include="WdpConnections.cs" />
     <Compile Include="XboxliveCmdlet.cs" />
   </ItemGroup>
