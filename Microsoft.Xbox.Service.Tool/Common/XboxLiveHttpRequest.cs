@@ -79,6 +79,7 @@ namespace Microsoft.Xbox.Services.Tool
             if (this.autoAttachAuthHeader)
             {
                 string eToken = await Auth.Client.GetETokenAsync(scid, sandbox, refreshToken);
+                request.Headers.Remove("Authorization");
                 request.Headers.Add("Authorization", "XBL3.0 x=-;" + eToken);
             }
 
