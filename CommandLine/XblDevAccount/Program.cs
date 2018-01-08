@@ -22,7 +22,7 @@ namespace XblDevAccount
         }
 
 
-        [Verb("signin", HelpText = "Sign in a xbox live develoepr account.")]
+        [Verb("signin", HelpText = "Sign in a xbox live developer account.")]
         private class SignInOptions
         {
             [Option('s', "source", Required = true,
@@ -49,7 +49,7 @@ namespace XblDevAccount
             }
         }
 
-        [Verb("signout", HelpText = "Sign out the signed in develoepr account.")]
+        [Verb("signout", HelpText = "Sign out the signed in developer account.")]
         private class SignOutOptions
         {
             [Usage]

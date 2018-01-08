@@ -115,7 +115,7 @@ namespace GlobalStorage
             [Option('o', "output", Required = true, HelpText = "The output file path to save as for downloading")]
             public string OutputFile { get; set; }
 
-            [Option('f', "force-overwirte", HelpText = "Force overwrite if local file already exists")]
+            [Option('f', "force-overwrite", HelpText = "Force overwrite if local file already exists")]
             public bool ForceOverwrite { get; set; }
 
             [Usage(ApplicationAlias = "GlobalStorage")]
@@ -297,7 +297,7 @@ namespace GlobalStorage
             //Check if file exist if no ForceOverWrite present. 
             if (!options.ForceOverwrite && File.Exists(options.OutputFile))
             {
-                Console.Error.WriteLine($"OutFile {options.OutputFile} already exsit, pass in ForceOverwrite if you would like to overwrite");
+                Console.Error.WriteLine($"OutFile {options.OutputFile} already exist, pass in ForceOverwrite if you would like to overwrite");
                 return -1;
             }
 

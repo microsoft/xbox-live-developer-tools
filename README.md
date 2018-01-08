@@ -1,40 +1,115 @@
 ## Welcome!
 
-The Microsoft Xbox Live PowerShell Module provides a way to:
+The Microsoft Xbox Live Tooling API provides a way to:
 
-* Get/Set sandboxes on PC and Xbox console.
+* Reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history.
+* Manage title's global storage in test sandbox.
 
 To get access to the Xbox Live service you must be a managed developer, enrolled in the [ID@Xbox](http://www.xbox.com/Developers/id) program or participating in the [Xbox Live Creators Program](https://aka.ms/xblcp). To learn more about these programs, please refer to the [developer program overview](https://docs.microsoft.com/windows/uwp/xbox-live/developer-program-overview).
 
 
-## Getting Started using Xbox Live PowerShell Module
-
-* Install Xbox Live PowerShell module from the [PowerShell Gallery](https://powershellgallery.com):
-
-```powershell
-Install-Module XboxlivePSModule -Scope CurrentUser
-Import-Module XboxlivePSModule
-```
-
-* Update your exsiting Xbox Live PS Module 
-```powershell
-Update-Module XboxlivePSModule
-```
-
-* Usage
-
-    * Get and set sandbox on your PC or Xbox One Console with [Get-XblSandbox](docs/Get-XblSandbox.md) and [Set-XblSandbox](docs/Set-XblSandbox.md )
 
 ## Repo Structure
-* [/docs/](docs): Cmdlets documents.
-* [/Microsoft.Xbox.Service.Tool/](Microsoft.Xbox.Service.Tool): XBL cloud tooling dll, contains code for talking to xbl service tooling endpoints. Being consumed by cmdlets.
-* [/XboxLiveCmdlets/](XboxLiveCmdlets): Code for xbl cmdlets, warpper for consuming Microsoft.Xbox.Service.Tool.dll, also contains client only code for tooling like sandbox utilities.  
-* [/XboxlivePSModule/](XboxlivePSModule): Manifest and building script for Xbl PS module.
+* [/Microsoft.Xbox.Service.Tool/](Microsoft.Xbox.Service.Tool): Xbox Live tooling dll, contains code for talking to xbl service tooling endpoints. Being consumed by cmdlets.
+* [/CommandLine/](CommandLine): Command line executables for Xbox Live tooling.
+* [/Test/](Test): Test code.
 
-## Documentation
-You can also learn how to use Xbox Live PowerShell module by reading our documentation:
+## Command Line Exe Usage:
+### XblDevAccount.exe
+The exe is used to signin/out dev account and save the credntial to be used across other xbl exes requires dev credential. 
 
-- [Cmdlet Documentation](docs/XboxLivePsModule.md)
+#### Usage:
+***signin:*** This command will pop up UI if needed, last used account info will be saved for further use across all other executables.
+``` 
+XblDevAccount.exe signin --userName xxx --accountSource XDP|WindowsDevCenter 
+```
+
+***success output example:***
+```
+Developer account {Name} has successfully signed in. 
+    ID: {id}
+    AccountID: {accountId}
+    AccountType: {accountType}
+    AccountMoniker: {accountMoniker}
+    AccountSource: {accountSource}
+```
+
+***signout*** : This command will call delete last signed in account info, and clear up cached tokens.
+
+```
+XblDevAccount.exe signout
+```
+
+***success output example:***
+```
+Developer account {Name} has successfully signed out. 
+```
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+### PlayerReset.exe 
+PlayerReset is used to reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history. XblDevAccount.exe signin is required to call at least once before first use. 
+
+#### Usage:
+```PlayerReset.exe –scid xxx --sandbox xxx --xuid xxxx ```
+
+***Success output example:*** 
+```
+Player {email} data reset has completed successfully.
+```
+
+***Error output example:***
+```
+Player {email} data reset has completed with errors:
+    Leaderboard reset contains error: {errorMessage}
+```
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+### GlobalStorage.exe 
+GlobalStorage.exe is used to manage title global storage in test sandboxes, before publish to RETAIL. XblDevAccount.exe signin is required to call at least once before first use.
+
+#### Usage:
+***quota:*** Get title global storage quota information.
+```
+GlobalStorage.exe quota –scid xxx --sandbox xxx
+```
+
+
+Success output:
+```
+Your global storage quota: used bytes {usedBytes}, total bytes {totalBytes}
+```
+
+***list:*** Gets a list of blob meta-data under a given path for the title global storage.
+```
+GlobalStorage list --scid xxx --max-items 10 --path path --sandbox xxx
+```
+Success output:
+```
+Total 12 items found, Displaying item 0 to 12
+        test.txt,       Config,         2
+        ...
+        tool.zip,       Binary,         1874772
+```
+
+***delete:*** Deletes a blob from title storage.
+```
+GlobalStorage delete --scid xxx --blob-path foo\bar\blob.txt --sandbox xxx --type Json
+```
+
+***download:*** Downloads blob data from title storage.
+```
+GlobalStorage download --scid xxx --output c:\test.txt --blob-path \text.txt --sandbox xxx --type Json
+```
+
+***upload:*** Uploads blob data to title storage.
+```
+GlobalStorage upload --scid xxx --file c:\test.txt --blob-path \text.txt --sandbox xxx --type Json
+```
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ## Contribute Back!
@@ -42,7 +117,6 @@ You can also learn how to use Xbox Live PowerShell module by reading our documen
 Is there a feature missing that you'd like to see, or found a bug that you have a fix for? Or do you have an idea or just interest in helping out in building the library? Let us know and we'd love to work with you. For a good starting point on where we are headed and feature ideas, take a look at our [requested features and bugs](../../issues).  
 
 [Contrubute guidance](CONTRIBUTING.md)
-[Develop guidance](DEVELOP.md)
 
 Big or small we'd like to take your contributions back to help improve the Xbox Live PowerShell Module for everyone. 
 
