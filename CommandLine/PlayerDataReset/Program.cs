@@ -22,11 +22,11 @@ namespace PlayerDataReset
             public string ServiceConfigurationId  { get; set; }
 
             [Option('s', "sandbox", Required =true,
-                HelpText = "The target sandbox id for player resetting")]
+                HelpText = "The target sandbox for player resetting")]
             public string Sandbox { get; set; }
 
             [Option('x', "xuid", Required = true,
-                HelpText = "The xbox user id of the player to be reset")]
+                HelpText = "The Xbox Live user ID of the player to be reset")]
             public string XboxUserId { get; set; }
 
             [Usage(ApplicationAlias = "PlayerDataReset")]
