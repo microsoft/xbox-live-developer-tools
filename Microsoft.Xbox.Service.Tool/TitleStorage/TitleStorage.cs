@@ -118,7 +118,6 @@ namespace Microsoft.Xbox.Services.Tool
         /// <param name="sandbox">The target sandbox id for title storage</param>
         /// <param name="pathAndFileName">Blob path and file name to store on XboxLive service.(example: "foo\bar\blob.txt")</param>
         /// <param name="blobType">Title storage blob type</param>
-        /// <returns></returns>
         static public async Task DeleteGlobalStorageBlob(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
@@ -135,7 +134,7 @@ namespace Microsoft.Xbox.Services.Tool
 
         }
 
-        internal TitleStorage()
+        private TitleStorage()
         {
         }
 

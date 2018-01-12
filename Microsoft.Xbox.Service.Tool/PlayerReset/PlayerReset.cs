@@ -23,8 +23,8 @@ namespace Microsoft.Xbox.Services.Tool
         /// </summary>
         /// <param name="serviceConfigurationId">The service configuration ID (SCID) of the title for player data resetting</param>
         /// <param name="sandbox">The target sandbox id for player resetting</param>
-        /// <param name="xboxUserId">The xbox user id of the player to be reset</param>
-        /// <returns></returns>
+        /// <param name="xboxUserId">The Xbox user id of the player to be reset</param>
+        /// <returns>The UserResetResult object for the reset result</returns>
         static public async Task<UserResetResult> ResetPlayerDataAsync(string serviceConfigurationId, string sandbox, string xboxUserId)
         {
             // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
@@ -33,6 +33,8 @@ namespace Microsoft.Xbox.Services.Tool
 
             return await SubmitJobAndPollStatus(sandbox, serviceConfigurationId, xboxUserId);
         }
+
+        private PlayerReset() { }
 
         private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid)
         {

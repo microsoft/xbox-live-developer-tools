@@ -54,7 +54,7 @@ namespace Microsoft.Xbox.Services.Tool
             }
 
             // If final HTTP status is not success
-            throw new XboxLiveException("Failed to call xbox live services", response, null);
+            throw new XboxLiveException("Failed to call Xbox Live services", response, null);
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Microsoft.Xbox.Services.Tool
             }
             catch (Exception e)
             {
-                throw new XboxLiveException("Failed to call xbox live services", null, e);
+                throw new XboxLiveException("Failed to call Xbox Live services", null, e);
             }
         }
 

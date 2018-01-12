@@ -21,9 +21,9 @@ namespace Microsoft.Xbox.Services.Tool
         internal static AuthClient Client {get;set;} = new AuthClient();
 
         /// <summary>
-        /// Load the last signed in user from local cache.
+        /// Load the last signed in user from local cache and set as sign in info.
         /// </summary>
-        /// <returns>The DevAccount object repesnets the last signed in dev account</returns>
+        /// <returns>The DevAccount object represents the last signed in dev account</returns>
         public static DevAccount LoadLastSignedInUser()
         {
             
@@ -45,7 +45,7 @@ namespace Microsoft.Xbox.Services.Tool
         }
 
         /// <summary>
-        /// Set user info for futuer authtication. 
+        /// Set user info for authentication. 
         /// </summary>
         /// <param name="accountSource">The account source where the developer account was registered.</param>
         /// <param name="userName">The user name of the account, optional.</param>
@@ -123,6 +123,10 @@ namespace Microsoft.Xbox.Services.Tool
                 Client.ETokenCache.Value.RemoveUserTokenCache(Client.AuthContext.UserName);
                 Client.AuthContext = null;
             }
+        }
+
+        private Auth()
+        {
         }
 
         private static void SaveLastSignedInUser(DevAccount account)
