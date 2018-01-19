@@ -17,7 +17,8 @@ namespace Microsoft.Xbox.Services.Tool
     public class Auth
     {
         private static object initLock = new object();
-
+        private const string CacheFile = "lastUser";
+        
         internal static AuthClient Client {get;set;} = new AuthClient();
 
         /// <summary>
@@ -30,12 +31,17 @@ namespace Microsoft.Xbox.Services.Tool
             DevAccount result = null;
             try
             {
-                string lastSignInUserCacheFile = Path.Combine(ClientSettings.Singleton.CacheFolder, "lastUser");
+                string lastSignInUserCacheFile = Path.Combine(ClientSettings.Singleton.CacheFolder, CacheFile);
 
-                result = JsonConvert.DeserializeObject<DevAccount>(File.Exists(lastSignInUserCacheFile)
-                    ? File.ReadAllText(lastSignInUserCacheFile) : string.Empty);
+                if (File.Exists(lastSignInUserCacheFile))
+                {
+                    result = JsonConvert.DeserializeObject<DevAccount>(File.ReadAllText(lastSignInUserCacheFile));
+                }
 
-                Auth.SetAuthInfo(result.Name, result.AccountSource);
+                if (result!= null)
+                {
+                    Auth.SetAuthInfo(result.Name, result.AccountSource);
+                }
             }
             catch (Exception e)
             {
@@ -89,7 +95,7 @@ namespace Microsoft.Xbox.Services.Tool
         /// Attempt to sign in developer account, UI will be triggered if necessary 
         /// </summary>
         /// <returns>DevAccount object contains developer account info.</returns>
-        public static async Task<DevAccount> SignIn()
+        public static async Task<DevAccount> SignInAsync()
         {
             if (Client.AuthContext == null)
             {
@@ -120,6 +126,7 @@ namespace Microsoft.Xbox.Services.Tool
         {
             lock (initLock)
             {
+                File.Delete(Path.Combine(ClientSettings.Singleton.CacheFolder, CacheFile));
                 Client.ETokenCache.Value.RemoveUserTokenCache(Client.AuthContext.UserName);
                 Client.AuthContext = null;
             }
@@ -133,7 +140,7 @@ namespace Microsoft.Xbox.Services.Tool
         {
             try
             {
-                string lastSignInUserCacheFile = Path.Combine(ClientSettings.Singleton.CacheFolder, "lastUser");
+                string lastSignInUserCacheFile = Path.Combine(ClientSettings.Singleton.CacheFolder, CacheFile);
                 File.WriteAllText(lastSignInUserCacheFile, JsonConvert.SerializeObject(account));
             }
             catch (Exception e)

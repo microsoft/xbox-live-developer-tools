@@ -90,7 +90,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignIn();
+            var devAccount = await Auth.SignInAsync();
             Assert.AreEqual(DefaultId, devAccount.Id);
             Assert.AreEqual(DefaultName, devAccount.Name);
             Assert.AreEqual(DefaultAccountId, devAccount.AccountId);
@@ -121,7 +121,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             try
             {
-                await Auth.SignIn();
+                await Auth.SignInAsync();
             }
             catch (XboxLiveException ex)
             {
@@ -155,7 +155,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignIn();
+            var devAccount = await Auth.SignInAsync();
 
             Assert.AreEqual(devAccount.Id, DefaultId);
             Assert.AreEqual(devAccount.Name, DefaultName);
@@ -188,7 +188,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignIn();
+            var devAccount = await Auth.SignInAsync();
 
             Assert.AreEqual(devAccount.Id, DefaultId);
             Assert.AreEqual(devAccount.Name, DefaultName);

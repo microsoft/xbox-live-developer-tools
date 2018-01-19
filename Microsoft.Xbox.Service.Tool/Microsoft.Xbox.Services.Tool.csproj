@@ -67,6 +67,7 @@
     <Compile Include="Auth\XdtsTokenRequest.cs" />
     <Compile Include="Common\Log.cs" />
     <Compile Include="Common\TestHook.cs" />
+    <Compile Include="Common\XboxLiveErrorStatus.cs" />
     <Compile Include="Common\XboxLiveException.cs" />
     <Compile Include="Common\XboxLiveHttpContent.cs" />
     <Compile Include="Common\XboxLiveHttpRequest.cs" />

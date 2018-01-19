@@ -22,13 +22,15 @@ namespace Microsoft.Xbox.Services.Tool
         {
             get { return authContext != null && authContext.TokenCache.Count > 0; }
         }
-        public string UserName { get; }
+        public string UserName { get; private set; }
 
         public AdalAuthContext(string userName)
         {
             authContext = new AuthenticationContext(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, tokenCache);
             this.UserName = userName;
-            this.userIdentifier = new UserIdentifier(UserName, UserIdentifierType.RequiredDisplayableId);
+            this.userIdentifier = string.IsNullOrEmpty(userName) ? 
+                UserIdentifier.AnyUser : 
+                new UserIdentifier(UserName, UserIdentifierType.RequiredDisplayableId);
         }
 
         public virtual async Task<string> AcquireTokenSilentAsync()
@@ -45,9 +47,9 @@ namespace Microsoft.Xbox.Services.Tool
             AuthenticationResult result = await this.authContext.AcquireTokenAsync(
                 ClientSettings.Singleton.AADResource,
                 ClientSettings.Singleton.AADApplicationId, new Uri("urn:ietf:wg:oauth:2.0:oob"),
-                new PlatformParameters(PromptBehavior.Auto),
+                new PlatformParameters(string.IsNullOrEmpty(this.UserName)? PromptBehavior.SelectAccount : PromptBehavior.Auto),
                 userIdentifier);
-
+            this.UserName = result.UserInfo.DisplayableId;
             return result?.AccessToken;
         }
     }
