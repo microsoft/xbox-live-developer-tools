@@ -1,0 +1,26 @@
+﻿//-----------------------------------------------------------------------
+// <copyright file="Program.cs" company="Microsoft">
+//     Copyright (c) Microsoft. All rights reserved.
+//     Internal use only.
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System;
+using System.Windows.Forms;
+
+namespace SessionHistoryViewer
+{
+    static class Program
+    {
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Form1());
+        }
+    }
+}

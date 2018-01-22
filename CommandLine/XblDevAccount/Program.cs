@@ -115,7 +115,7 @@ namespace XblDevAccount
             try
             {
                 Auth.SetAuthInfo(signInOptions.UserName, (DevAccountSource) signInOptions.AccountSource);
-                var devAccount = await Auth.SignIn();
+                var devAccount = await Auth.SignInAsync();
                 Console.WriteLine($"Developer account {devAccount.Name} has successfully signed in. ");
                 DisplayDevAccount(devAccount, "\t");
                 return 0;
