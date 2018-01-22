@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.Authentication
 {
     using Microsoft.Identity.Client;
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Microsoft.Xbox.Services.DevTool.Common;
 
     internal class MsalAuthContext : IAuthContext
     {
@@ -39,7 +40,7 @@ namespace Microsoft.Xbox.Services.Tool
         {
             if (cachedUser == null)
             {
-                throw new XboxLiveException(XboxLiveErrorStatus.AuthenticationFailure, "No cached user found");
+                throw new InvalidOperationException("No cached user found, please call SignInAsync to sign in a user.");
             }
 
             AuthenticationResult result = await this.publicClientApplication.AcquireTokenSilentAsync(Scopes, cachedUser);

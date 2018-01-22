@@ -1,13 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.PlayerReset
 {
     using Newtonsoft.Json;
     using System;
     using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Authentication;
+    using Microsoft.Xbox.Services.DevTool.Common;
 
     /// <summary>
     /// Class for PlayerReset tooling functionality.
@@ -29,7 +31,7 @@ namespace Microsoft.Xbox.Services.Tool
         {
             // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
             // populate the auth error up-front.
-            await Auth.GetETokenSilentlyAsync(serviceConfigurationId, sandbox);
+            await Authentication.GetDevTokenSlientlyAsync(serviceConfigurationId, sandbox);
 
             return await SubmitJobAndPollStatus(sandbox, serviceConfigurationId, xboxUserId);
         }
@@ -53,39 +55,17 @@ namespace Microsoft.Xbox.Services.Tool
                         // Wait for 3 seconds for each interval
                         await Task.Delay(RetryDelay);
 
-                        try
-                        {
-                            jobStatus = await CheckJobStatus(jobResponse);
-                        }
-                        catch(XboxLiveException ex)
-                        {
-                            // TODO: BUG: service currently have bug that if polling to early for 
-                            // job status, it will return 400. Right now we threat it as job queue
-                            // and wait for next poll.
-                            if (ex.Response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                            {
-                                jobStatus = new JobStatusResponse
-                                {
-                                    Status = "Queued",
-                                    JobId = jobResponse.JobId
-                                };
-                            }
-                            else
-                            {
-                                throw ex;
-                            }
-
-                        }
+                        jobStatus = await CheckJobStatus(jobResponse);
 
                         if (jobStatus.Status == "CompletedSuccess")
                         {
-                            result.OverallStatus = ResetOverallStatus.Succeeded;
+                            result.OverallResult = ResetOverallResult.Succeeded;
                             result.ProviderStatus = jobStatus.ProviderStatus;
                             break;
                         }
                         else if (jobStatus.Status == "CompletedError")
                         {
-                            result.OverallStatus = ResetOverallStatus.CompletedError;
+                            result.OverallResult = ResetOverallResult.CompletedError;
                             result.ProviderStatus = jobStatus.ProviderStatus;
                             break;
                         }
@@ -93,21 +73,21 @@ namespace Microsoft.Xbox.Services.Tool
 
                     if (jobStatus.Status == "InProgress" || jobStatus.Status == "Queued")
                     {
-                        result.OverallStatus = ResetOverallStatus.Timeout;
+                        result.OverallResult = ResetOverallResult.Timeout;
                         result.ProviderStatus = jobStatus.ProviderStatus;
                     }
 
                 }
             }
-            catch (XboxLiveException)
+            catch (Exception)
             {
-                result.OverallStatus = ResetOverallStatus.CompletedError;
+                result.OverallResult = ResetOverallResult.CompletedError;
             }
 
             // Log detail status
-            if(result.OverallStatus != ResetOverallStatus.Succeeded)
+            if(result.OverallResult != ResetOverallResult.Succeeded)
             {
-                Log.WriteLog($"Resetting player {xuid} result {result.OverallStatus}: ");
+                Log.WriteLog($"Resetting player {xuid} result {result.OverallResult}: ");
                 if (jobStatus != null && jobStatus.ProviderStatus != null)
                 {
                     foreach (var providerStatus in jobStatus.ProviderStatus)
@@ -135,8 +115,10 @@ namespace Microsoft.Xbox.Services.Tool
 
                 var response = await submitRequest.SendAsync(requestMsg);
 
+                response.Response.EnsureSuccessStatusCode();
+
                 // remove "" if found one.
-                string responseContent = await response.Content.ReadAsStringAsync();
+                string responseContent = await response.Response.Content.ReadAsStringAsync();
                 job.JobId = responseContent.Trim(new char[] { '\\', '\"' });
                 job.CorrelationId = response.CollrelationId;
 
@@ -156,12 +138,27 @@ namespace Microsoft.Xbox.Services.Tool
                     requestMsg.Headers.Add("X-XblCorrelationId", userResetJob.CorrelationId);
                 }
 
-                string eToken = await Auth.GetETokenSilentlyAsync(userResetJob.Scid, userResetJob.Sandbox);
+                string eToken = await Authentication.GetDevTokenSlientlyAsync(userResetJob.Scid, userResetJob.Sandbox);
                 requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
-                var response = await submitRequest.SendAsync(requestMsg);
-                string responseConent = await response.Content.ReadAsStringAsync();
-                var jobstatus =  JsonConvert.DeserializeObject<JobStatusResponse>(responseConent);
+                XboxLiveHttpResponse xblResponse = await submitRequest.SendAsync(requestMsg);
+
+                // There is a chance if polling too early for job status, it will return 400. 
+                // We threat it as job queue and wait for next poll.
+                if (xblResponse.Response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    return new JobStatusResponse
+                    {
+                        Status = "Queued",
+                        JobId = userResetJob.JobId
+                    };
+                }
+
+                // Throw HttpRequestExcetpion for other HTTP status code
+                xblResponse.Response.EnsureSuccessStatusCode();
+
+                string responseConent = await xblResponse.Response.Content.ReadAsStringAsync();
+                var jobstatus = JsonConvert.DeserializeObject<JobStatusResponse>(responseConent);
 
                 Log.WriteLog($"Checking {userResetJob.JobId} job stauts: {jobstatus.Status}");
 

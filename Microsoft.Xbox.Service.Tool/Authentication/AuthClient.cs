@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.Authentication
 {
     using Newtonsoft.Json;
     using System;
-    using System.Collections.Concurrent;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Microsoft.Xbox.Services.DevTool.Common;
+    using System.Collections.Generic;
 
     internal class AuthClient
     {
@@ -17,16 +18,21 @@ namespace Microsoft.Xbox.Services.Tool
 
         public Lazy<XdtsTokenCache> ETokenCache { get; } = new Lazy<XdtsTokenCache>();
 
+        public AuthClient()
+        {
+            
+        }
+
         public bool HasCredential
         {
             get { return this.Account != null; }
         }
 
-        public virtual async Task<string> GetETokenAsync(string scid, string sandbox, bool forceRefresh)
+        public virtual async Task<string> GetETokenAsync(string scid, IEnumerable<string> sandboxes, bool forceRefresh)
         {
             if (AuthContext == null)
             {
-                throw new XboxLiveException(XboxLiveErrorStatus.AuthenticationFailure, "User Info is not found.");
+                throw new InvalidOperationException("User Info is not found.");
             }
 
             string eToken = null;
@@ -35,14 +41,14 @@ namespace Microsoft.Xbox.Services.Tool
             {
                 // return cachaed token if we have one and didn't expire
                 string cacheKey =
-                    XdtsTokenCache.GetCacheKey(AuthContext.UserName, AuthContext.AccountSource, scid, sandbox);
+                    XdtsTokenCache.GetCacheKey(AuthContext.UserName, AuthContext.AccountSource, scid, sandboxes);
                 this.ETokenCache.Value.TryGetCachedToken(cacheKey, out eToken);
             }
 
             if (string.IsNullOrEmpty(eToken))
             {
                 var aadToken = await this.AuthContext.AcquireTokenSilentAsync();
-                var xtdsToken = await FetchXdtsToken(aadToken, scid, sandbox);
+                var xtdsToken = await FetchXdtsToken(aadToken, scid, sandboxes);
                 eToken = xtdsToken.Token;
             }
 
@@ -53,37 +59,37 @@ namespace Microsoft.Xbox.Services.Tool
         {
             if (AuthContext == null)
             {
-                throw new XboxLiveException(XboxLiveErrorStatus.AuthenticationFailure, "User Info is not found.");
+                throw new InvalidOperationException("User Info is not found.");
             }
 
             string aadToken = await AuthContext.AcquireTokenAsync();
-            XdtsTokenResponse token = await FetchXdtsToken(aadToken, string.Empty, string.Empty);
+            XdtsTokenResponse token = await FetchXdtsToken(aadToken, string.Empty, null);
 
             this.Account = new DevAccount(token, this.AuthContext.AccountSource);
 
             return this.Account;
         }
 
-
-        protected async Task<XdtsTokenResponse> FetchXdtsToken(string aadToken, string scid, string sandbox)
+        protected async Task<XdtsTokenResponse> FetchXdtsToken(string aadToken, string scid, IEnumerable<string> sandboxes)
         {
             var tokenRequest = new XboxLiveHttpRequest(false, null, null);
             var requestMsg = new HttpRequestMessage(HttpMethod.Post, this.AuthContext.XtdsEndpoint);
 
-            var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandbox));
+            var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
             requestMsg.Content = new StringContent(requestContent);
 
             // Add the aadToken header without validation as the framework
             // does not like the values returned for aadTokens for MSA accounts.
             requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken);
 
-            var responseContent = await tokenRequest.SendAsync(requestMsg);
+            HttpResponseMessage response = (await tokenRequest.SendAsync(requestMsg)).Response;
+            response.EnsureSuccessStatusCode();
             Log.WriteLog("Fetch xdts Token succeeded.");
 
-            string content = await responseContent.Content.ReadAsStringAsync();
+            string content = await response.Content.ReadAsStringAsync();
             var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(content);
             
-            string key = XdtsTokenCache.GetCacheKey(AuthContext.UserName, AuthContext.AccountSource, scid, sandbox);
+            string key = XdtsTokenCache.GetCacheKey(AuthContext.UserName, AuthContext.AccountSource, scid, sandboxes);
             this.ETokenCache.Value.UpdateToken(key, token);
 
             return token;

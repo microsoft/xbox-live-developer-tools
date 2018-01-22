@@ -3,15 +3,16 @@
 
 using CommandLine;
 using CommandLine.Text;
-using Microsoft.Win32;
+using Microsoft.Xbox.Services.DevTool.Authentication;
+using Microsoft.Xbox.Services.DevTool.Common;
+using Microsoft.Xbox.Services.DevTool.TitleStorage;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Xbox.Services.Tool;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace GlobalStorage
 {
@@ -164,7 +165,7 @@ namespace GlobalStorage
                     })
                     .WithNotParsed(err => exitCode = -1);
 
-                DevAccount account = Auth.LoadLastSignedInUser();
+                DevAccount account = Authentication.LoadLastSignedInUser();
                 if (account == null)
                 {
                     Console.Error.WriteLine("Didn't found dev sign in info, please use \"XblDevAccount.exe signin\" to initiate.");
@@ -199,27 +200,19 @@ namespace GlobalStorage
                     exitCode = -1;
                 }
             }
-            catch (XboxLiveException ex)
+            catch (HttpRequestException ex)
             {
                 Console.WriteLine($"Error: GlobalStorage {invokedVerb} failed.");
-                if (ex.Response != null)
+
+                if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
                 {
-                    switch (ex.Response.StatusCode)
-                    {
-                        case HttpStatusCode.Unauthorized:
-                            Console.WriteLine(
-                                $"Unable to authorize the account with XboxLive service with scid : {baseOptions?.ServiceConfigurationId} and sandbox : {baseOptions?.Sandbox}, please contact your administrator.");
-                            break;
-
-                        case HttpStatusCode.Forbidden:
-                            Console.WriteLine(
-                                "Your account doesn't have access to perform the operation, please contact your administrator.");
-                            break;
-
-                        default:
-                            Console.WriteLine(ex.Message);
-                            break;
-                    }
+                    Console.WriteLine(
+                        $"Unable to authorize the account with XboxLive service with scid : {baseOptions?.ServiceConfigurationId} and sandbox : {baseOptions?.Sandbox}, please contact your administrator.");
+                }
+                else if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Forbidden)))
+                {
+                    Console.WriteLine(
+                        "Your account doesn't have access to perform the operation, please contact your administrator.");
                 }
                 else
                 {
@@ -251,7 +244,7 @@ namespace GlobalStorage
         {
             Console.WriteLine(
                 $"Getting global storage blob list for scid : {options.ServiceConfigurationId}, sandbox {options.Sandbox}, path {options.Path}");
-            TitleStorageBlobMetadataResult result = await TitleStorage.GetGlobalStorageBlobMetaData(
+            TitleStorageBlobMetadataResult result = await TitleStorage.GetGlobalStorageBlobMetaDataAsync(
                 options.ServiceConfigurationId, options.Sandbox, options.Path, options.MaxItems, options.SkipItems);
 
             Console.WriteLine(
@@ -269,7 +262,7 @@ namespace GlobalStorage
             Console.WriteLine(
                 $"Deleting global storage blob list for scid : {options.ServiceConfigurationId}, sandbox {options.Sandbox}, path {options.Path}, type {options.Type}");
 
-            await TitleStorage.DeleteGlobalStorageBlob(options.ServiceConfigurationId, options.Sandbox,
+            await TitleStorage.DeleteGlobalStorageBlobAsync(options.ServiceConfigurationId, options.Sandbox,
                 options.Path, (TitleStorageBlobType)options.Type);
 
             Console.WriteLine("Global storage blob deleted");
@@ -284,7 +277,7 @@ namespace GlobalStorage
 
             byte[] blobData = File.ReadAllBytes(options.File);
 
-            await TitleStorage.UploadGlobalStorageBlob(options.ServiceConfigurationId, options.Sandbox, options.Path,
+            await TitleStorage.UploadGlobalStorageBlobAsync(options.ServiceConfigurationId, options.Sandbox, options.Path,
                 (TitleStorageBlobType) options.Type, blobData);
 
             Console.WriteLine("Global storage blob uploaded.");
@@ -304,7 +297,7 @@ namespace GlobalStorage
             Console.WriteLine(
                 $"Download global storage blob list for scid : {options.ServiceConfigurationId}, sandbox {options.Sandbox}, path {options.Path}, type {options.Type}");
 
-            byte[] blobData = await TitleStorage.DownloadGlobalStorageBlob(
+            byte[] blobData = await TitleStorage.DownloadGlobalStorageBlobAsync(
                 options.ServiceConfigurationId, options.Sandbox, options.Path, (TitleStorageBlobType)options.Type);
 
             File.WriteAllBytes(options.OutputFile, blobData);

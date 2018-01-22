@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.PlayerReset
 {
     /// <summary>
     /// Status of provider status of player reset job.

@@ -1,15 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Net;
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.Common
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Microsoft.Xbox.Services.DevTool.Authentication;
 
     internal class XboxLiveHttpRequest : IDisposable
     {
@@ -29,32 +30,25 @@ namespace Microsoft.Xbox.Services.Tool
         }
 
         // Take a Func<HttpRequestMessage> so that HttpRequestMessage will be construct in caller scope.
-        public async Task<XboxLiveHttpContent> SendAsync(HttpRequestMessage request)
+        public async Task<XboxLiveHttpResponse> SendAsync(HttpRequestMessage request)
         {
-            var content = new XboxLiveHttpContent();
+            var xblResposne = new XboxLiveHttpResponse();
 
             HttpResponseMessage response = await this.SendInternalAsync(request, false);
 
-            if (response != null && response.IsSuccessStatusCode)
+            if (response != null)
             {
-                ExtractCollrelationId(response, ref content);
-                content.Content = response.Content;
-                return content;
+                ExtractCollrelationId(response, ref xblResposne);
             }
-            else if (response.StatusCode == HttpStatusCode.Forbidden)
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
             {
                 // Force refresh the token if gets 403, then resend the request.
                 response = await this.SendInternalAsync(request, true);
-                if (response != null && response.IsSuccessStatusCode)
-                {
-                    ExtractCollrelationId(response, ref content);
-                    content.Content = response.Content;
-                    return content;
-                }
             }
 
-            // If final HTTP status is not success
-            throw new XboxLiveException("Failed to call Xbox Live services", response, null);
+            xblResposne.Response = response;
+            return xblResposne;
         }
 
         /// <summary>
@@ -78,22 +72,15 @@ namespace Microsoft.Xbox.Services.Tool
         {
             if (this.autoAttachAuthHeader)
             {
-                string eToken = await Auth.Client.GetETokenAsync(scid, sandbox, refreshToken);
+                string eToken = await Authentication.Client.GetETokenAsync(scid, new string[]{ sandbox }, refreshToken);
                 request.Headers.Remove("Authorization");
                 request.Headers.Add("Authorization", "XBL3.0 x=-;" + eToken);
             }
 
-            try
-            {
-                return await this.httpClient.SendAsync(request);
-            }
-            catch (Exception e)
-            {
-                throw new XboxLiveException("Failed to call Xbox Live services", null, e);
-            }
+            return await this.httpClient.SendAsync(request);
         }
 
-        private static void ExtractCollrelationId(HttpResponseMessage response, ref XboxLiveHttpContent content)
+        private static void ExtractCollrelationId(HttpResponseMessage response, ref XboxLiveHttpResponse xblResponse)
         {
             if (response != null)
             {
@@ -101,7 +88,7 @@ namespace Microsoft.Xbox.Services.Tool
                 {
                     if (correlationIds != null && !string.IsNullOrEmpty(correlationIds.First()))
                     {
-                        content.CollrelationId = correlationIds.First();
+                        xblResponse.CollrelationId = correlationIds.First();
                     }
                 }
             }

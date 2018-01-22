@@ -1,23 +1,24 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Xbox.Services.Tool
+using System.Web.Configuration;
+
+namespace Microsoft.Xbox.Services.DevTool.Authentication
 {
-    using Microsoft.Identity.Client;
+    using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using System.IO;
+    using Microsoft.Xbox.Services.DevTool.Common;
 
-    internal class MsalTokenCache
+    internal class AdalTokenCache : TokenCache
     {
-        public TokenCache TokenCache { get; } = new TokenCache();
-
-        private const string CacheFile = "msal.cache";
+        private const string CacheFile = "adal.cache";
 
         private static readonly object FileLock = new object();
 
-        public MsalTokenCache()
+        public AdalTokenCache()
         {
-            TokenCache.SetBeforeAccess(BeforeAccessNotification);
-            TokenCache.SetAfterAccess(AfterAccessNotification);
+            this.AfterAccess = AfterAccessNotification;
+            this.BeforeAccess = BeforeAccessNotification;
 
             Directory.CreateDirectory(ClientSettings.Singleton.CacheFolder);
         }

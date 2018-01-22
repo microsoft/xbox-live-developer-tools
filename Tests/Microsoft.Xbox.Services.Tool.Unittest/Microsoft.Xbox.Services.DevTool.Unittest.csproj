@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.Xbox.Services.Tool.Unittest</RootNamespace>
-    <AssemblyName>Microsoft.Xbox.Services.Tool.Unittest</AssemblyName>
+    <AssemblyName>Microsoft.Xbox.Services.DevTool.Unittest</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -76,9 +76,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Microsoft.Xbox.Service.Tool\Microsoft.Xbox.Services.Tool.csproj">
+    <ProjectReference Include="..\..\Microsoft.Xbox.Service.Tool\Microsoft.Xbox.Services.DevTool.csproj">
       <Project>{2442b61c-1cd6-4556-bf98-56b73e4106de}</Project>
-      <Name>Microsoft.Xbox.Services.Tool</Name>
+      <Name>Microsoft.Xbox.Services.DevTool</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

@@ -18,7 +18,8 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using DiffPlex.Model;
-using Microsoft.Xbox.Services.Tool;
+using Microsoft.Xbox.Services.DevTool.Authentication;
+using Microsoft.Xbox.Services.DevTool.Common;
 using Newtonsoft.Json;
 
 using SessionHistoryViewer.DataContracts;
@@ -272,7 +273,7 @@ namespace SessionHistoryViewer
                 InitViews();
                 Tuple<SessionHistoryDocumentResponse, string> queryResponse = null;
 
-                string eToken = await Auth.GetETokenSilentlyAsync(tbScid.Text, tbSandbox.Text);
+                string eToken = await Authentication.GetDevTokenSlientlyAsync(tbScid.Text, tbSandbox.Text);
 
                 lblExplanation.Text = "Downloading change history for the selected historical\nMPSD document...";
                 if (listView1.SelectedIndices.Count == 1)
@@ -519,7 +520,7 @@ namespace SessionHistoryViewer
             if (!SnapshotCache.TryGetSnapshot(hashKey, out snapshot))
             {
 
-                string eToken = await Auth.GetETokenSilentlyAsync(tbScid.Text, tbSandbox.Text);
+                string eToken = await Authentication.GetDevTokenSlientlyAsync(tbScid.Text, tbSandbox.Text);
 
                 lblExplanation.Text = string.Format("Downloading session snapshot #{0}", changeNumber);
 
@@ -568,7 +569,7 @@ namespace SessionHistoryViewer
             dateTimePicker1.Value = queryBundle.QueryFrom;
             dateTimePicker2.Value = queryBundle.QueryTo;
 
-            string eToken = await Auth.GetETokenSilentlyAsync(tbScid.Text, tbSandbox.Text);
+            string eToken = await Authentication.GetDevTokenSlientlyAsync(tbScid.Text, tbSandbox.Text);
 
             lblExplanation.Text = "Searching for MPSD historical documents...";
 
@@ -1048,7 +1049,7 @@ namespace SessionHistoryViewer
                 ActivityId = listView1.Items[selectedIndex].SubItems[5].Text,
             };
 
-            string eToken = await Auth.GetETokenSilentlyAsync(tbScid.Text, tbSandbox.Text);
+            string eToken = await Authentication.GetDevTokenSlientlyAsync(tbScid.Text, tbSandbox.Text);
 
             lblExplanation.Text = "Downloading change history for the selected session...";
 
@@ -1148,7 +1149,7 @@ namespace SessionHistoryViewer
                 this.btnSingInout.Enabled = false;
                 if (signedInuser != null)
                 {
-                    Auth.SignOut();
+                    Authentication.SignOut();
                     signedInuser = null;
                 }
                 else
@@ -1158,17 +1159,8 @@ namespace SessionHistoryViewer
                     {
                         accountSource = DevAccountSource.XboxDeveloperPortal;
                     }
-                    Auth.SetAuthInfo(null, accountSource);
 
-                    this.signedInuser = await Auth.SignInAsync();
-                }
-            }
-            catch (XboxLiveException exception)
-            {
-                // Don't do anything if user canceled.
-                if (exception.ErrorStatus != XboxLiveErrorStatus.UserCancelled)
-                {
-                    MessageBox.Show(exception.Message, "Error");
+                    this.signedInuser = await Authentication.SignInAsync(accountSource, null);
                 }
             }
             catch (Exception exception)
@@ -1190,7 +1182,7 @@ namespace SessionHistoryViewer
 
         private void UpdateAccountPanel()
         {
-            this.signedInuser = Auth.LoadLastSignedInUser();
+            this.signedInuser = Authentication.LoadLastSignedInUser();
             if (signedInuser != null)
             {
                 btnSingInout.Text = "Sign Out";

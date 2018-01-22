@@ -1,22 +1,23 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.Authentication
 {
     using System.Collections.Generic;
+    using Microsoft.Xbox.Services.DevTool.Common;
 
     internal class XdtsTokenRequest
     {
-        public XdtsTokenRequest(string scid = "", string sandbox = "")
+        public XdtsTokenRequest(string scid, IEnumerable<string> sandboxes)
         {
             if (!string.IsNullOrEmpty(scid))
             {
                 Properties["Scid"] = scid;
             }
 
-            if (!string.IsNullOrEmpty(sandbox))
+            if (sandboxes!=null)
             {
-                Properties["Sandboxes"] = sandbox;
+                Properties["Sandboxes"] = string.Join(" ", sandboxes);
             }
         }
 

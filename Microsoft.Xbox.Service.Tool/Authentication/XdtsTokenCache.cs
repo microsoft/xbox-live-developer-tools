@@ -1,16 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Linq;
-using System.Runtime.InteropServices;
-
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.Authentication
 {
-    using Microsoft.Identity.Client;
     using Newtonsoft.Json;
+    using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
+    using Microsoft.Xbox.Services.DevTool.Common;
+
 
     internal class XdtsTokenCache
     {
@@ -52,9 +51,9 @@ namespace Microsoft.Xbox.Services.Tool
             return false;
         }
 
-        public static string GetCacheKey(string userName, DevAccountSource accountSource, string scid, string sandbox)
+        public static string GetCacheKey(string userName, DevAccountSource accountSource, string scid, IEnumerable<string> sandboxes)
         {
-            string keyFullstring = userName + accountSource.ToString() + scid + sandbox;
+            string keyFullstring = userName + accountSource.ToString() + scid + (sandboxes == null? String.Empty: String.Join(" ", sandboxes));
 
             return keyFullstring.GetHashCode().ToString();
         }

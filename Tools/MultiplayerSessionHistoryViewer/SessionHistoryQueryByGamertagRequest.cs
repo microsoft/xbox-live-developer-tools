@@ -1,9 +1,6 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="SessionHistoryQueryByGamertagRequest.cs" company="Microsoft">
-//     Copyright (c) Microsoft. All rights reserved.
-//     Internal use only.
-// </copyright>
-//-----------------------------------------------------------------------
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 
 using System;
 using System.Runtime.Serialization;

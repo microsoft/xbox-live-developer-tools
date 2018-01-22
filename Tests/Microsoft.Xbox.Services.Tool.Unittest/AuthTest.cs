@@ -1,17 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Newtonsoft.Json;
-using RichardSzalay.MockHttp;
-using System;
-using System.IO;
-using System.Net;
-using System.Threading.Tasks;
+using System.Net.Http;
 
-namespace Microsoft.Xbox.Services.Tool.Unittest
+namespace Microsoft.Xbox.Services.DevTool.Unittest
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.Xbox.Services.DevTool.Authentication;
+    using Microsoft.Xbox.Services.DevTool.Common;
+    using Moq;
+    using Newtonsoft.Json;
+    using RichardSzalay.MockHttp;
+    using System;
+    using System.IO;
+    using System.Net;
+    using System.Threading.Tasks;
+
     [TestClass]
     public class AuthTest
     {
@@ -25,9 +29,11 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
         private const string DefaultAccountType = "accounttype";
         private const string DefaultMoniker = "moniker";
 
+        private Mock<IAuthContext> authMock;
+
         public void ComposeETokenPayload(TimeSpan expireTime, string scid, string sandbox, out string request, out string response)
         {
-            request = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandbox));
+            request = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, (String.IsNullOrEmpty(sandbox)? null : new string[]{ sandbox })));
 
             var utcNowString = DateTime.UtcNow.ToString();
             var expiredTimeString = (DateTime.UtcNow + expireTime).ToString();
@@ -35,9 +41,9 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             response = $"{{'IssueInstant':'{utcNowString}','NotAfter':'{expiredTimeString}','Token':'{DefaultEToken+scid+sandbox}','DisplayClaims':{{'eid':'{DefaultId}','enm':'{DefaultName}','eai':'{DefaultAccountId}','eam':'{DefaultMoniker}','eat':'{DefaultAccountType}'}}}}";
         }
 
-        private static void SetupMockAad()
+        private void SetupMockAad()
         {
-            var authMock = new Mock<IAuthContext>();
+            this.authMock = new Mock<IAuthContext>();
             authMock.Setup(o => o.AcquireTokenSilentAsync())
                 .ReturnsAsync("aadtoken");
 
@@ -47,9 +53,13 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             authMock.Setup(o => o.UserName).Returns(string.Empty);
             authMock.Setup(o => o.AccountSource).Returns(DevAccountSource.WindowsDevCenter);
             authMock.Setup(o => o.XtdsEndpoint).Returns(DefaultXtdsEndpoint);
-
-            Auth.Client = new AuthClient {AuthContext = authMock.Object};
         }
+
+        async Task<DevAccount> SignInAsync(DevAccountSource accountSource, string userName)
+        {
+            return await Authentication.SignInAsync(accountSource, userName, this.authMock.Object);
+        }
+
 
         [TestInitialize]
         public void TestInit()
@@ -61,12 +71,8 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
         [TestCleanup]
         public void TestCleanup()
         {
-            Auth.Client = null;
             TestHook.MockHttpHandler = null;
-            if (Directory.Exists(ClientSettings.Singleton.CacheFolder))
-            {
-                Directory.Delete(ClientSettings.Singleton.CacheFolder, true);
-            }
+            Authentication.SignOut();
         }
 
         [TestMethod]
@@ -90,7 +96,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignInAsync();
+            var devAccount = await this.SignInAsync(DevAccountSource.WindowsDevCenter, string.Empty);
             Assert.AreEqual(DefaultId, devAccount.Id);
             Assert.AreEqual(DefaultName, devAccount.Name);
             Assert.AreEqual(DefaultAccountId, devAccount.AccountId);
@@ -98,16 +104,14 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             Assert.AreEqual(DefaultAccountType, devAccount.AccountType);
             Assert.AreEqual(DevAccountSource.WindowsDevCenter, devAccount.AccountSource);
 
-            var token2 = await Auth.GetETokenSilentlyAsync(DefaultScid, DefaultSandbox);
-            Assert.AreEqual(token2, Auth.PrepareForAuthHeader(DefaultEToken+DefaultScid+DefaultSandbox));
+            var token2 = await Authentication.GetDevTokenSlientlyAsync(DefaultScid, DefaultSandbox);
+            Assert.AreEqual(token2, Authentication.PrepareForAuthHeader(DefaultEToken+DefaultScid+DefaultSandbox));
         }
 
 
         [TestMethod]
         public async Task GetETokenFailTest()
         {
-            SetupMockAad();
-
             var mockHttp = new MockHttpMessageHandler();
 
             ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out string defaultRequest,
@@ -121,12 +125,13 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             try
             {
-                await Auth.SignInAsync();
+                await this.SignInAsync(DevAccountSource.WindowsDevCenter, string.Empty);
             }
-            catch (XboxLiveException ex)
+            catch (HttpRequestException ex)
             {
                 Assert.IsFalse(string.IsNullOrEmpty(ex.Message));
-                Assert.AreEqual(ex.Response.StatusCode, HttpStatusCode.BadRequest);
+                Assert.IsTrue(ex.Message.Contains("400"));
+                //Assert.AreEqual(ex.Response.StatusCode, HttpStatusCode.BadRequest);
 
                 return;
             }
@@ -137,8 +142,6 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
         [TestMethod]
         public async Task TokenRefreshTest()
         {
-            SetupMockAad();
-
             var mockHttp = new MockHttpMessageHandler();
 
             ComposeETokenPayload(TimeSpan.Zero, string.Empty, string.Empty, out string defaultRequest,
@@ -149,13 +152,9 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
                 .WithContent(defaultRequest)
                 .Respond("application/json", defaultXdtsResponse);
 
-            mockHttp.Expect(DefaultXtdsEndpoint)
-                .WithContent(defaultRequest)
-                .Respond("application/json", defaultXdtsResponse);
-
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignInAsync();
+            var devAccount = await this.SignInAsync(DevAccountSource.WindowsDevCenter, string.Empty);
 
             Assert.AreEqual(devAccount.Id, DefaultId);
             Assert.AreEqual(devAccount.Name, DefaultName);
@@ -164,8 +163,12 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
             Assert.AreEqual(devAccount.AccountSource, DevAccountSource.WindowsDevCenter);
 
-            var token = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
-            Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
+            mockHttp.Expect(DefaultXtdsEndpoint)
+                .WithContent(defaultRequest)
+                .Respond("application/json", defaultXdtsResponse);
+
+            var token = await Authentication.GetDevTokenSlientlyAsync(string.Empty, string.Empty);
+            Assert.AreEqual(token, Authentication.PrepareForAuthHeader(DefaultEToken));
 
             mockHttp.VerifyNoOutstandingExpectation();
 
@@ -174,8 +177,6 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
         [TestMethod]
         public async Task TokenCacheTest()
         {
-            SetupMockAad();
-
             var mockHttp = new MockHttpMessageHandler();
 
             ComposeETokenPayload(new TimeSpan(1,0,0), string.Empty, string.Empty, out string defaultRequest,
@@ -188,7 +189,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var devAccount = await Auth.SignInAsync();
+            var devAccount = await this.SignInAsync(DevAccountSource.WindowsDevCenter, string.Empty);
 
             Assert.AreEqual(devAccount.Id, DefaultId);
             Assert.AreEqual(devAccount.Name, DefaultName);
@@ -197,8 +198,8 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
             Assert.AreEqual(devAccount.AccountSource, DevAccountSource.WindowsDevCenter);
 
-            var token = await Auth.GetETokenSilentlyAsync(string.Empty, string.Empty);
-            Assert.AreEqual(token, Auth.PrepareForAuthHeader(DefaultEToken));
+            var token = await Authentication.GetDevTokenSlientlyAsync(string.Empty, string.Empty);
+            Assert.AreEqual(token, Authentication.PrepareForAuthHeader(DefaultEToken));
 
             mockHttp.VerifyNoOutstandingExpectation();
 

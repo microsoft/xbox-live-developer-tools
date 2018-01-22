@@ -1,20 +1,22 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.Xbox.Services.Tool;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using RichardSzalay.MockHttp;
-using System.IO;
-using System.Net;
-
-namespace Microsoft.Xbox.Services.Tool.Unittest
+namespace Microsoft.Xbox.Services.DevTool.Unittest
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.Xbox.Services.DevTool.Authentication;
+    using Microsoft.Xbox.Services.DevTool.Common;
+    using Microsoft.Xbox.Services.DevTool.TitleStorage;
+    using Moq;
+    using RichardSzalay.MockHttp;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+
     [TestClass]
     public class GlobalStorageTest
     {
@@ -47,10 +49,10 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
         private void SetUpMockAuth()
         {
             var mockAuth = new Mock<AuthClient>();
-            mockAuth.Setup(o => o.GetETokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
-                .ReturnsAsync((string scid, string sandbox, bool refresh) => DefaultEtoken + scid + sandbox);
-            Auth.Client = mockAuth.Object;
-            Auth.SetAuthInfo(DefaultUserName, DevAccountSource.WindowsDevCenter);
+            mockAuth.Setup(o => o.GetETokenAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
+                .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => DefaultEtoken + scid + String.Join(" ", sandboxes));
+            Authentication.Client = mockAuth.Object;
+            Authentication.SetAuthInfo(DevAccountSource.WindowsDevCenter, DefaultUserName);
         }
 
         private string ExpectedToken(string scid, string sandbox)
@@ -107,7 +109,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var metadataResult = await TitleStorage.GetGlobalStorageBlobMetaData(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, DefaultMaxItems, DefaultSkipItems );
+            var metadataResult = await TitleStorage.GetGlobalStorageBlobMetaDataAsync(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, DefaultMaxItems, DefaultSkipItems );
             Assert.AreEqual((uint)8, metadataResult.TotalItems);
             Assert.AreEqual(6, metadataResult.Items.Count());
             Assert.IsTrue(metadataResult.HasNext);
@@ -139,7 +141,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var metadataResult = await TitleStorage.GetGlobalStorageBlobMetaData(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, DefaultMaxItems, DefaultSkipItems);
+            var metadataResult = await TitleStorage.GetGlobalStorageBlobMetaDataAsync(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, DefaultMaxItems, DefaultSkipItems);
             Assert.AreEqual((uint)0, metadataResult.TotalItems);
             Assert.AreEqual(0, metadataResult.Items.Count());
             Assert.IsFalse(metadataResult.HasNext);
@@ -162,7 +164,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             TestHook.MockHttpHandler = mockHttp;
 
             TitleStorageBlobType fileType = (TitleStorageBlobType)Enum.Parse(typeof(TitleStorageBlobType), DefaultFileType, true);
-            await TitleStorage.UploadGlobalStorageBlob(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, fileType, this.defaultBytes);
+            await TitleStorage.UploadGlobalStorageBlobAsync(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, fileType, this.defaultBytes);
         }
 
 
@@ -184,7 +186,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             TestHook.MockHttpHandler = mockHttp;
 
             TitleStorageBlobType fileType = (TitleStorageBlobType)Enum.Parse(typeof(TitleStorageBlobType), DefaultFileType, true);
-            byte[] bytes = await TitleStorage.DownloadGlobalStorageBlob(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, fileType);
+            byte[] bytes = await TitleStorage.DownloadGlobalStorageBlobAsync(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, fileType);
 
             Assert.AreEqual(bytes.Length, this.defaultBytes.Length);
 
@@ -207,7 +209,7 @@ namespace Microsoft.Xbox.Services.Tool.Unittest
             TestHook.MockHttpHandler = mockHttp;
 
             TitleStorageBlobType fileType = (TitleStorageBlobType)Enum.Parse(typeof(TitleStorageBlobType), DefaultFileType, true);
-            await TitleStorage.DeleteGlobalStorageBlob(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, fileType);
+            await TitleStorage.DeleteGlobalStorageBlobAsync(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, fileType);
         }
     }
 }

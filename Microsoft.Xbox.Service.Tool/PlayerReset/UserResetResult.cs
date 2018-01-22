@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.PlayerReset
 {
     using System.Collections.Generic;
 
@@ -13,7 +13,7 @@ namespace Microsoft.Xbox.Services.Tool
         /// <summary>
         /// The overall status of resetting job
         /// </summary>
-        public ResetOverallStatus OverallStatus { get; internal set; } = ResetOverallStatus.Unknown;
+        public ResetOverallResult OverallResult { get; internal set; } = ResetOverallResult.Unknown;
 
         /// <summary>
         /// A collection of player reset provider status. 

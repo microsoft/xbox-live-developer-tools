@@ -2,19 +2,21 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.Authentication
 {
     using Microsoft.Identity.Client;
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using Newtonsoft.Json;
     using System.IO;
     using System.Threading.Tasks;
+    using Microsoft.Xbox.Services.DevTool.Common;
 
     /// <summary>
     /// Class for XboxLive developer account authentication.
     /// </summary>
-    public class Auth
+    public class Authentication
     {
         private static object initLock = new object();
         private const string CacheFile = "lastUser";
@@ -40,7 +42,7 @@ namespace Microsoft.Xbox.Services.Tool
 
                 if (result!= null)
                 {
-                    Auth.SetAuthInfo(result.Name, result.AccountSource);
+                    Authentication.SetAuthInfo(result.AccountSource, result.Name);
                 }
             }
             catch (Exception e)
@@ -51,72 +53,58 @@ namespace Microsoft.Xbox.Services.Tool
         }
 
         /// <summary>
-        /// Set user info for authentication. 
+        /// Attempt to fetch a developer eToken without triggering any UI.
         /// </summary>
-        /// <param name="accountSource">The account source where the developer account was registered.</param>
-        /// <param name="userName">The user name of the account, optional.</param>
-        public static void SetAuthInfo(string userName, DevAccountSource accountSource)
+        /// <param name="serviceConfigurationId">The target service configuration ID (SCID) for the eToken, when empty, the token won't have access to a particular service configure</param>
+        /// <param name="sandbox">The target sandbox for the eToken, when empty, the token won't have any access to a particular sandbox</param>
+        /// <returns>Developer eToken for specific serviceConfigurationId and sandbox</returns>
+        public static async Task<string> GetDevTokenSlientlyAsync(string serviceConfigurationId, string sandbox)
         {
-            lock (initLock)
-            {
-                Client.AuthContext = CretaeAuthContext(userName, accountSource);
-            }
+            return await GetDevTokenSlientlyAsync(serviceConfigurationId, string.IsNullOrEmpty(sandbox) ? null : new string[] { sandbox });
         }
 
         /// <summary>
         /// Attempt to fetch a developer eToken without triggering any UI.
         /// </summary>
-        /// <param name="serviceConfigurationId">The target service configuration ID (SCID) for the eToken, could be empty</param>
-        /// <param name="sandbox">The target sandbox id for the eToken, could be empty</param>
+        /// <param name="serviceConfigurationId">The target service configuration ID (SCID) for the eToken,  when empty, the token won't have access to a particular service configure</param>
+        /// <param name="sandboxes">The target sandbox list for the eToken, when empty, the token won't have any access to a particular sandbox</param>
         /// <returns>Developer eToken for specific serviceConfigurationId and sandbox</returns>
-        public static async Task<string> GetETokenSilentlyAsync(string serviceConfigurationId, string sandbox)
+        public static async Task<string> GetDevTokenSlientlyAsync(string serviceConfigurationId, IEnumerable<string> sandboxes)
         {
             if (Client.AuthContext == null)
             {
-                throw new XboxLiveException(XboxLiveErrorStatus.AuthenticationFailure, "User Info is not found, call Auth.SetAuthInfo or LoadLastSignedInUser first.");
+                throw new InvalidOperationException("User Info is not found, call Auth.SignInAsync or Auth.LoadLastSignedInUser first.");
             }
 
-            try
-            {
-                string etoken = await Client.GetETokenAsync(serviceConfigurationId, sandbox, false);
-                return PrepareForAuthHeader(etoken);
-            }
-            catch (AdalException exception)
-            {
-                throw new XboxLiveException(exception.Message, XboxLiveErrorStatus.AuthenticationFailure, exception);
-            }
-            catch (MsalException exception)
-            {
-                throw new XboxLiveException(exception.Message, XboxLiveErrorStatus.AuthenticationFailure, exception);
-            }
+            string etoken = await Client.GetETokenAsync(serviceConfigurationId, sandboxes, false);
+            return PrepareForAuthHeader(etoken);
         }
 
         /// <summary>
         /// Attempt to sign in developer account, UI will be triggered if necessary 
         /// </summary>
+        /// <param name="accountSource">The account source where the developer account was registered.</param>
+        /// <param name="userName">The user name of the account, optional.</param>
         /// <returns>DevAccount object contains developer account info.</returns>
-        public static async Task<DevAccount> SignInAsync()
+        public static async Task<DevAccount> SignInAsync(DevAccountSource accountSource, string userName)
         {
-            if (Client.AuthContext == null)
-            {
-                throw new XboxLiveException(XboxLiveErrorStatus.AuthenticationFailure, "User Info is not found, call Auth.SetAuthInfo first.");
-            }
+            SetAuthInfo(accountSource, userName);
 
-            try
-            {
-                DevAccount devAccount = await Client.SignInAsync();
-                SaveLastSignedInUser(devAccount);
+            DevAccount devAccount = await Client.SignInAsync();
+            SaveLastSignedInUser(devAccount);
 
-                return devAccount;
-            }
-            catch (AdalException exception)
-            {
-                throw new XboxLiveException(exception.Message, XboxLiveErrorStatus.AuthenticationFailure, exception);
-            }
-            catch (MsalException exception)
-            {
-                throw new XboxLiveException(exception.Message, XboxLiveErrorStatus.AuthenticationFailure, exception);
-            }
+            return devAccount;
+        }
+
+        // Test hook
+        internal static async Task<DevAccount> SignInAsync(DevAccountSource accountSource, string userName, IAuthContext authContext)
+        {
+            Client.AuthContext = authContext;
+
+            DevAccount devAccount = await Client.SignInAsync();
+            SaveLastSignedInUser(devAccount);
+
+            return devAccount;
         }
 
         /// <summary>
@@ -132,8 +120,16 @@ namespace Microsoft.Xbox.Services.Tool
             }
         }
 
-        private Auth()
+        private Authentication()
         {
+        }
+
+        internal static void SetAuthInfo(DevAccountSource accountSource, string userName)
+        {
+            lock (initLock)
+            {
+                Client.AuthContext = CretaeAuthContext(accountSource, userName);
+            }
         }
 
         private static void SaveLastSignedInUser(DevAccount account)
@@ -149,7 +145,7 @@ namespace Microsoft.Xbox.Services.Tool
             }
         }
 
-        private static IAuthContext CretaeAuthContext(string userName, DevAccountSource accountSource)
+        private static IAuthContext CretaeAuthContext(DevAccountSource accountSource, string userName)
         {
             switch (accountSource)
             {
@@ -158,7 +154,7 @@ namespace Microsoft.Xbox.Services.Tool
                 case DevAccountSource.XboxDeveloperPortal:
                     return new MsalAuthContext(userName);
                 default:
-                    throw new XboxLiveException("Unsupported developer type");
+                    throw new ArgumentException("Unsupported developer type");
             }
         }
 

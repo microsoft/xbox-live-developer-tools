@@ -5,15 +5,15 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Microsoft.Xbox.Services.Tool")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Microsoft.Xbox.Services.DevTool")]
+[assembly: AssemblyDescription("Microsoft Xbox Live Developer Tooling API")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft Corporation")]
-[assembly: AssemblyProduct("Microsoft.Xbox.Services.Tool")]
+[assembly: AssemblyProduct("Microsoft.Xbox.Services.DevTool")]
 [assembly: AssemblyCopyright("Copyright (c) Microsoft Corporation. All rights reserved")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: InternalsVisibleTo("Microsoft.Xbox.Services.Tool.UnitTest")]
+[assembly: InternalsVisibleTo("Microsoft.Xbox.Services.DevTool.UnitTest")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 

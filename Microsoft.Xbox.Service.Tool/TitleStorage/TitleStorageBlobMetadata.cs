@@ -3,7 +3,7 @@
 
 
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.TitleStorage
 {
     using System;
 

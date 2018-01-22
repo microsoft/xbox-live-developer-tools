@@ -1,11 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.Authentication
 {
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using System;
     using System.Threading.Tasks;
+    using Microsoft.Xbox.Services.DevTool.Common;
 
     internal class AdalAuthContext : IAuthContext
     {

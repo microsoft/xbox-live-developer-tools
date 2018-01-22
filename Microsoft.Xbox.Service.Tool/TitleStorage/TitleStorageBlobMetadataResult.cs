@@ -1,12 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Linq;
 
-using Newtonsoft.Json.Serialization;
-
-namespace Microsoft.Xbox.Services.Tool
+namespace Microsoft.Xbox.Services.DevTool.TitleStorage
 {
-    using Newtonsoft.Json;
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
@@ -18,7 +16,7 @@ namespace Microsoft.Xbox.Services.Tool
         /// <summary>
         /// Collection of TitleStorageBlobMetadata objects returned by a service request.
         /// </summary>
-        public IEnumerable<TitleStorageBlobMetadata> Items { get; internal set; } = new List<TitleStorageBlobMetadata>();
+        public IEnumerable<TitleStorageBlobMetadata> Items { get; internal set; } = Enumerable.Empty<TitleStorageBlobMetadata>();
 
         /// <summary>
         /// If current result collection has next page.
@@ -39,7 +37,7 @@ namespace Microsoft.Xbox.Services.Tool
                 return new TitleStorageBlobMetadataResult();
             }
 
-            return await TitleStorage.GetGlobalStorageBlobMetaData(this.ServiceConfigurationId, this.Sandbox, this.Path, maxItems, 0, this.ContinuationToken);
+            return await TitleStorage.GetGlobalStorageBlobMetaDataAsync(this.ServiceConfigurationId, this.Sandbox, this.Path, maxItems, 0, this.ContinuationToken);
         }
 
         /// <summary>
