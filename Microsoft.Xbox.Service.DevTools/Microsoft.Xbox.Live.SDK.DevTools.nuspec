@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>https://aka.ms/xblsdklicense</licenseUrl>
+    <projectUrl>https://aka.ms/xblsdkgetaccess</projectUrl>
+    <iconUrl>http://www.xbox.com/shell/images/shell/XboxLogo.png</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>$description$</description>
+    <copyright>© Microsoft Corporation. All rights reserved./copyright>
+    <tags>Microsoft Xbox Live Service XSAPI Tool</tags>
+  </metadata>
+</package>

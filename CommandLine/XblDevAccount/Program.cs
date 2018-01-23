@@ -2,11 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 
+using System.Net.Http;
+
 namespace XblDevAccount
 {
     using CommandLine;
     using CommandLine.Text;
-    using Microsoft.Xbox.Services.Tool;
+    using Microsoft.Xbox.Services.DevTools.Authentication;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -114,16 +116,15 @@ namespace XblDevAccount
         {
             try
             {
-                Auth.SetAuthInfo(signInOptions.UserName, (DevAccountSource) signInOptions.AccountSource);
-                var devAccount = await Auth.SignInAsync();
+                var devAccount = await Authentication.SignInAsync((DevAccountSource)signInOptions.AccountSource, signInOptions.UserName);
                 Console.WriteLine($"Developer account {devAccount.Name} has successfully signed in. ");
                 DisplayDevAccount(devAccount, "\t");
                 return 0;
             }
-            catch (XboxLiveException ex)
+            catch (HttpRequestException ex)
             {
                 Console.WriteLine("Error: signin failed");
-                if (ex.Response != null && ex.Response.StatusCode == HttpStatusCode.Unauthorized)
+                if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
                 {
                     Console.WriteLine("Unable to authorize this account with XboxLive service, please check your account.");
                 }
@@ -146,10 +147,10 @@ namespace XblDevAccount
 
         private static int OnSignOut()
         {
-            DevAccount account = Auth.LoadLastSignedInUser();
+            DevAccount account = Authentication.LoadLastSignedInUser();
             if (account != null)
             {
-                Auth.SignOut();
+                Authentication.SignOut();
                 Console.WriteLine($"Developer account {account.Name} from { account.AccountSource} has successfully signed out. ");
                 return 0;
             }
@@ -162,7 +163,7 @@ namespace XblDevAccount
 
         private static int  OnShow()
         {
-            DevAccount account = Auth.LoadLastSignedInUser();
+            DevAccount account = Authentication.LoadLastSignedInUser();
             if (account != null)
             {
                 Console.WriteLine($"Developer account {account.Name} from { account.AccountSource} is currently signed in. ");

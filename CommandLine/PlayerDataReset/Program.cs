@@ -3,13 +3,13 @@
 
 using CommandLine;
 using CommandLine.Text;
-using Microsoft.Win32;
+using Microsoft.Xbox.Services.DevTools.Authentication;
+using Microsoft.Xbox.Services.DevTools.PlayerReset;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
+using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.Xbox.Services.Tool;
 
 namespace PlayerDataReset
 {
@@ -82,7 +82,7 @@ namespace PlayerDataReset
                 return -1;
             }
 
-            DevAccount account = Auth.LoadLastSignedInUser();
+            DevAccount account = Authentication.LoadLastSignedInUser();
             if (account == null)
             {
                 Console.Error.WriteLine("Didn't found dev sign in info, please use \"XblDevAccount.exe signin\" to initiate.");
@@ -97,16 +97,16 @@ namespace PlayerDataReset
                 UserResetResult result = await PlayerReset.ResetPlayerDataAsync(options.ServiceConfigurationId,
                     options.Sandbox, options.XboxUserId);
 
-                switch (result.OverallStatus)
+                switch (result.OverallResult)
                 {
-                    case ResetOverallStatus.Succeeded:
+                    case ResetOverallResult.Succeeded:
                         Console.WriteLine("Resetting has completed successfully.");
                         return 0;
-                    case ResetOverallStatus.CompletedError:
+                    case ResetOverallResult.CompletedError:
                         Console.WriteLine("Resetting has completed with some error:");
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
-                    case ResetOverallStatus.Timeout:
+                    case ResetOverallResult.Timeout:
                         Console.WriteLine("Resetting has timed out:");
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
@@ -115,27 +115,19 @@ namespace PlayerDataReset
                         return -1;
                 }
             }
-            catch (XboxLiveException ex)
+            catch (HttpRequestException ex)
             {
                 Console.WriteLine("Error: player data reset failed");
-                if (ex.Response != null)
+
+                if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
                 {
-                    switch (ex.Response.StatusCode)
-                    {
-                        case HttpStatusCode.Unauthorized:
-                            Console.WriteLine(
-                                $"Unable to authorize the account with XboxLive service with scid : {options.ServiceConfigurationId} and sandbox : {options.Sandbox}, please contact your administrator.");
-                            break;
-
-                        case HttpStatusCode.Forbidden:
-                            Console.WriteLine(
-                                "Your account doesn't have access to perform the operation, please contact your administrator.");
-                            break;
-
-                        default:
-                            Console.WriteLine(ex.Message);
-                            break;
-                    }
+                    Console.WriteLine(
+                        $"Unable to authorize the account with XboxLive service with scid : {options.ServiceConfigurationId} and sandbox : {options.Sandbox}, please contact your administrator.");
+                }
+                else if (ex.Message.Contains(Convert.ToString((int) HttpStatusCode.Forbidden)))
+                {
+                    Console.WriteLine(
+                        "Your account doesn't have access to perform the operation, please contact your administrator.");
                 }
                 else
                 {
