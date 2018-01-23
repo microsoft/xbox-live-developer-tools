@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Xbox.Services.DevTool", "Microsoft.Xbox.Service.Tool\Microsoft.Xbox.Services.DevTool.csproj", "{2442B61C-1CD6-4556-BF98-56B73E4106DE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Xbox.Services.DevTools", "Microsoft.Xbox.Service.DevTools\Microsoft.Xbox.Services.DevTools.csproj", "{2442B61C-1CD6-4556-BF98-56B73E4106DE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{703BDA01-0475-42AB-BC4A-866CECF44652}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Xbox.Services.DevTool.Unittest", "tests\Microsoft.Xbox.Services.Tool.Unittest\Microsoft.Xbox.Services.DevTool.Unittest.csproj", "{80FB58E0-D8FE-4F00-BF84-61370009AC94}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Xbox.Services.DevTools.Unittest", "tests\Microsoft.Xbox.Services.DevTools.Unittest\Microsoft.Xbox.Services.DevTools.Unittest.csproj", "{80FB58E0-D8FE-4F00-BF84-61370009AC94}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CommandLine", "CommandLine", "{82A7D026-105D-4E30-BFE4-765C9EF223A8}"
 EndProject

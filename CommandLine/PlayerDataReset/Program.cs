@@ -3,9 +3,8 @@
 
 using CommandLine;
 using CommandLine.Text;
-using Microsoft.Xbox.Services.DevTool.Authentication;
-using Microsoft.Xbox.Services.DevTool.Common;
-using Microsoft.Xbox.Services.DevTool.PlayerReset;
+using Microsoft.Xbox.Services.DevTools.Authentication;
+using Microsoft.Xbox.Services.DevTools.PlayerReset;
 using System;
 using System.Collections.Generic;
 using System.Net;

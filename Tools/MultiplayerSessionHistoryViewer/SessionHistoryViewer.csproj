@@ -117,9 +117,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Microsoft.Xbox.Service.Tool\Microsoft.Xbox.Services.DevTool.csproj">
+    <ProjectReference Include="..\..\Microsoft.Xbox.Service.DevTools\Microsoft.Xbox.Services.DevTools.csproj">
       <Project>{2442b61c-1cd6-4556-bf98-56b73e4106de}</Project>
-      <Name>Microsoft.Xbox.Services.Tool</Name>
+      <Name>Microsoft.Xbox.Services.DevTools</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

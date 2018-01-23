@@ -18,8 +18,7 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using DiffPlex.Model;
-using Microsoft.Xbox.Services.DevTool.Authentication;
-using Microsoft.Xbox.Services.DevTool.Common;
+using Microsoft.Xbox.Services.DevTools.Authentication;
 using Newtonsoft.Json;
 
 using SessionHistoryViewer.DataContracts;
