@@ -33,12 +33,14 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
-                var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "/global/scids/" + serviceConfigurationId));
+                HttpResponseMessage response = (await request.SendAsync(() =>
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "/global/scids/" + serviceConfigurationId));
+                    requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
-                string eToken = await Authentication.GetDevTokenSlientlyAsync(serviceConfigurationId, sandbox);
-                requestMsg.Headers.Add("x-xbl-contract-version", "1");
+                    return requestMsg;
 
-                HttpResponseMessage response = (await request.SendAsync(requestMsg)).Response;
+                })).Response;
                 response.EnsureSuccessStatusCode();
 
                 string content = await response.Content.ReadAsStringAsync();
@@ -78,14 +80,14 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
-                var requestMsg = new HttpRequestMessage(HttpMethod.Put, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
+                var response = await request.SendAsync(()=>
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Put, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
+                    requestMsg.Headers.Add("x-xbl-contract-version", "1");
+                    requestMsg.Content = new ByteArrayContent(blobBytes);
 
-                string eToken = await Authentication.GetDevTokenSlientlyAsync(serviceConfigurationId, sandbox);
-                requestMsg.Headers.Add("x-xbl-contract-version", "1");
-
-                requestMsg.Content = new ByteArrayContent(blobBytes);
-
-                var response = await request.SendAsync(requestMsg);
+                    return requestMsg;
+                });
 
                 Log.WriteLog($"UploadGlobalStorageBlobAsync for scid: {serviceConfigurationId}, sandbox: {sandbox}");
             }
@@ -103,12 +105,13 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
-                var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
+                HttpResponseMessage response = (await request.SendAsync(()=> 
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
+                    requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
-                string eToken = await Authentication.GetDevTokenSlientlyAsync(serviceConfigurationId, sandbox);
-                requestMsg.Headers.Add("x-xbl-contract-version", "1");
-
-                HttpResponseMessage response = (await request.SendAsync(requestMsg)).Response;
+                    return requestMsg;
+                })).Response;
                 response.EnsureSuccessStatusCode();
 
                 Log.WriteLog($"DownloadGlobalStorageBlobAsync for scid: {serviceConfigurationId}, sandbox: {sandbox}");
@@ -129,12 +132,13 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
-                var requestMsg = new HttpRequestMessage(HttpMethod.Delete, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
+                var response = await request.SendAsync(()=>
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Delete, new Uri(baseUri, $"/global/scids/{serviceConfigurationId}/data/{pathAndFileName},{blobType.ToString().ToLower()}"));
+                    requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
-                string eToken = await Authentication.GetDevTokenSlientlyAsync(serviceConfigurationId, sandbox);
-                requestMsg.Headers.Add("x-xbl-contract-version", "1");
-
-                var response = await request.SendAsync(requestMsg);
+                    return requestMsg;
+                });
 
                 Log.WriteLog($"DeleteGlobalStorageBlobAsync for scid: {serviceConfigurationId}, sandbox: {sandbox}");
             }
@@ -157,12 +161,13 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 
                 AppendPagingInfo(ref uriBuilder, maxItems, skipItems, continuationToken);
 
-                var requestMsg = new HttpRequestMessage(HttpMethod.Get, uriBuilder.Uri);
+                HttpResponseMessage response = (await request.SendAsync(()=>
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Get, uriBuilder.Uri);
+                    requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
-                string eToken = await Authentication.GetDevTokenSlientlyAsync(serviceConfigurationId, sandbox);
-                requestMsg.Headers.Add("x-xbl-contract-version", "1");
-
-                HttpResponseMessage response = (await request.SendAsync(requestMsg)).Response;
+                    return requestMsg;
+                })).Response;
 
                 // Return empty list on 404
                 if (response.StatusCode == HttpStatusCode.NotFound)

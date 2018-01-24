@@ -30,11 +30,12 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         }
 
         // Take a Func<HttpRequestMessage> so that HttpRequestMessage will be construct in caller scope.
-        public async Task<XboxLiveHttpResponse> SendAsync(HttpRequestMessage request)
+        // It is needed for retry as HttpRequestMessage will be disposed after send, cannot be reused.
+        public async Task<XboxLiveHttpResponse> SendAsync(Func<HttpRequestMessage> requestGenerator)
         {
             var xblResposne = new XboxLiveHttpResponse();
 
-            HttpResponseMessage response = await this.SendInternalAsync(request, false);
+            HttpResponseMessage response = await this.SendInternalAsync(requestGenerator(), false);
 
             if (response != null)
             {
@@ -44,7 +45,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             if (response.StatusCode == HttpStatusCode.Forbidden)
             {
                 // Force refresh the token if gets 403, then resend the request.
-                response = await this.SendInternalAsync(request, true);
+                response = await this.SendInternalAsync(requestGenerator(), true);
             }
 
             xblResposne.Response = response;
