@@ -129,7 +129,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             lock (initLock)
             {
-                Client.AuthContext = CretaeAuthContext(accountSource, userName);
+                Client.AuthContext = CreateAuthContext(accountSource, userName);
             }
         }
 
@@ -146,7 +146,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
         }
 
-        private static IAuthContext CretaeAuthContext(DevAccountSource accountSource, string userName)
+        private static IAuthContext CreateAuthContext(DevAccountSource accountSource, string userName)
         {
             switch (accountSource)
             {
