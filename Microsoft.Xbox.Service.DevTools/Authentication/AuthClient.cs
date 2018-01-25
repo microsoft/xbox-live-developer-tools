@@ -74,27 +74,32 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         protected async Task<XdtsTokenResponse> FetchXdtsToken(string aadToken, string scid, IEnumerable<string> sandboxes)
         {
-            var tokenRequest = new XboxLiveHttpRequest(false, null, null);
-            var requestMsg = new HttpRequestMessage(HttpMethod.Post, this.AuthContext.XtdsEndpoint);
+            using (var tokenRequest = new XboxLiveHttpRequest(false, null, null))
+            {
+                HttpResponseMessage response = (await tokenRequest.SendAsync(() =>
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Post, this.AuthContext.XtdsEndpoint);
 
-            var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
-            requestMsg.Content = new StringContent(requestContent);
+                    var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
+                    requestMsg.Content = new StringContent(requestContent);
 
-            // Add the aadToken header without validation as the framework
-            // does not like the values returned for aadTokens for MSA accounts.
-            requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken);
+                    // Add the aadToken header without validation as the framework
+                    // does not like the values returned for aadTokens for MSA accounts.
+                    requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken);
 
-            HttpResponseMessage response = (await tokenRequest.SendAsync(requestMsg)).Response;
-            response.EnsureSuccessStatusCode();
-            Log.WriteLog("Fetch xdts Token succeeded.");
+                    return requestMsg;
+                })).Response;
+                response.EnsureSuccessStatusCode();
+                Log.WriteLog("Fetch xdts Token succeeded.");
 
-            string content = await response.Content.ReadAsStringAsync();
-            var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(content);
-            
-            string key = XdtsTokenCache.GetCacheKey(AuthContext.UserName, AuthContext.AccountSource, scid, sandboxes);
-            this.ETokenCache.Value.UpdateToken(key, token);
+                string content = await response.Content.ReadAsStringAsync();
+                var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(content);
 
-            return token;
+                string key = XdtsTokenCache.GetCacheKey(AuthContext.UserName, AuthContext.AccountSource, scid, sandboxes);
+                this.ETokenCache.Value.UpdateToken(key, token);
+
+                return token;
+            }
         }
     }
 }

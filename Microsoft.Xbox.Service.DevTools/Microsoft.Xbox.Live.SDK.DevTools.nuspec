@@ -11,7 +11,7 @@
     <iconUrl>http://www.xbox.com/shell/images/shell/XboxLogo.png</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>$description$</description>
-    <copyright>© Microsoft Corporation. All rights reserved./copyright>
+    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>Microsoft Xbox Live Service XSAPI Tool</tags>
   </metadata>
 </package>

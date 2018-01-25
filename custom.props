@@ -14,9 +14,9 @@
   </Choose>
 
   <PropertyGroup Label="Version">
-    <VersionMajor>1</VersionMajor>
-    <VersionMinor>0</VersionMinor>
-    <VersionInfoProductName>Xbox Live Tools</VersionInfoProductName>
+    <VersionMajor>2018</VersionMajor>
+    <VersionMinor>2</VersionMinor>
+    <VersionInfoProductName>Xbox Live Dev Tools</VersionInfoProductName>
   </PropertyGroup>
 
   <PropertyGroup>

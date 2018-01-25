@@ -91,6 +91,6 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         public string UDCAuthEndpoint{ get; private set; } = "https://developer.microsoft.com/xdts/authorize";
 
         public string MsalXboxLiveClientId = "b1eab458-325b-45a5-9692-ad6079c1eca8";
-        public string XmintAuthEndpoint { get; private set; } = "https://xmint.xboxlive.com/adfs/authorize?rp=https%3A%2F%2Fxdp.dnet.xboxlive.com%2F";
+        public string XmintAuthEndpoint { get; private set; } = "https://xmint.xboxlive.com/adfs/authorize?rp=https%3A%2F%2Fxdp.xboxlive.com%2F";
     }
 }

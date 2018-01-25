@@ -108,14 +108,15 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 
             using (var submitRequest = new XboxLiveHttpRequest(true, scid, sandbox))
             {
-                var requestMsg = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "submitJob"));
+                var response = await submitRequest.SendAsync(()=> 
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "submitJob"));
+                    var requestContent = JsonConvert.SerializeObject(new JobSubmitReqeust(scid, xuid));
+                    requestMsg.Content = new StringContent(requestContent);
+                    requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
-                var requestContent = JsonConvert.SerializeObject(new JobSubmitReqeust(scid, xuid));
-                requestMsg.Content = new StringContent(requestContent);
-
-                requestMsg.Headers.Add("x-xbl-contract-version", "100");
-
-                var response = await submitRequest.SendAsync(requestMsg);
+                    return requestMsg;
+                });
 
                 response.Response.EnsureSuccessStatusCode();
 
@@ -134,16 +135,17 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         {
             using (var submitRequest = new XboxLiveHttpRequest(true, userResetJob.Scid, userResetJob.Sandbox))
             {
-                var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "jobs/" + userResetJob.JobId));
-                if (!string.IsNullOrEmpty(userResetJob.CorrelationId))
+                XboxLiveHttpResponse xblResponse = await submitRequest.SendAsync(()=>
                 {
-                    requestMsg.Headers.Add("X-XblCorrelationId", userResetJob.CorrelationId);
-                }
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "jobs/" + userResetJob.JobId));
+                    if (!string.IsNullOrEmpty(userResetJob.CorrelationId))
+                    {
+                        requestMsg.Headers.Add("X-XblCorrelationId", userResetJob.CorrelationId);
+                    }
+                    requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
-                string eToken = await Authentication.GetDevTokenSlientlyAsync(userResetJob.Scid, userResetJob.Sandbox);
-                requestMsg.Headers.Add("x-xbl-contract-version", "100");
-
-                XboxLiveHttpResponse xblResponse = await submitRequest.SendAsync(requestMsg);
+                    return requestMsg;
+                });
 
                 // There is a chance if polling too early for job status, it will return 400. 
                 // We threat it as job queue and wait for next poll.
