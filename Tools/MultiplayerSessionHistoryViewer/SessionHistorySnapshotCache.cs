@@ -1,23 +1,22 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-using System;
-using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Collections.Generic;
-using System.Text;
-
 namespace SessionHistoryViewer
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Security.Cryptography;
+    using System.Text;
+
     internal class SessionHistorySnapshotCache
     {
-        ConcurrentDictionary<string, string> cache = new ConcurrentDictionary<string, string>();
+        private ConcurrentDictionary<string, string> cache = new ConcurrentDictionary<string, string>();
 
-        internal HashAlgorithm algorithm;
+        private HashAlgorithm algorithm;
+
         public SessionHistorySnapshotCache()
         {
-            algorithm = SHA256.Create();
+            this.algorithm = SHA256.Create();
         }
 
         public string GetHashString(string sessionName, string branch, long changeNumber)
@@ -34,10 +33,10 @@ namespace SessionHistoryViewer
 
             string key = string.Format("{0}{1}{2}", sessionName, branch, changeNumber);
 
-            byte[] bytes =algorithm.ComputeHash(Encoding.UTF8.GetBytes(key));
+            byte[] bytes = this.algorithm.ComputeHash(Encoding.UTF8.GetBytes(key));
 
             StringBuilder sb = new StringBuilder();
-            foreach(byte b in bytes)
+            foreach (byte b in bytes)
             {
                 sb.Append(b.ToString("X2"));
             }
@@ -49,9 +48,9 @@ namespace SessionHistoryViewer
         {
             snapshot = null;
 
-            if (cache.ContainsKey(key))
+            if (this.cache.ContainsKey(key))
             {
-                snapshot = cache[key];
+                snapshot = this.cache[key];
                 return true;
             }
 
@@ -65,12 +64,7 @@ namespace SessionHistoryViewer
                 throw new ArgumentNullException("key");
             }
 
-            if (snapshot == null)
-            {
-                throw new ArgumentNullException("snapshot");
-            }
-
-            cache[key] =snapshot;
+            this.cache[key] = snapshot ?? throw new ArgumentNullException("snapshot");
         }
     }
 }

@@ -1,16 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-using System;
-using System.Globalization;
-using System.IO;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
-using System.Text;
-
 namespace SessionHistoryViewer
 {
+    using System;
+    using System.Globalization;
+    using System.IO;
+    using System.Runtime.Serialization;
+    using System.Runtime.Serialization.Json;
+    using System.Text;
+
     public static class Serializer
     {
         /// <summary>
@@ -29,7 +28,7 @@ namespace SessionHistoryViewer
         public static T DeserializeJson<T>(this byte[] data)
         {
             if (data == null || data.Length == 0)
-                return default(T);
+                return default;
 
             try
             {
@@ -42,11 +41,13 @@ namespace SessionHistoryViewer
             catch (SerializationException)
             {
             }
-            return default(T);
+
+            return default;
         }
+
         public static T DeserializeJson<T>(this string json)
         {
-            return String.IsNullOrEmpty(json) ? default(T) : json.ToUTF8ByteArray().DeserializeJson<T>();
+            return string.IsNullOrEmpty(json) ? default(T) : json.ToUTF8ByteArray().DeserializeJson<T>();
         }
 
         public static string SerializeToJsonString(this object instance)
@@ -56,7 +57,6 @@ namespace SessionHistoryViewer
                 return ms.CreateString();
             }
         }
-
 
         public static byte[] SerializeToJsonByteArray(this object instance)
         {
@@ -95,8 +95,9 @@ namespace SessionHistoryViewer
         /// <returns></returns>
         public static byte[] ToUTF8ByteArray(this string value)
         {
-            return String.IsNullOrEmpty(value) ? new byte[0] : Encoding.UTF8.GetBytes(value);
+            return string.IsNullOrEmpty(value) ? new byte[0] : Encoding.UTF8.GetBytes(value);
         }
+
         /// <summary>
         /// Get a string from a ASCII byte array
         /// </summary>
@@ -104,8 +105,9 @@ namespace SessionHistoryViewer
         /// <returns></returns>
         public static string FromUTF8ByteArray(this byte[] value)
         {
-            return value == null || value.Length == 0 ? String.Empty : Encoding.UTF8.GetString(value);
+            return value == null || value.Length == 0 ? string.Empty : Encoding.UTF8.GetString(value);
         }
+
         /// <summary>
         /// Generate a Unicode encoded byte array for the string
         /// </summary>
@@ -113,8 +115,9 @@ namespace SessionHistoryViewer
         /// <returns></returns>
         public static byte[] ToUnicodeByteArray(this string value)
         {
-            return String.IsNullOrEmpty(value) ? new byte[0] : Encoding.Unicode.GetBytes(value);
+            return string.IsNullOrEmpty(value) ? new byte[0] : Encoding.Unicode.GetBytes(value);
         }
+
         /// <summary>
         /// Get a string from a Unicode byte array
         /// </summary>
@@ -122,12 +125,14 @@ namespace SessionHistoryViewer
         /// <returns></returns>
         public static string FromUnicodeByteArray(this byte[] value)
         {
-            return value == null || value.Length == 0 ? String.Empty : Encoding.Unicode.GetString(value);
+            return value == null || value.Length == 0 ? string.Empty : Encoding.Unicode.GetString(value);
         }
+
         public static string ToISO8601(this DateTime value)
         {
             return value.ToString("s", CultureInfo.InvariantCulture);
         }
+
         /// <summary>
         /// Suppress IDispose because caller is responsible for disposing of this Stream
         /// </summary>
@@ -142,6 +147,7 @@ namespace SessionHistoryViewer
             ms.Position = 0;
             return ms;
         }
+
         /// <summary>
         /// Convert a byte array to a Base64 string.
         /// </summary>
@@ -149,7 +155,7 @@ namespace SessionHistoryViewer
         /// <returns>Base64 string representing the byte array.   Null or Empty byte array returns String.Empty</returns>
         public static string ToBase64String(this byte[] value)
         {
-            return value == null || value.Length == 0 ? String.Empty : Convert.ToBase64String(value);
+            return value == null || value.Length == 0 ? string.Empty : Convert.ToBase64String(value);
         }
 
         /// <summary>
@@ -162,7 +168,7 @@ namespace SessionHistoryViewer
             byte[] result;
             try
             {
-                result = String.IsNullOrEmpty(value) ? new byte[0] : Convert.FromBase64String(value);
+                result = string.IsNullOrEmpty(value) ? new byte[0] : Convert.FromBase64String(value);
             }
             catch (FormatException)
             {
@@ -171,6 +177,7 @@ namespace SessionHistoryViewer
 
             return result;
         }
+
         /// <summary>
         /// Wrap Enum.TryParse into a function that returns a INullable value
         /// </summary>
@@ -181,8 +188,7 @@ namespace SessionHistoryViewer
             where T : struct
         {
             T? result = null;
-            T enumValue = default(T);
-            if (Enum.TryParse<T>(value, true, out enumValue))
+            if (Enum.TryParse<T>(value, true, out T enumValue))
             {
                 result = enumValue;
             }

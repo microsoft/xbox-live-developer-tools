@@ -1,16 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-using System;
-using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
-
 namespace SessionHistoryViewer
 {
+    using System.Collections.Generic;
+    using Newtonsoft.Json.Linq;
+
     public class SessionHistoryDocumentResponse
     {
-        private List<SessionHistoryDocumentMetadata> QueryResult = new List<SessionHistoryDocumentMetadata>();
+        private List<SessionHistoryDocumentMetadata> queryResult = new List<SessionHistoryDocumentMetadata>();
 
         public SessionHistoryDocumentResponse(string json)
         {
@@ -21,7 +19,7 @@ namespace SessionHistoryViewer
                 string changedByUsers = string.Empty;
                 foreach (var user in response.results[i].changedBy)
                 {
-                    changedByUsers += string.Format("{0}, ", user.ToString());
+                    changedByUsers += $"{user}, ";
                 }
 
                 if (changedByUsers.Length > 0)
@@ -33,7 +31,7 @@ namespace SessionHistoryViewer
                 string changeSummary = string.Empty;
                 foreach (var change in response.results[i].details)
                 {
-                    changeSummary += string.Format("{0}, ", change);
+                    changeSummary += $"{change}, ";
                 }
 
                 if (changeSummary.Length > 0)
@@ -42,25 +40,26 @@ namespace SessionHistoryViewer
                     changeSummary = changeSummary.TrimEnd(new char[] { ',' });
                 }
 
-                QueryResult.Add(new SessionHistoryDocumentMetadata()
+                this.queryResult.Add(new SessionHistoryDocumentMetadata()
                     {
-                        changeNumber = response.results[i].changeNumber,
-                        changedBy = changedByUsers,
-                        timestamp = response.results[i].timestamp,
-                        titleId = response.results[i].titleId,
-                        serviceId = response.results[i].serviceId,
-                        correlationId = response.results[i].correlationId,
-                        details = changeSummary
+                        ChangeNumber = response.results[i].changeNumber,
+                        ChangedBy = changedByUsers,
+                        Timestamp = response.results[i].timestamp,
+                        TitleId = response.results[i].titleId,
+                        ServiceId = response.results[i].serviceId,
+                        CorrelationId = response.results[i].correlationId,
+                        Details = changeSummary
                     });
             }
         }
 
-        public string continuationToken { get; set; }
+        public string ContinuationToken { get; set; }
+
         public List<SessionHistoryDocumentMetadata> Results
         {
             get
             {
-                return QueryResult;
+                return this.queryResult;
             }
         }
     }

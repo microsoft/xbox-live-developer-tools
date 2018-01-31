@@ -1,20 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-using System.Linq;
-using System.Net;
-using Microsoft.Xbox.Services.DevTools.Common;
-
 namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 {
-    using Newtonsoft.Json.Linq;
     using System;
+    using System.Linq;
+    using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Web;
-    using Authentication;
-    using DevTools.Common;
+    using Microsoft.Xbox.Services.DevTools.Common;
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// Class for TitleStorage tooling functionality.
@@ -23,13 +19,17 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
     {
         private static Uri baseUri = new Uri(ClientSettings.Singleton.TitleStorageEndpoint);
 
+        private TitleStorage()
+        {
+        }
+
         /// <summary>
         /// Get title global storage quota information.
         /// </summary>
         /// <param name="serviceConfigurationId">The service configuration ID (SCID) of the title</param>
         /// <param name="sandbox">The target sandbox id for title storage</param>
         /// <returns>GlobalStorageQuotaInfo object contains quota info</returns>
-        static public async Task<GlobalStorageQuotaInfo> GetGlobalStorageQuotaAsync(string serviceConfigurationId, string sandbox)
+        public static async Task<GlobalStorageQuotaInfo> GetGlobalStorageQuotaAsync(string serviceConfigurationId, string sandbox)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
@@ -39,7 +39,6 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
                     requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
                     return requestMsg;
-
                 })).Response;
                 response.EnsureSuccessStatusCode();
 
@@ -51,7 +50,6 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 
                 return info;
             }
-
         }
 
         /// <summary>
@@ -63,7 +61,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <param name="maxItems">The maximum number of items to return.</param>
         /// <param name="skipItems">The number of items to skip before returning results.</param>
         /// <returns>TitleStorageBlobMetadataResult object contains result collection.</returns>
-        static public async Task<TitleStorageBlobMetadataResult> GetGlobalStorageBlobMetaDataAsync(string serviceConfigurationId, string sandbox, string path, uint maxItems, uint skipItems)
+        public static async Task<TitleStorageBlobMetadataResult> GetGlobalStorageBlobMetaDataAsync(string serviceConfigurationId, string sandbox, string path, uint maxItems, uint skipItems)
         {
             return await GetGlobalStorageBlobMetaDataAsync(serviceConfigurationId, sandbox, path, maxItems, skipItems, null);
         }
@@ -76,7 +74,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <param name="pathAndFileName">Blob path and file name to store on XboxLive service.(example: "foo\bar\blob.txt")</param>
         /// <param name="blobType">Title storage blob type</param>
         /// <param name="blobBytes">The byte array contains the blob data to upload.</param>
-        static public async Task UploadGlobalStorageBlobAsync(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType, byte[] blobBytes)
+        public static async Task UploadGlobalStorageBlobAsync(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType, byte[] blobBytes)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
@@ -101,7 +99,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <param name="pathAndFileName">Blob path and file name to store on XboxLive service.(example: "foo\bar\blob.txt")</param>
         /// <param name="blobType">Title storage blob type</param>
         /// <returns>The byte array contains downloaded blob data</returns>
-        static public async Task<byte[]> DownloadGlobalStorageBlobAsync(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType)
+        public static async Task<byte[]> DownloadGlobalStorageBlobAsync(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
@@ -118,7 +116,6 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 
                 return await response.Content.ReadAsByteArrayAsync();
             }
-
         }
 
         /// <summary>
@@ -128,7 +125,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <param name="sandbox">The target sandbox id for title storage</param>
         /// <param name="pathAndFileName">Blob path and file name to store on XboxLive service.(example: "foo\bar\blob.txt")</param>
         /// <param name="blobType">Title storage blob type</param>
-        static public async Task DeleteGlobalStorageBlobAsync(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType)
+        public static async Task DeleteGlobalStorageBlobAsync(string serviceConfigurationId, string sandbox, string pathAndFileName, TitleStorageBlobType blobType)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
@@ -142,11 +139,6 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 
                 Log.WriteLog($"DeleteGlobalStorageBlobAsync for scid: {serviceConfigurationId}, sandbox: {sandbox}");
             }
-
-        }
-
-        private TitleStorage()
-        {
         }
 
         internal static async Task<TitleStorageBlobMetadataResult> GetGlobalStorageBlobMetaDataAsync(string serviceConfigurationId, string sandbox, string path, uint maxItems,
@@ -177,7 +169,6 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 
                 response.EnsureSuccessStatusCode();
 
-
                 Log.WriteLog($"GetGlobalStorageBlobMetaDataAsync for scid: {serviceConfigurationId}, sandbox: {sandbox}");
 
                 string stringContent = await response.Content.ReadAsStringAsync();
@@ -195,7 +186,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
                 var metadataArray = array.Select((o) =>
                 {
                     string fileName = o["fileName"].Value<string>();
-                    UInt64 size = o["size"].Value<UInt64>();
+                    ulong size = o["size"].Value<ulong>();
                     var filePathAndTypeArray = fileName.Split(',');
                     if (filePathAndTypeArray.Length != 2)
                     {
@@ -211,7 +202,6 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
                         Path = filePathAndTypeArray[0],
                         Size = size,
                         Type = type
-
                     };
                 }).ToArray();
 
@@ -221,7 +211,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
             }
         }
 
-        static private void AppendPagingInfo(ref UriBuilder uriBuilder, uint maxItems, uint skipItems,
+        private static void AppendPagingInfo(ref UriBuilder uriBuilder, uint maxItems, uint skipItems,
             string continuationToken)
         {
             var queries = HttpUtility.ParseQueryString(uriBuilder.Query);
@@ -246,5 +236,4 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
             uriBuilder.Query = queries.ToString();
         }
     }
-
 }

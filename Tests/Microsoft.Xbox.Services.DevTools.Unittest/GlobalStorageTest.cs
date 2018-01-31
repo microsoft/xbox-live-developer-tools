@@ -3,12 +3,6 @@
 
 namespace Microsoft.Xbox.Services.DevTools.Unittest
 {
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using DevTools.Authentication;
-    using DevTools.Common;
-    using DevTools.TitleStorage;
-    using Moq;
-    using RichardSzalay.MockHttp;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -16,6 +10,12 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using DevTools.Authentication;
+    using DevTools.Common;
+    using DevTools.TitleStorage;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+    using RichardSzalay.MockHttp;
 
     [TestClass]
     public class GlobalStorageTest
@@ -24,24 +24,23 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         private const string DefaultScid = "scid";
         private const string DefaultSandbox = "sandbox";
         private const string DefaultEtoken = "etoken";
-        private const UInt64 DefaultQuota = UInt64.MaxValue;
-        private const UInt64 DefaultUsedQuota = UInt64.MaxValue - 2 ;
+        private const ulong DefaultQuota = ulong.MaxValue;
+        private const ulong DefaultUsedQuota = ulong.MaxValue - 2;
         private const string DefaultGlobalStoragePath = "path";
         private const uint DefaultMaxItems = 150;
         private const uint DefaultSkipItems = 2;
         private const string DefaultFileType = "config";
         private const uint ByteSize = 10;
         private byte[] defaultBytes;
-        
 
         private void SetupMockBytes()
         {
-            if (defaultBytes == null)
+            if (this.defaultBytes == null)
             {
-                defaultBytes = new byte[ByteSize];
+                this.defaultBytes = new byte[ByteSize];
                 for (int i = 0; i < ByteSize; i++)
                 {
-                    defaultBytes[i] = (byte)i;
+                    this.defaultBytes[i] = (byte)i;
                 }
             }
         }
@@ -50,9 +49,9 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         {
             var mockAuth = new Mock<AuthClient>();
             mockAuth.Setup(o => o.GetETokenAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
-                .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => DefaultEtoken + scid + String.Join(" ", sandboxes));
-            Authentication.Client = mockAuth.Object;
-            Authentication.SetAuthInfo(DevAccountSource.WindowsDevCenter, DefaultUserName);
+                .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => DefaultEtoken + scid + string.Join(" ", sandboxes));
+            ToolAuthentication.Client = mockAuth.Object;
+            ToolAuthentication.SetAuthInfo(DevAccountSource.WindowsDevCenter, DefaultUserName);
         }
 
         private string ExpectedToken(string scid, string sandbox)
@@ -63,7 +62,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task GetQuota()
         {
-            SetUpMockAuth();
+           this.SetUpMockAuth();
 
             string quotaResponse = $"{{'quotaInfo':{{'usedBytes':{DefaultUsedQuota},'quotaBytes':{DefaultQuota}}}}}";
 
@@ -72,7 +71,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             var mockHttp = new MockHttpMessageHandler();
 
             mockHttp.Expect(uri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", quotaResponse);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -86,7 +85,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task GetBlobMetadata()
         {
-            SetUpMockAuth();
+            this.SetUpMockAuth();
 
             string response =
                 "{'blobs':[" +
@@ -104,7 +103,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             var mockHttp = new MockHttpMessageHandler();
 
             mockHttp.Expect(uri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", response);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -114,11 +113,10 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Assert.AreEqual(6, metadataResult.Items.Count());
             Assert.IsTrue(metadataResult.HasNext);
 
-
             // GetNextAsync
             var nextPageUri = new Uri(new Uri(ClientSettings.Singleton.TitleStorageEndpoint), $"global/scids/{DefaultScid}/data/{DefaultGlobalStoragePath}?maxItems={DefaultMaxItems}&continuationToken=123456");
             mockHttp.Expect(nextPageUri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", response);
 
             var metaResult1 = await metadataResult.GetNextAsync(DefaultMaxItems);
@@ -130,13 +128,13 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task GetBlobMetadataNotFound()
         {
-            SetUpMockAuth();
+            this.SetUpMockAuth();
 
             var uri = new Uri(new Uri(ClientSettings.Singleton.TitleStorageEndpoint), $"global/scids/{DefaultScid}/data/{DefaultGlobalStoragePath}");
 
             var mockHttp = new MockHttpMessageHandler();
             mockHttp.Expect(uri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond(HttpStatusCode.NotFound);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -150,15 +148,15 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task UploadBlob()
         {
-            SetUpMockAuth();
-            SetupMockBytes();
+            this.SetUpMockAuth();
+            this.SetupMockBytes();
 
             var uri = new Uri(new Uri(ClientSettings.Singleton.TitleStorageEndpoint), $"global/scids/{DefaultScid}/data/{DefaultGlobalStoragePath},{DefaultFileType}");
 
             var mockHttp = new MockHttpMessageHandler();
 
             mockHttp.Expect(HttpMethod.Put, uri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", "{}");
 
             TestHook.MockHttpHandler = mockHttp;
@@ -167,12 +165,11 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             await TitleStorage.UploadGlobalStorageBlobAsync(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, fileType, this.defaultBytes);
         }
 
-
         [TestMethod]
         public async Task DownloadBlob()
         {
-            SetUpMockAuth();
-            SetupMockBytes();
+            this.SetUpMockAuth();
+            this.SetupMockBytes();
 
             var uri = new Uri(new Uri(ClientSettings.Singleton.TitleStorageEndpoint), $"global/scids/{DefaultScid}/data/{DefaultGlobalStoragePath},{DefaultFileType}");
 
@@ -180,7 +177,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             Stream stream = new MemoryStream(this.defaultBytes);
             mockHttp.Expect(HttpMethod.Get, uri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", stream);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -189,21 +186,20 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             byte[] bytes = await TitleStorage.DownloadGlobalStorageBlobAsync(DefaultScid, DefaultSandbox, DefaultGlobalStoragePath, fileType);
 
             Assert.AreEqual(bytes.Length, this.defaultBytes.Length);
-
         }
 
         [TestMethod]
         public async Task DeleteBlob()
         {
-            SetUpMockAuth();
-            SetupMockBytes();
+            this.SetUpMockAuth();
+            this.SetupMockBytes();
 
             var uri = new Uri(new Uri(ClientSettings.Singleton.TitleStorageEndpoint), $"global/scids/{DefaultScid}/data/{DefaultGlobalStoragePath},{DefaultFileType}");
 
             var mockHttp = new MockHttpMessageHandler();
 
             mockHttp.Expect(HttpMethod.Delete, uri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", "{}");
 
             TestHook.MockHttpHandler = mockHttp;

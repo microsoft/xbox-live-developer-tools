@@ -1,23 +1,24 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="HistoricalDocument.cs" company="Microsoft">
-//     Copyright (c) Microsoft. All rights reserved.
-//     Internal use only.
-// </copyright>
-//-----------------------------------------------------------------------
-
-using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace SessionHistoryViewer.DataContracts
 {
+    using System.Collections.Generic;
+
     public class HistoricalDocument
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1051:DoNotDeclareVisibleInstanceFields")]
-        public IList<DocumentStateSnapshot> DocumentSnapshots = new List<DocumentStateSnapshot>();
+        public IList<DocumentStateSnapshot> DocumentSnapshots { get; set; } = new List<DocumentStateSnapshot>();
+
         public string SessionName { get; set; }
+
         public string Branch { get; set; }
+
         public string LastModified { get; set; }
+
         public bool IsExpired { get; set; }
+
         public int NumSnapshots { get; set; }
+
         public string ActivityId { get; set; }
     }
 }

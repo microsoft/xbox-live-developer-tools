@@ -1,57 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using CommandLine;
-using CommandLine.Text;
-using Microsoft.Xbox.Services.DevTools.Authentication;
-using Microsoft.Xbox.Services.DevTools.PlayerReset;
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-
 namespace PlayerDataReset
 {
-    class Program
+    using System;
+    using System.Collections.Generic;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+    using CommandLine;
+    using CommandLine.Text;
+    using Microsoft.Xbox.Services.DevTools.Authentication;
+    using Microsoft.Xbox.Services.DevTools.PlayerReset;
+
+    internal class Program
     {
-        internal class ResetOptions
-        {
-            [Option('c', "scid", Required = true,
-                HelpText = "The service configuration ID (SCID) of the title for player data resetting")]
-            public string ServiceConfigurationId  { get; set; }
-
-            [Option('s', "sandbox", Required =true,
-                HelpText = "The target sandbox for player resetting")]
-            public string Sandbox { get; set; }
-
-            [Option('x', "xuid", Required = true,
-                HelpText = "The Xbox Live user ID of the player to be reset")]
-            public string XboxUserId { get; set; }
-
-            [Usage(ApplicationAlias = "PlayerDataReset")]
-            public static IEnumerable<Example> Examples
-            {
-                get
-                {
-                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx"});
-                }
-            }
-        }
-
-        static void PrintProviderDetails(List<JobProviderStatus> providers)
-        {
-            foreach (var provider in providers)
-            {
-                if (provider.Status == ResetProviderStatus.CompletedSuccess)
-                {
-                    Console.WriteLine($"\t{provider.Provider}, Status: {provider.Status} " +
-                                      (provider.Status == ResetProviderStatus.CompletedSuccess? $"ErrorMsg: {provider.ErrorMessage}" : String.Empty));
-                }
-            }
-        }
-
-        static async Task<int> Main(string[] args)
+        private static async Task<int> Main(string[] args)
         {
             try
             {
@@ -74,6 +38,18 @@ namespace PlayerDataReset
             }
         }
 
+        private static void PrintProviderDetails(List<JobProviderStatus> providers)
+        {
+            foreach (var provider in providers)
+            {
+                if (provider.Status == ResetProviderStatus.CompletedSuccess)
+                {
+                    Console.WriteLine($"\t{provider.Provider}, Status: {provider.Status} " +
+                                      (provider.Status == ResetProviderStatus.CompletedSuccess? $"ErrorMsg: {provider.ErrorMessage}" : string.Empty));
+                }
+            }
+        }
+
         private static async Task<int> OnReset(ResetOptions options)
         {
             if (options == null)
@@ -82,7 +58,7 @@ namespace PlayerDataReset
                 return -1;
             }
 
-            DevAccount account = Authentication.LoadLastSignedInUser();
+            DevAccount account = ToolAuthentication.LoadLastSignedInUser();
             if (account == null)
             {
                 Console.Error.WriteLine("Didn't found dev sign in info, please use \"XblDevAccount.exe signin\" to initiate.");
@@ -94,7 +70,8 @@ namespace PlayerDataReset
 
             try
             {
-                UserResetResult result = await PlayerReset.ResetPlayerDataAsync(options.ServiceConfigurationId,
+                UserResetResult result = await PlayerReset.ResetPlayerDataAsync(
+                    options.ServiceConfigurationId,
                     options.Sandbox, options.XboxUserId);
 
                 switch (result.OverallResult)
@@ -133,7 +110,32 @@ namespace PlayerDataReset
                 {
                     Console.WriteLine(ex.Message);
                 }
+
                 return -1;
+            }
+        }
+
+        internal class ResetOptions
+        {
+            [Option('c', "scid", Required = true,
+                HelpText = "The service configuration ID (SCID) of the title for player data resetting")]
+            public string ServiceConfigurationId { get; set; }
+
+            [Option('s', "sandbox", Required = true,
+                HelpText = "The target sandbox for player resetting")]
+            public string Sandbox { get; set; }
+
+            [Option('x', "xuid", Required = true,
+                HelpText = "The Xbox Live user ID of the player to be reset")]
+            public string XboxUserId { get; set; }
+
+            [Usage(ApplicationAlias = "PlayerDataReset")]
+            public static IEnumerable<Example> Examples
+            {
+                get
+                {
+                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx" });
+                }
             }
         }
     }

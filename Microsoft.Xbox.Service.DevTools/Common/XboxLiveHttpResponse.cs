@@ -8,6 +8,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
     internal class XboxLiveHttpResponse
     {
         public HttpResponseMessage Response { get; set; }
-        public string CollrelationId { get; set; }
+
+        public string CorrelationId { get; set; }
     }
 }

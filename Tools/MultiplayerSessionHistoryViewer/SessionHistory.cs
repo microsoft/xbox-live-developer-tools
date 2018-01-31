@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.IO;
-using System.Net;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-
 namespace SessionHistoryViewer
 {
+    using System;
+    using System.IO;
+    using System.Net;
+    using System.Threading.Tasks;
+    using Newtonsoft.Json;
+
     public static class SessionHistory
     {
         private const int TimeoutInMilliseconds = 30000;
@@ -141,9 +141,9 @@ namespace SessionHistoryViewer
 
             var postBody = new SessionHistoryQueryByGamertagRequest
             {
-                gamertag = gamertag,
-                startAt = startAt,
-                endAt = endAt
+                Gamertag = gamertag,
+                StartAt = startAt,
+                EndAt = endAt
             };
 
             return await SessionHistory.RunSessionHistoryRequestAsync(CreateSessionHistoryPostRequest(url, eToken, postBody.SerializeToJsonByteArray()));
@@ -167,9 +167,9 @@ namespace SessionHistoryViewer
 
             var postBody = new SessionHistoryQueryByXuidRequest
             {
-                xuid = xuid.ToString(),
-                startAt = startAt,
-                endAt = endAt
+                Xuid = xuid.ToString(),
+                StartAt = startAt,
+                EndAt = endAt
             };
 
             return await SessionHistory.RunSessionHistoryRequestAsync(CreateSessionHistoryPostRequest(url, eToken, postBody.SerializeToJsonByteArray()));
@@ -185,7 +185,7 @@ namespace SessionHistoryViewer
 
             var postBody = new SessionHistoryQueryByCorrelationIdRequest
             {
-                correlationId = correlationId,
+                CorrelationId = correlationId,
             };
 
             return await SessionHistory.RunSessionHistoryRequestAsync(CreateSessionHistoryPostRequest(url, eToken, postBody.SerializeToJsonByteArray()));

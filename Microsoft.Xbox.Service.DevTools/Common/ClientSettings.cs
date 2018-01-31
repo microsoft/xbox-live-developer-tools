@@ -8,22 +8,6 @@ namespace Microsoft.Xbox.Services.DevTools.Common
 
     internal class ClientSettings
     {
-        public static ClientSettings Singleton
-        {
-            get
-            {
-                lock(singletonLock)
-                {
-                    if (singleton == null)
-                    {
-                        singleton = new ClientSettings("");
-                    }
-                }
-
-                return singleton;
-            }
-        }
-
         private static object singletonLock = new object();
         private static ClientSettings singleton;
 
@@ -43,7 +27,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/common";
             this.WindowsLiveAuthenticationType = "uri:WindowsLiveID";
             this.OmegaResetToolEndpoint = "https://eraser.xboxlive.com";
-            
+
             // Override values for other environments
             if (environment.ToUpper() == "DNET")
             {
@@ -62,8 +46,25 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             this.StsAdfsAuthenticationUri = new Uri(stsAdfsAuthenticationEndpoint);
 
             // Cache folder
-            CacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Microsoft/XboxLiveTool/"+ environment);
+            this.CacheFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Microsoft/XboxLiveTool/" + environment);
+        }
+
+        public static ClientSettings Singleton
+        {
+            get
+            {
+                lock (singletonLock)
+                {
+                    if (singleton == null)
+                    {
+                        singleton = new ClientSettings(string.Empty);
+                    }
+                }
+
+                return singleton;
+            }
         }
 
         public string CacheFolder { get; set; } 
@@ -86,11 +87,15 @@ namespace Microsoft.Xbox.Services.DevTools.Common
 
         // TODO: Update this to runtime etoken after it's ready, for now we use design time etoken.
         public string XDTSToolRelyingParty { get; private set; } = "http://developer.xboxlive.com";
-        public string AADApplicationId { get; private set; } = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1";
-        public string AADResource { get; private set; } = "https://developer.microsoft.com/";
-        public string UDCAuthEndpoint{ get; private set; } = "https://developer.microsoft.com/xdts/authorize";
 
-        public string MsalXboxLiveClientId = "b1eab458-325b-45a5-9692-ad6079c1eca8";
+        public string AADApplicationId { get; private set; } = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1";
+
+        public string AADResource { get; private set; } = "https://developer.microsoft.com/";
+
+        public string UDCAuthEndpoint { get; private set; } = "https://developer.microsoft.com/xdts/authorize";
+
+        public string MsalXboxLiveClientId { get; private set; } = "b1eab458-325b-45a5-9692-ad6079c1eca8";
+
         public string XmintAuthEndpoint { get; private set; } = "https://xmint.xboxlive.com/adfs/authorize?rp=https%3A%2F%2Fxdp.xboxlive.com%2F";
     }
 }

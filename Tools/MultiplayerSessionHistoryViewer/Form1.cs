@@ -1,124 +1,120 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="Form1.cs" company="Microsoft">
-//     Copyright (c) Microsoft. All rights reserved.
-//     Internal use only.
-// </copyright>
-//-----------------------------------------------------------------------
-
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Net;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
-using DiffPlex.Model;
-using Microsoft.Xbox.Services.DevTools.Authentication;
-using Newtonsoft.Json;
-
-using SessionHistoryViewer.DataContracts;
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace SessionHistoryViewer
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Drawing;
+    using System.IO;
+    using System.Net;
+    using System.Threading.Tasks;
+    using System.Windows.Forms;
+
+    using DiffPlex;
+    using DiffPlex.DiffBuilder;
+    using DiffPlex.DiffBuilder.Model;
+    using DiffPlex.Model;
+    using Microsoft.Xbox.Services.DevTools.Authentication;
+    using Newtonsoft.Json;
+
+    using SessionHistoryViewer.DataContracts;
+
     public partial class Form1 : Form
     {
-        private SessionHistorySnapshotCache SnapshotCache = new SessionHistorySnapshotCache();
-        private static bool VLeftScrollInProgress;
-        private static bool VRightScrollInProgress;
         private const string LocalTimeColumnHeader = "Timestamp (Local)";
         private const string UtcTimeColumnHeader = "Timestamp (UTC)";
-        private const string feedbackEmailAddress = "multiplayer@microsoft.com";
-        private const string sessionHistoryFileFilter = "Session History files (*.hist)|*.hist";
+        private const string FeedbackEmailAddress = "multiplayer@microsoft.com";
+        private const string SessionHistoryFileFilter = "Session History files (*.hist)|*.hist";
         private const string QueryFailure = "Query Failure";
         private const string SaveInstructions = "To save a session history offline, right click on an item below.";
+        private const int NumLookbackDays = 7;
+        private const int QueryResultColumnCount = 6;
+        private const int DocumentMetadataColumnCount = 7;
 
-        const int NumLookbackDays = 7;
-        const int QueryResultColumnCount = 6;
-        const int DocumentMetadataColumnCount = 7;
+        private const int SideMargin = 18;
+        private const int VertMargin = 4;
 
-        const int sideMargin = 18;
-        const int vertMargin = 4;
+        private SessionHistorySnapshotCache snapshotCache = new SessionHistorySnapshotCache();
+        private static bool vLeftScrollInProgress;
+        private static bool vRightScrollInProgress;
 
-        UserSettings userSettings = new UserSettings();
+        private UserSettings userSettings = new UserSettings();
 
-        Stack<QueryBundle> queryStack = new Stack<QueryBundle>();
-        bool ShowingOfflineSession;
-        bool QueryCancelled;
-        bool isLV1SortOrderDescending = true;
-        bool isLV2SortOrderDescending = true;
+        private Stack<QueryBundle> queryStack = new Stack<QueryBundle>();
+        private bool showingOfflineSession;
+        private bool queryCancelled;
+        private bool isLV1SortOrderDescending = true;
+        private bool isLV2SortOrderDescending = true;
 
         private DevAccount signedInuser = null;
 
         public Form1()
         {
-            InitializeComponent();
+            this.InitializeComponent();
             
-            listView1.View = View.Details;
-            listView1.GridLines = true;
-            listView1.FullRowSelect = true;
+            this.listView1.View = View.Details;
+            this.listView1.GridLines = true;
+            this.listView1.FullRowSelect = true;
 
-            string lv1ColumnWidths = userSettings.ListView1ColumnWidths;
+            string lv1ColumnWidths = this.userSettings.ListView1ColumnWidths;
             string[] c1Widths = lv1ColumnWidths.Split(new char[] { ',' });
 
-            displayDateTimesAsUTCToolStripMenuItem.Checked = userSettings.ShowLocalTime;
+            this.displayDateTimesAsUTCToolStripMenuItem.Checked = this.userSettings.ShowLocalTime;
 
-            listView1.AddColumn("SessionName", c1Widths, 0, 231);
-            listView1.AddColumn("Branch", c1Widths, 1, 231);
-            listView1.AddColumn("Changes", c1Widths, 2, 55);            
-            listView1.AddColumn(userSettings.ShowLocalTime ? LocalTimeColumnHeader : UtcTimeColumnHeader, c1Widths, 3, 140);
-            listView1.AddColumn("Expired?", c1Widths, 4, 65);
-            listView1.AddColumn("ActivityId", c1Widths, 5, 250);
+            this.listView1.AddColumn("SessionName", c1Widths, 0, 231);
+            this.listView1.AddColumn("Branch", c1Widths, 1, 231);
+            this.listView1.AddColumn("Changes", c1Widths, 2, 55);            
+            this.listView1.AddColumn(this.userSettings.ShowLocalTime ? LocalTimeColumnHeader : UtcTimeColumnHeader, c1Widths, 3, 140);
+            this.listView1.AddColumn("Expired?", c1Widths, 4, 65);
+            this.listView1.AddColumn("ActivityId", c1Widths, 5, 250);
             
-            listView2.View = View.Details;
-            listView2.GridLines = true;
-            listView2.FullRowSelect = true;
+            this.listView2.View = View.Details;
+            this.listView2.GridLines = true;
+            this.listView2.FullRowSelect = true;
 
-            string lv2ColumnWidths = userSettings.ListView2ColumnWidths;
+            string lv2ColumnWidths = this.userSettings.ListView2ColumnWidths;
             string[] c2Widths = lv2ColumnWidths.Split(new char[] { ',' });
 
-            listView2.AddColumn("Change", c2Widths, 0, 50);
-            listView2.AddColumn("Modified By", c2Widths, 1, 120);
-            listView2.AddColumn(userSettings.ShowLocalTime ? LocalTimeColumnHeader : UtcTimeColumnHeader, c2Widths, 2, 120);
-            listView2.AddColumn("TitleId", c2Widths, 3, 80);
-            listView2.AddColumn("ServiceId", c2Widths, 4, 100);
-            listView2.AddColumn("CorrelationId", c2Widths, 5, 250);
-            listView2.AddColumn("Changes", c2Widths, 6, 450);
-            
-            dateTimePicker1.MinDate = DateTime.Today.AddDays(-NumLookbackDays);
-            dateTimePicker1.MaxDate = DateTime.Today;
+            this.listView2.AddColumn("Change", c2Widths, 0, 50);
+            this.listView2.AddColumn("Modified By", c2Widths, 1, 120);
+            this.listView2.AddColumn(this.userSettings.ShowLocalTime ? LocalTimeColumnHeader : UtcTimeColumnHeader, c2Widths, 2, 120);
+            this.listView2.AddColumn("TitleId", c2Widths, 3, 80);
+            this.listView2.AddColumn("ServiceId", c2Widths, 4, 100);
+            this.listView2.AddColumn("CorrelationId", c2Widths, 5, 250);
+            this.listView2.AddColumn("Changes", c2Widths, 6, 450);
 
-            dateTimePicker2.MinDate = DateTime.Today.AddDays(-NumLookbackDays);
-            dateTimePicker2.MaxDate = DateTime.Today.AddDays(1);
+            this.dateTimePicker1.MinDate = DateTime.Today.AddDays(-NumLookbackDays);
+            this.dateTimePicker1.MaxDate = DateTime.Today;
 
-            dateTimePicker1.Value = DateTime.Today.AddDays(-NumLookbackDays);
-            dateTimePicker2.Value = DateTime.Today;
+            this.dateTimePicker2.MinDate = DateTime.Today.AddDays(-NumLookbackDays);
+            this.dateTimePicker2.MaxDate = DateTime.Today.AddDays(1);
 
-            tbSandbox.Text = userSettings.Sandbox;
-            tbScid.Text = userSettings.Scid;
-            tbTemplateName.Text = userSettings.TemplateName;
-            tbQueryKey.Text = userSettings.QueryKey;
-            cmbQueryType.SelectedIndex = userSettings.QueryType;
-            cmbAccountSource.SelectedIndex = userSettings.AccountSource;
+            this.dateTimePicker1.Value = DateTime.Today.AddDays(-NumLookbackDays);
+            this.dateTimePicker2.Value = DateTime.Today;
 
-            UpdateAccountPanel();
+            this.tbSandbox.Text = this.userSettings.Sandbox;
+            this.tbScid.Text = this.userSettings.Scid;
+            this.tbTemplateName.Text = this.userSettings.TemplateName;
+            this.tbQueryKey.Text = this.userSettings.QueryKey;
+            this.cmbQueryType.SelectedIndex = this.userSettings.QueryType;
+            this.cmbAccountSource.SelectedIndex = this.userSettings.AccountSource;
+
+            this.UpdateAccountPanel();
         }
 
         private async Task<Tuple<HttpStatusCode, string>> QueryForHistoricalSessionDocuments(string eToken, QueryBundle queryBundle, string continuationToken)
         {
             if (continuationToken == null)
             {
-                InitViews();
-                listView1.Items.Clear();
+                this.InitViews();
+                this.listView1.Items.Clear();
             }
 
             Tuple<System.Net.HttpStatusCode, string> response = null;
 
-            switch (cmbQueryType.SelectedIndex)
+            switch (this.cmbQueryType.SelectedIndex)
             {
                 case (int)QueryBy.SessionName:
                     {
@@ -128,6 +124,7 @@ namespace SessionHistoryViewer
                             queryBundle.QueryKey,
                             eToken);
                     }
+
                     break;
 
                 case (int)QueryBy.GamerTag:
@@ -141,6 +138,7 @@ namespace SessionHistoryViewer
                             continuationToken,
                             eToken);
                     }
+
                     break;
 
                 case (int)QueryBy.GamerXuid:
@@ -154,6 +152,7 @@ namespace SessionHistoryViewer
                             continuationToken,
                             eToken);
                     }
+
                     break;
 
                 case (int)QueryBy.CorrelationId:
@@ -161,9 +160,10 @@ namespace SessionHistoryViewer
                         response = await SessionHistory.QuerySessionHistoryByCorrelationIdAsync(
                             queryBundle.Scid,
                             queryBundle.TemplateName,
-                            tbQueryKey.Text,
+                            this.tbQueryKey.Text,
                             eToken);
                     }
+
                     break;
             }
 
@@ -178,38 +178,38 @@ namespace SessionHistoryViewer
             {
                 string[] arr = new string[QueryResultColumnCount] 
                 { 
-                    item.sessionName,
-                    item.branch,
-                    item.changes.ToString(),
-                    displayDateTimesAsUTCToolStripMenuItem.Checked ? item.lastModified.ToString() : item.lastModified.ToLocalTime().ToString(),
-                    item.isExpired.ToString(),
-                    item.activityId
+                    item.SessionName,
+                    item.Branch,
+                    item.Changes.ToString(),
+                    this.displayDateTimesAsUTCToolStripMenuItem.Checked ? item.LastModified.ToString() : item.LastModified.ToLocalTime().ToString(),
+                    item.IsExpired.ToString(),
+                    item.ActivityId
                 };
 
                 ListViewItem lvi = new ListViewItem(arr);
-                listView1.Items.Add(lvi);
+                this.listView1.Items.Add(lvi);
             }
 
-            lblDocCount.Text = string.Format("{0} session{1}", listView1.Items.Count, (listView1.Items.Count != 1) ? "s" : "");
-            lblDocCount.Text += "      [" + SaveInstructions + "]";
+            this.lblDocCount.Text = string.Format("{0} session{1}", this.listView1.Items.Count, (this.listView1.Items.Count != 1) ? "s" : string.Empty);
+            this.lblDocCount.Text += "      [" + SaveInstructions + "]";
 
-            if (QueryCancelled)
+            if (this.queryCancelled)
             {
                 return new Tuple<HttpStatusCode, string>(HttpStatusCode.OK, null); // ignore continuation token if user cancelled the query
             }
             else
             {
-                return new Tuple<HttpStatusCode, string>(HttpStatusCode.OK, queryResponse.continuationToken);
+                return new Tuple<HttpStatusCode, string>(HttpStatusCode.OK, queryResponse.ContinuationToken);
             }
         }
 
         private void InitViews()
         {
-            listView2.Items.Clear();
-            rtbSnapshotLeft.Text = string.Empty;
-            rtbSnapshotRight.Text = string.Empty;
-            lblChangeLeft.Text = string.Empty;
-            lblChangeRight.Text = string.Empty;
+            this.listView2.Items.Clear();
+            this.rtbSnapshotLeft.Text = string.Empty;
+            this.rtbSnapshotRight.Text = string.Empty;
+            this.lblChangeLeft.Text = string.Empty;
+            this.lblChangeRight.Text = string.Empty;
         }
 
         private bool ValidateControl(Control control)
@@ -228,29 +228,30 @@ namespace SessionHistoryViewer
 
         private bool InputsAreValid()
         {
-            if (!ValidateControl(tbSandbox)) return false;
+            if (!this.ValidateControl(this.tbSandbox)) return false;
 
             Guid guid;
-            if (!Guid.TryParseExact(tbScid.Text, "D", out guid))
+            if (!Guid.TryParseExact(this.tbScid.Text, "D", out guid))
             {
                 Console.Beep();
-                tbScid.BackColor = Color.FromKnownColor(KnownColor.Aquamarine);
-                tbScid.Focus();
+                this.tbScid.BackColor = Color.FromKnownColor(KnownColor.Aquamarine);
+                this.tbScid.Focus();
                 return false;
             }
-            tbScid.BackColor = Color.FromKnownColor(KnownColor.Window);
+            
+            this.tbScid.BackColor = Color.FromKnownColor(KnownColor.Window);
 
-            if (!ValidateControl(tbTemplateName)) return false;
-            if (!ValidateControl(tbQueryKey)) return false;
+            if (!this.ValidateControl(this.tbTemplateName)) return false;
+            if (!this.ValidateControl(this.tbQueryKey)) return false;
 
-            if (cmbQueryType.SelectedIndex == (int)QueryBy.GamerXuid)
+            if (this.cmbQueryType.SelectedIndex == (int)QueryBy.GamerXuid)
             {
                 long xuid;
-                if (!long.TryParse(tbQueryKey.Text, out xuid))
+                if (!long.TryParse(this.tbQueryKey.Text, out xuid))
                 {
                     Console.Beep();
-                    tbQueryKey.BackColor = Color.FromKnownColor(KnownColor.Aquamarine);
-                    tbQueryKey.Focus();
+                    this.tbQueryKey.BackColor = Color.FromKnownColor(KnownColor.Aquamarine);
+                    this.tbQueryKey.Focus();
                     return false;
                 }
             }
@@ -258,30 +259,30 @@ namespace SessionHistoryViewer
             return true;
         }
 
-        private async void listView1_SelectedIndexChanged(object sender, EventArgs e)
+        private async void ListView1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (listView1.SelectedItems.Count == 0)
+            if (this.listView1.SelectedItems.Count == 0)
             {
                 return;
             }
 
-            if (!ShowingOfflineSession)
+            if (!this.showingOfflineSession)
             {
-                QueryCancelled = false;
+                this.queryCancelled = false;
 
-                InitViews();
+                this.InitViews();
                 Tuple<SessionHistoryDocumentResponse, string> queryResponse = null;
 
-                string eToken = await Authentication.GetDevTokenSlientlyAsync(tbScid.Text, tbSandbox.Text);
+                string eToken = await ToolAuthentication.GetDevTokenSilentlyAsync(this.tbScid.Text, this.tbSandbox.Text);
 
-                lblExplanation.Text = "Downloading change history for the selected historical\nMPSD document...";
-                if (listView1.SelectedIndices.Count == 1)
+                this.lblExplanation.Text = "Downloading change history for the selected historical\nMPSD document...";
+                if (this.listView1.SelectedIndices.Count == 1)
                 {
-                    var index = listView1.SelectedIndices[0];
-                    queryResponse = await QueryForDocSessionHistoryAsync(eToken, listView1.Items[index].SubItems[0].Text, listView1.Items[index].SubItems[1].Text).ConfigureAwait(true);
+                    var index = this.listView1.SelectedIndices[0];
+                    queryResponse = await this.QueryForDocSessionHistoryAsync(eToken, this.listView1.Items[index].SubItems[0].Text, this.listView1.Items[index].SubItems[1].Text).ConfigureAwait(true);
                 }
 
-                downloadPanel.Hide();
+                this.downloadPanel.Hide();
 
                 if (queryResponse.Item2 != null)
                 {
@@ -291,34 +292,34 @@ namespace SessionHistoryViewer
 
                 if (queryResponse != null && queryResponse.Item1 != null && queryResponse.Item1.Results != null)
                 {
-                    queryResponse.Item1.Results.Sort((foo1, foo2) => foo1.changeNumber.CompareTo(foo2.changeNumber));
+                    queryResponse.Item1.Results.Sort((foo1, foo2) => foo1.ChangeNumber.CompareTo(foo2.ChangeNumber));
 
                     foreach (var item in queryResponse.Item1.Results)
                     {
                         string[] lv2arr = new string[DocumentMetadataColumnCount] 
                             { 
-                                item.changeNumber == SessionHistory.MaxChangeValue ? "expired" : item.changeNumber.ToString(),
-                                item.changedBy,
-                                displayDateTimesAsUTCToolStripMenuItem.Checked ? item.timestamp.ToString() : item.timestamp.ToLocalTime().ToString(),
-                                item.titleId,
-                                item.serviceId,
-                                item.correlationId,
-                                item.details
+                                item.ChangeNumber == SessionHistory.MaxChangeValue ? "expired" : item.ChangeNumber.ToString(),
+                                item.ChangedBy,
+                                this.displayDateTimesAsUTCToolStripMenuItem.Checked ? item.Timestamp.ToString() : item.Timestamp.ToLocalTime().ToString(),
+                                item.TitleId,
+                                item.ServiceId,
+                                item.CorrelationId,
+                                item.Details
                             };
 
                         ListViewItem lvi2 = new ListViewItem(lv2arr);
-                        listView2.Items.Add(lvi2);
+                        this.listView2.Items.Add(lvi2);
                     }
 
-                    DisplayChangesInfo();
+                    this.DisplayChangesInfo();
                 }
             }
         }
 
         private void DisplayChangesInfo()
         {
-            string extraHelp = "";
-            int numItems = listView2.Items.Count;
+            string extraHelp = string.Empty;
+            int numItems = this.listView2.Items.Count;
 
             if (numItems == 1)
             {
@@ -329,7 +330,7 @@ namespace SessionHistoryViewer
                 extraHelp = "[Ctrl+Select two changes below to see both snapshots side by side]";
             }
 
-            lblChangeCount.Text = string.Format("{0} change{1}     {2}", numItems, numItems != 1 ? "s" : "", extraHelp);
+            this.lblChangeCount.Text = string.Format("{0} change{1}     {2}", numItems, numItems != 1 ? "s" : string.Empty, extraHelp);
         }
 
         private async Task<Tuple<SessionHistoryDocumentResponse, string>> QueryForDocSessionHistoryAsync(string eToken, string sessionName, string branch)
@@ -338,8 +339,8 @@ namespace SessionHistoryViewer
             string errMsg = null;
 
             var response = await SessionHistory.GetSessionHistoryDocumentDataAsync(
-                tbScid.Text,
-                tbTemplateName.Text,
+                this.tbScid.Text,
+                this.tbTemplateName.Text,
                 sessionName, 
                 branch,
                 eToken);
@@ -356,27 +357,27 @@ namespace SessionHistoryViewer
             return new Tuple<SessionHistoryDocumentResponse, string>(queryResponse, errMsg);
         }
 
-        private async void listView2_SelectedIndexChanged(object sender, EventArgs e)
+        private async void ListView2_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (listView2.SelectedIndices.Count > 2)
+            if (this.listView2.SelectedIndices.Count > 2)
             {
                 return;
             }
 
-            rtbSnapshotLeft.Text = string.Empty;
-            rtbSnapshotRight.Text = string.Empty;
-            lblChangeLeft.Text = string.Empty;
-            lblChangeRight.Text = string.Empty;
+            this.rtbSnapshotLeft.Text = string.Empty;
+            this.rtbSnapshotRight.Text = string.Empty;
+            this.lblChangeLeft.Text = string.Empty;
+            this.lblChangeRight.Text = string.Empty;
 
-            if (listView2.SelectedIndices.Count > 0)
+            if (this.listView2.SelectedIndices.Count > 0)
             {
                 int index = 0;
-                if (listView1.SelectedItems.Count > 0)
+                if (this.listView1.SelectedItems.Count > 0)
                 {
-                    index = listView1.SelectedIndices[0];
+                    index = this.listView1.SelectedIndices[0];
                 }
                 
-                var leftIndex = listView2.SelectedIndices[0];
+                var leftIndex = this.listView2.SelectedIndices[0];
                 long changeLeft;
 
                 string errMsg = null;
@@ -384,16 +385,16 @@ namespace SessionHistoryViewer
                 string leftSnapshot = string.Empty;
                 string rightSnapshot = string.Empty;
 
-                if (long.TryParse(listView2.Items[leftIndex].SubItems[0].Text, out changeLeft))
+                if (long.TryParse(this.listView2.Items[leftIndex].SubItems[0].Text, out changeLeft))
                 {
-                    Tuple<string, string> getSnapshotResponse = await QueryForDocSessionHistoryChangeAsync(
-                        listView1.Items[index].SubItems[0].Text, 
-                        listView1.Items[index].SubItems[1].Text,
+                    Tuple<string, string> getSnapshotResponse = await this.QueryForDocSessionHistoryChangeAsync(
+                        this.listView1.Items[index].SubItems[0].Text,
+                        this.listView1.Items[index].SubItems[1].Text,
                         changeLeft).ConfigureAwait(true);
 
                     if (getSnapshotResponse.Item1 != null)
                     {
-                        lblChangeLeft.Text = string.Format("Change #{0}", changeLeft);
+                        this.lblChangeLeft.Text = string.Format("Change #{0}", changeLeft);
                         leftSnapshot = getSnapshotResponse.Item1;
                     }
                     else
@@ -402,27 +403,27 @@ namespace SessionHistoryViewer
                     }
                 }
 
-                if (errMsg == null && listView2.SelectedIndices.Count > 1)
+                if (errMsg == null && this.listView2.SelectedIndices.Count > 1)
                 {
                     long changeRight;
-                    var rightIndex = listView2.SelectedIndices[1];
+                    var rightIndex = this.listView2.SelectedIndices[1];
 
-                    if (long.TryParse(listView2.Items[rightIndex].SubItems[0].Text, out changeRight))
+                    if (long.TryParse(this.listView2.Items[rightIndex].SubItems[0].Text, out changeRight))
                     {
-                        if (!ShowingOfflineSession)
+                        if (!this.showingOfflineSession)
                         {
-                            lblExplanation.Text = string.Format("Downloading change #{0}", changeRight);
+                            this.lblExplanation.Text = string.Format("Downloading change #{0}", changeRight);
                         }
 
-                        Tuple<string, string> getSnapshotResponse = await QueryForDocSessionHistoryChangeAsync(
-                            listView1.Items[index].SubItems[0].Text, 
-                            listView1.Items[index].SubItems[1].Text,
+                        Tuple<string, string> getSnapshotResponse = await this.QueryForDocSessionHistoryChangeAsync(
+                            this.listView1.Items[index].SubItems[0].Text,
+                            this.listView1.Items[index].SubItems[1].Text,
                             changeRight).ConfigureAwait(true);
 
                         if (getSnapshotResponse.Item1 != null)
                         {
-                            rightSnapshot = getSnapshotResponse.Item1;                            
-                            lblChangeRight.Text = string.Format("Change #{0}", changeRight);
+                            rightSnapshot = getSnapshotResponse.Item1;
+                            this.lblChangeRight.Text = string.Format("Change #{0}", changeRight);
                         }
                         else
                         {
@@ -431,9 +432,9 @@ namespace SessionHistoryViewer
                     }
                 }
 
-                ShowDiffs(leftSnapshot, rightSnapshot);
+                this.ShowDiffs(leftSnapshot, rightSnapshot);
 
-                downloadPanel.Hide();
+                this.downloadPanel.Hide();
 
                 if (errMsg != null)
                 {
@@ -497,8 +498,8 @@ namespace SessionHistoryViewer
 
             SideBySideDiffModel model = diffBuilder.BuildDiffModel(oldText, newText);
 
-            DisplayDiffPiece(rtbSnapshotLeft, model.OldText.Lines, string.IsNullOrEmpty(newText));
-            DisplayDiffPiece(rtbSnapshotRight, model.NewText.Lines, false);
+            this.DisplayDiffPiece(this.rtbSnapshotLeft, model.OldText.Lines, string.IsNullOrEmpty(newText));
+            this.DisplayDiffPiece(this.rtbSnapshotRight, model.NewText.Lines, false);
         }
 
         private async Task<Tuple<string, string>> QueryForDocSessionHistoryChangeAsync(string sessionName, string branch, long changeNumber)
@@ -511,21 +512,20 @@ namespace SessionHistoryViewer
                 return new Tuple<string, string>(null, null); // there is nothing to get, so don't bother trying
             }
 
-            string hashKey = SnapshotCache.GetHashString(
+            string hashKey = this.snapshotCache.GetHashString(
                 sessionName,
                 branch,
                 changeNumber);
 
-            if (!SnapshotCache.TryGetSnapshot(hashKey, out snapshot))
+            if (!this.snapshotCache.TryGetSnapshot(hashKey, out snapshot))
             {
+                string eToken = await ToolAuthentication.GetDevTokenSilentlyAsync(this.tbScid.Text, this.tbSandbox.Text);
 
-                string eToken = await Authentication.GetDevTokenSlientlyAsync(tbScid.Text, tbSandbox.Text);
-
-                lblExplanation.Text = string.Format("Downloading session snapshot #{0}", changeNumber);
+                this.lblExplanation.Text = string.Format("Downloading session snapshot #{0}", changeNumber);
 
                 var response = await SessionHistory.GetSessionHistoryDocumentChangeAsync(
-                    tbScid.Text,
-                    tbTemplateName.Text,
+                    this.tbScid.Text,
+                    this.tbTemplateName.Text,
                     sessionName,
                     branch,
                     changeNumber,
@@ -534,7 +534,7 @@ namespace SessionHistoryViewer
                 if (response.Item1 == HttpStatusCode.OK)
                 {
                     snapshot = response.Item2;
-                    SnapshotCache.AddSnapshotToCache(hashKey, response.Item2);
+                    this.snapshotCache.AddSnapshotToCache(hashKey, response.Item2);
                 }
                 else if (response.Item1 != HttpStatusCode.NoContent)
                 {
@@ -542,15 +542,15 @@ namespace SessionHistoryViewer
                 }
             }
 
-            return new Tuple<string,string>(snapshot, errorMsg);
+            return new Tuple<string, string>(snapshot, errorMsg);
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Application.Exit();
         }
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string msgTitle = "MPSD Session History Viewer";
             string msgBody = "\u00a9 2015 Microsoft Corporation";
@@ -560,24 +560,24 @@ namespace SessionHistoryViewer
 
         private async Task SearchForHistoricalDocumentsAsync(QueryBundle queryBundle, bool addToStack)
         {
-            tbSandbox.Text = queryBundle.Sandbox;
-            tbScid.Text = queryBundle.Scid;
-            tbTemplateName.Text = queryBundle.TemplateName;
-            tbQueryKey.Text = queryBundle.QueryKey;
-            cmbQueryType.SelectedIndex = queryBundle.QueryKeyIndex;
-            dateTimePicker1.Value = queryBundle.QueryFrom;
-            dateTimePicker2.Value = queryBundle.QueryTo;
+            this.tbSandbox.Text = queryBundle.Sandbox;
+            this.tbScid.Text = queryBundle.Scid;
+            this.tbTemplateName.Text = queryBundle.TemplateName;
+            this.tbQueryKey.Text = queryBundle.QueryKey;
+            this.cmbQueryType.SelectedIndex = queryBundle.QueryKeyIndex;
+            this.dateTimePicker1.Value = queryBundle.QueryFrom;
+            this.dateTimePicker2.Value = queryBundle.QueryTo;
 
-            string eToken = await Authentication.GetDevTokenSlientlyAsync(tbScid.Text, tbSandbox.Text);
+            string eToken = await ToolAuthentication.GetDevTokenSilentlyAsync(this.tbScid.Text, this.tbSandbox.Text);
 
-            lblExplanation.Text = "Searching for MPSD historical documents...";
+            this.lblExplanation.Text = "Searching for MPSD historical documents...";
 
             Tuple<HttpStatusCode, string> response = null;
             string continuationToken = null;
 
             do
             {
-                response = await QueryForHistoricalSessionDocuments(eToken, queryBundle, continuationToken);
+                response = await this.QueryForHistoricalSessionDocuments(eToken, queryBundle, continuationToken);
 
                 if (response.Item1 == HttpStatusCode.OK)
                 {
@@ -587,9 +587,10 @@ namespace SessionHistoryViewer
                 {
                     continuationToken = null;
                 }
-            } while (continuationToken != null);
+            }
+            while (continuationToken != null);
 
-            downloadPanel.Hide();
+            this.downloadPanel.Hide();
 
             if (response.Item1 != HttpStatusCode.OK)
             {
@@ -608,87 +609,87 @@ namespace SessionHistoryViewer
             }
             else
             {
-                if (listView1.Items.Count == 0)
+                if (this.listView1.Items.Count == 0)
                 {
-                    btnPriorQuery.Visible = (queryStack.Count > 0); // show the back button following un unsuccesful query (if there was a prior successul one)
+                    this.btnPriorQuery.Visible = this.queryStack.Count > 0; // show the back button following un unsuccesful query (if there was a prior successul one)
                     MessageBox.Show("No results found.  Try expanding the query time window (if possible)\nor use different search criteria.", "Query Results");
                 }
                 else
                 {
                     if (addToStack)
                     {
-                        queryStack.Push(queryBundle); // succesful query, so remember it
-                        btnPriorQuery.Visible = (queryStack.Count > 1);
+                        this.queryStack.Push(queryBundle); // succesful query, so remember it
+                        this.btnPriorQuery.Visible = this.queryStack.Count > 1;
                     }
                     else
                     {
-                        btnPriorQuery.Visible = (queryStack.Count > 0);
+                        this.btnPriorQuery.Visible = this.queryStack.Count > 0;
                     }
                 }
             }
         }
 
-        private async void btnPriorQuery_Click(object sender, EventArgs e)
+        private async void BtnPriorQuery_Click(object sender, EventArgs e)
         {
-            QueryBundle priorQuery = queryStack.Pop();
+            QueryBundle priorQuery = this.queryStack.Pop();
 
-            await SearchForHistoricalDocumentsAsync(priorQuery, false);
+            await this.SearchForHistoricalDocumentsAsync(priorQuery, false);
         }
 
-        private async void btnQuery_Click(object sender, EventArgs e)
+        private async void BtnQuery_Click(object sender, EventArgs e)
         {
-            QueryCancelled = false;
+            this.queryCancelled = false;
 
-            if (!InputsAreValid())
+            if (!this.InputsAreValid())
             {
                 return;
             }
 
-            saveSessionHistoryToolStripMenuItem.Visible = true;
-            ShowingOfflineSession = false;
+            this.saveSessionHistoryToolStripMenuItem.Visible = true;
+            this.showingOfflineSession = false;
 
             QueryBundle bundle = new QueryBundle()
             {
-                Sandbox = tbSandbox.Text.Trim(),
-                Scid = tbScid.Text.Trim(),
-                TemplateName = tbTemplateName.Text.Trim(),
-                QueryKey = tbQueryKey.Text.Trim(),
-                QueryKeyIndex = cmbQueryType.SelectedIndex,
-                QueryFrom = dateTimePicker1.Value,
-                QueryTo = dateTimePicker2.Value,
+                Sandbox = this.tbSandbox.Text.Trim(),
+                Scid = this.tbScid.Text.Trim(),
+                TemplateName = this.tbTemplateName.Text.Trim(),
+                QueryKey = this.tbQueryKey.Text.Trim(),
+                QueryKeyIndex = this.cmbQueryType.SelectedIndex,
+                QueryFrom = this.dateTimePicker1.Value,
+                QueryTo = this.dateTimePicker2.Value,
             };
 
-            await SearchForHistoricalDocumentsAsync(bundle, true);
+            await this.SearchForHistoricalDocumentsAsync(bundle, true);
         }
 
-        private void sendFeedbackToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SendFeedbackToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(string.Format("This tool will improve with your detailed feedback.\n\nPlease send comments, feature requests, and bug reports\nto {0}.", feedbackEmailAddress), "Feedback Request");
+            MessageBox.Show(string.Format("This tool will improve with your detailed feedback.\n\nPlease send comments, feature requests, and bug reports\nto {0}.", FeedbackEmailAddress), "Feedback Request");
         }
 
-        private void tbSandbox_Validated(object sender, EventArgs e)
+        private void TbSandbox_Validated(object sender, EventArgs e)
         {
-            userSettings.Sandbox = tbSandbox.Text;
+            this.userSettings.Sandbox = this.tbSandbox.Text;
         }
 
-        private void tbScid_Validated(object sender, EventArgs e)
+        private void TbScid_Validated(object sender, EventArgs e)
         {
-            userSettings.Scid = tbScid.Text;
+            this.userSettings.Scid = this.tbScid.Text;
         }
 
-        private void tbTemplateName_Validated(object sender, EventArgs e)
+        private void TbTemplateName_Validated(object sender, EventArgs e)
         {
-            userSettings.TemplateName = tbTemplateName.Text;
+            this.userSettings.TemplateName = this.tbTemplateName.Text;
         }
 
-        private void tbQueryKey_Validated(object sender, EventArgs e)
+        private void TbQueryKey_Validated(object sender, EventArgs e)
         {
-            userSettings.QueryKey = tbQueryKey.Text;
+            this.userSettings.QueryKey = this.tbQueryKey.Text;
         }
 
-        private void cmbQueryType_SelectedIndexChanged(object sender, EventArgs e)
+        private void CmbQueryType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            userSettings.QueryType = cmbQueryType.SelectedIndex;
+            this.userSettings.QueryType = this.cmbQueryType.SelectedIndex;
         }
 
         private void AdjustControls()
@@ -701,154 +702,156 @@ namespace SessionHistoryViewer
                 int activeFormWidth = ActiveForm.Width;
 
                 // width calculations
-                listView1.Width = (activeFormWidth - (sideMargin * 3));
-                splitContainer1.Width = listView1.Width;
+                this.listView1.Width = activeFormWidth - (SideMargin * 3);
+                this.splitContainer1.Width = this.listView1.Width;
 
-                listView2.Width = splitContainer1.Width;
+                this.listView2.Width = this.splitContainer1.Width;
 
-                int snapshotWidth = (splitContainer1.Panel2.Width - sideMargin ) / NumSnapshotViews;
-                rtbSnapshotLeft.Width = snapshotWidth;
-                rtbSnapshotRight.Width = snapshotWidth;
+                int snapshotWidth = (this.splitContainer1.Panel2.Width - SideMargin ) / NumSnapshotViews;
+                this.rtbSnapshotLeft.Width = snapshotWidth;
+                this.rtbSnapshotRight.Width = snapshotWidth;
 
                 // control height calcalations
-                splitContainer1.Height = activeFormHeight - listView1.Bottom - (vertMargin * 2);
-                AdjustPanel2Controls();
+                this.splitContainer1.Height = activeFormHeight - this.listView1.Bottom - (VertMargin * 2);
+                this.AdjustPanel2Controls();
 
                 // vertical position adjustment
-                splitContainer1.Top = listView1.Bottom + vertMargin;
+                this.splitContainer1.Top = this.listView1.Bottom + VertMargin;
 
                 // horizontal position adjustments
-                rtbSnapshotRight.Left = rtbSnapshotLeft.Right + sideMargin;
-                lblChangeRight.Left = rtbSnapshotRight.Left;
-                checkboxLockVScroll.Left = activeFormWidth / 2 - checkboxLockVScroll.Width / 2;
+                this.rtbSnapshotRight.Left = this.rtbSnapshotLeft.Right + SideMargin;
+                this.lblChangeRight.Left = this.rtbSnapshotRight.Left;
+                this.checkboxLockVScroll.Left = (activeFormWidth / 2) - (this.checkboxLockVScroll.Width / 2);
             }
         }
 
         private void AdjustPanel2Controls()
         {
-            int snapshotHeight = splitContainer1.Panel2.Height - lblChangeLeft.Height - checkboxLockVScroll.Height - (vertMargin * 2);
+            int snapshotHeight = this.splitContainer1.Panel2.Height - this.lblChangeLeft.Height - this.checkboxLockVScroll.Height - (VertMargin * 2);
 
-            rtbSnapshotLeft.Height = snapshotHeight - 50;
-            rtbSnapshotRight.Height = snapshotHeight - 50;
+            this.rtbSnapshotLeft.Height = snapshotHeight - 50;
+            this.rtbSnapshotRight.Height = snapshotHeight - 50;
 
-            checkboxLockVScroll.Top = rtbSnapshotLeft.Bottom + vertMargin;
+            this.checkboxLockVScroll.Top = this.rtbSnapshotLeft.Bottom + VertMargin;
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            AdjustControls();
+            this.AdjustControls();
         }
 
         private void Form1_ClientSizeChanged(object sender, EventArgs e)
         {
-            AdjustControls();
+            this.AdjustControls();
         }
 
-        private void rtbSnapshotLeft_VScroll(object sender, EventArgs e)
+        private void RtbSnapshotLeft_VScroll(object sender, EventArgs e)
         {
-            if (checkboxLockVScroll.Checked && !VRightScrollInProgress)
+            if (this.checkboxLockVScroll.Checked && !vRightScrollInProgress)
             {
-                VLeftScrollInProgress = true;
+                vLeftScrollInProgress = true;
 
-                int charPos = rtbSnapshotLeft.GetCharIndexFromPosition(new Point(0, 0));
-                rtbSnapshotRight.Select(charPos, 1);
-                rtbSnapshotRight.ScrollToCaret();
+                int charPos = this.rtbSnapshotLeft.GetCharIndexFromPosition(new Point(0, 0));
+                this.rtbSnapshotRight.Select(charPos, 1);
+                this.rtbSnapshotRight.ScrollToCaret();
 
-                VLeftScrollInProgress = false;
+                vLeftScrollInProgress = false;
             }
         }
 
-        private void rtbSnapshotRight_VScroll(object sender, EventArgs e)
+        private void RtbSnapshotRight_VScroll(object sender, EventArgs e)
         {
-            var offset = rtbSnapshotRight.AutoScrollOffset;
+            var offset = this.rtbSnapshotRight.AutoScrollOffset;
 
-            if (checkboxLockVScroll.Checked && !VLeftScrollInProgress)
+            if (this.checkboxLockVScroll.Checked && !vLeftScrollInProgress)
             {
-                VRightScrollInProgress = true;
+                vRightScrollInProgress = true;
 
-                int charPos = rtbSnapshotRight.GetCharIndexFromPosition(new Point(0, 0));
-                rtbSnapshotLeft.Select(charPos, 1);
-                rtbSnapshotLeft.ScrollToCaret();
+                int charPos = this.rtbSnapshotRight.GetCharIndexFromPosition(new Point(0, 0));
+                this.rtbSnapshotLeft.Select(charPos, 1);
+                this.rtbSnapshotLeft.ScrollToCaret();
 
-                VRightScrollInProgress = false;
+                vRightScrollInProgress = false;
             }
         }
 
-        private void rtbSnapshotRight_MouseDown(object sender, MouseEventArgs e)
+        private void RtbSnapshotRight_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
-                checkboxLockVScroll.Checked = !checkboxLockVScroll.Checked;
+                this.checkboxLockVScroll.Checked = !this.checkboxLockVScroll.Checked;
             }
         }
 
-        private void rtbSnapshotLeft_MouseDown(object sender, MouseEventArgs e)
+        private void RtbSnapshotLeft_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
-                checkboxLockVScroll.Checked = !checkboxLockVScroll.Checked;
+                this.checkboxLockVScroll.Checked = !this.checkboxLockVScroll.Checked;
             }
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             // save any UI customizations the user made
-            string lv1ColumnWidths = string.Format("{0},{1},{2},{3},{4},{5}", 
-                listView1.Columns[0].Width,
-                listView1.Columns[1].Width,
-                listView1.Columns[2].Width,
-                listView1.Columns[3].Width,
-                listView1.Columns[4].Width,
-                listView1.Columns[5].Width);
+            string lv1ColumnWidths = string.Format(
+                "{0},{1},{2},{3},{4},{5}", 
+                this.listView1.Columns[0].Width,
+                this.listView1.Columns[1].Width,
+                this.listView1.Columns[2].Width,
+                this.listView1.Columns[3].Width,
+                this.listView1.Columns[4].Width,
+                this.listView1.Columns[5].Width);
 
-            string lv2ColumnWidths = string.Format("{0},{1},{2},{3},{4},{5},{6}", 
-                listView2.Columns[0].Width,
-                listView2.Columns[1].Width,
-                listView2.Columns[2].Width,
-                listView2.Columns[3].Width,
-                listView2.Columns[4].Width,
-                listView2.Columns[5].Width,
-                listView2.Columns[6].Width);
+            string lv2ColumnWidths = string.Format(
+                "{0},{1},{2},{3},{4},{5},{6}", 
+                this.listView2.Columns[0].Width,
+                this.listView2.Columns[1].Width,
+                this.listView2.Columns[2].Width,
+                this.listView2.Columns[3].Width,
+                this.listView2.Columns[4].Width,
+                this.listView2.Columns[5].Width,
+                this.listView2.Columns[6].Width);
 
-            userSettings.ListView1ColumnWidths = lv1ColumnWidths;
-            userSettings.ListView2ColumnWidths = lv2ColumnWidths;
+            this.userSettings.ListView1ColumnWidths = lv1ColumnWidths;
+            this.userSettings.ListView2ColumnWidths = lv2ColumnWidths;
         }
 
-        private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
+        private void SplitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
         {
-            listView2.Height = splitContainer1.Panel1.Height - lblChangeCount.Height - vertMargin;
+            this.listView2.Height = this.splitContainer1.Panel1.Height - this.lblChangeCount.Height - VertMargin;
 
-            AdjustPanel2Controls();
+            this.AdjustPanel2Controls();
         }
 
-        private void displayDateTimesAsUTCToolStripMenuItem_Click(object sender, EventArgs e)
+        private void DisplayDateTimesAsUTCToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            userSettings.ShowLocalTime = !displayDateTimesAsUTCToolStripMenuItem.Checked;
+            this.userSettings.ShowLocalTime = !this.displayDateTimesAsUTCToolStripMenuItem.Checked;
 
-            listView1.Columns[3].Text = displayDateTimesAsUTCToolStripMenuItem.Checked ? UtcTimeColumnHeader : LocalTimeColumnHeader;
-            foreach(ListViewItem lvi1 in listView1.Items)
+            this.listView1.Columns[3].Text = this.displayDateTimesAsUTCToolStripMenuItem.Checked ? UtcTimeColumnHeader : LocalTimeColumnHeader;
+            foreach (ListViewItem lvi1 in this.listView1.Items)
             {
                 // column3 is the timestamp
                 DateTime dtToModify = DateTime.Parse(lvi1.SubItems[3].Text);
-                lvi1.SubItems[3].Text = displayDateTimesAsUTCToolStripMenuItem.Checked ? dtToModify.ToUniversalTime().ToString() : dtToModify.ToLocalTime().ToString();
+                lvi1.SubItems[3].Text = this.displayDateTimesAsUTCToolStripMenuItem.Checked ? dtToModify.ToUniversalTime().ToString() : dtToModify.ToLocalTime().ToString();
             }
 
-            listView2.Columns[2].Text = displayDateTimesAsUTCToolStripMenuItem.Checked ? UtcTimeColumnHeader : LocalTimeColumnHeader;
-            foreach (ListViewItem lvi2 in listView2.Items)
+            this.listView2.Columns[2].Text = this.displayDateTimesAsUTCToolStripMenuItem.Checked ? UtcTimeColumnHeader : LocalTimeColumnHeader;
+            foreach (ListViewItem lvi2 in this.listView2.Items)
             {
                 // column 2 is the timestamp
                 DateTime dtToModify = DateTime.Parse(lvi2.SubItems[2].Text);
-                lvi2.SubItems[2].Text = displayDateTimesAsUTCToolStripMenuItem.Checked ? dtToModify.ToUniversalTime().ToString() : dtToModify.ToLocalTime().ToString();
+                lvi2.SubItems[2].Text = this.displayDateTimesAsUTCToolStripMenuItem.Checked ? dtToModify.ToUniversalTime().ToString() : dtToModify.ToLocalTime().ToString();
             }
         }
 
-        private void loadSessionHistoryToolStripMenuItem_Click(object sender, EventArgs e)
+        private void LoadSessionHistoryToolStripMenuItem_Click(object sender, EventArgs e)
         {
             HistoricalDocument document = null;
 
             var openFileDialog = new OpenFileDialog()
             {
-                Filter = sessionHistoryFileFilter
+                Filter = SessionHistoryFileFilter
             };
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
@@ -860,7 +863,7 @@ namespace SessionHistoryViewer
                     {
                         document = JsonConvert.DeserializeObject<HistoricalDocument>(fileContents);
                     }
-                    catch(JsonSerializationException)
+                    catch (JsonSerializationException)
                     {
                         MessageBox.Show("Could not deserialize the file to a\nHistorical Document.", "Load Document Error");
                     }
@@ -869,8 +872,8 @@ namespace SessionHistoryViewer
 
             if (document != null)
             {
-                listView1.Items.Clear();
-                InitViews();
+                this.listView1.Items.Clear();
+                this.InitViews();
 
                 string[] arr = new string[QueryResultColumnCount] 
                 { 
@@ -883,11 +886,11 @@ namespace SessionHistoryViewer
                 };
 
                 ListViewItem lvi = new ListViewItem(arr);
-                listView1.Items.Add(lvi);
+                this.listView1.Items.Add(lvi);
 
                 foreach (DocumentStateSnapshot snapshot in document.DocumentSnapshots)
                 {
-                    string hashKey = SnapshotCache.GetHashString(
+                    string hashKey = this.snapshotCache.GetHashString(
                         document.SessionName,
                         document.Branch,
                         snapshot.Change);
@@ -896,10 +899,10 @@ namespace SessionHistoryViewer
 
                     if (snapshot.Change != SessionHistory.MaxChangeValue)
                     {
-                        if (!SnapshotCache.TryGetSnapshot(hashKey, out snapshotBody))
+                        if (!this.snapshotCache.TryGetSnapshot(hashKey, out snapshotBody))
                         {
                             snapshotBody = snapshot.Body;
-                            SnapshotCache.AddSnapshotToCache(hashKey, snapshot.Body);
+                            this.snapshotCache.AddSnapshotToCache(hashKey, snapshot.Body);
                         }
                     }
 
@@ -915,148 +918,76 @@ namespace SessionHistoryViewer
                         };
 
                     ListViewItem lvi2 = new ListViewItem(lv2arr);
-                    listView2.Items.Add(lvi2);
+                    this.listView2.Items.Add(lvi2);
                 }
 
-                lblDocCount.Text = "1 document [offline]";
-                DisplayChangesInfo();
+                this.lblDocCount.Text = "1 document [offline]";
+                this.DisplayChangesInfo();
 
-                ShowingOfflineSession = true;
-                saveSessionHistoryToolStripMenuItem.Visible = false;
+                this.showingOfflineSession = true;
+                this.saveSessionHistoryToolStripMenuItem.Visible = false;
             }
         }
 
-        private void listView1_MouseDown(object sender, MouseEventArgs e)
+        private void ListView1_MouseDown(object sender, MouseEventArgs e)
         {
-            if (listView1.SelectedItems.Count > 0)
+            if (this.listView1.SelectedItems.Count > 0)
             {
                 if (e.Button == System.Windows.Forms.MouseButtons.Right)
                 {
-                    SessionDocumentContextMenuStrip.Show(Cursor.Position);
+                    this.SessionDocumentContextMenuStrip.Show(Cursor.Position);
                 }
             }
         }
 
         // ColumnClick event handler.
-        internal void listView1_ColumnClick(object o, ColumnClickEventArgs e)
+        internal void ListView1_ColumnClick(object o, ColumnClickEventArgs e)
         {
             // Set the ListViewItemSorter property to a new ListViewItemComparer 
             // object. Setting this property immediately sorts the 
             // ListView using the ListViewItemComparer object.            
-            this.listView1.ListViewItemSorter = new ListViewItemComparer(e.Column, isLV1SortOrderDescending);
-            isLV1SortOrderDescending = !isLV1SortOrderDescending;
+            this.listView1.ListViewItemSorter = new ListViewItemComparer(e.Column, this.isLV1SortOrderDescending);
+            this.isLV1SortOrderDescending = !this.isLV1SortOrderDescending;
         }
 
         // ColumnClick event handler.
-        internal void listView2_ColumnClick(object o, ColumnClickEventArgs e)
+        internal void ListView2_ColumnClick(object o, ColumnClickEventArgs e)
         {
             // Set the ListViewItemSorter property to a new ListViewItemComparer 
             // object. Setting this property immediately sorts the 
             // ListView using the ListViewItemComparer object.            
-            this.listView2.ListViewItemSorter = new ListViewItemComparer(e.Column, isLV2SortOrderDescending);
-            isLV2SortOrderDescending = !isLV2SortOrderDescending;
+            this.listView2.ListViewItemSorter = new ListViewItemComparer(e.Column, this.isLV2SortOrderDescending);
+            this.isLV2SortOrderDescending = !this.isLV2SortOrderDescending;
         }
 
-        // Implements the manual sorting of items by columns.
-        class ListViewItemComparer : IComparer
+        private async void SaveSessionHistoryToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            private int col;
-            private bool isDescending;
-
-            public ListViewItemComparer()
-            {
-                col = 0;
-            }
-
-            public ListViewItemComparer(int column, bool isDescending)
-            {
-                this.col = column;
-                this.isDescending = isDescending;
-            }
-
-            public int Compare(object x, object y)
-            {
-                long value1;
-                bool isNumber = long.TryParse(((ListViewItem)x).SubItems[col].Text, out value1);
-
-                if (!isNumber)
-                {
-                    if (isDescending)
-                    {
-                        return String.Compare(((ListViewItem)x).SubItems[col].Text, ((ListViewItem)y).SubItems[col].Text);
-                    }
-                    else
-                    {
-                        return String.Compare(((ListViewItem)y).SubItems[col].Text, ((ListViewItem)x).SubItems[col].Text);
-                    }
-                }
-                else
-                {
-                    long value2;
-
-                    if (string.IsNullOrWhiteSpace(((ListViewItem)y).SubItems[col].Text))
-                    {
-                        value2 = 0;
-                    }
-                    else
-                    {                        
-                        if (!long.TryParse(((ListViewItem)y).SubItems[col].Text, out value2))
-                        {
-                            value2 = SessionHistory.MaxChangeValue;
-                        }
-                    }
-
-                    if (value1 == value2)
-                    {
-                        return 0;
-                    }
-
-                    if (isDescending)
-                    {
-                        if (value1 < value2)
-                            return -1;
-                        else
-                            return 1;
-                    }
-                    else
-                    {
-                        if (value1 < value2)
-                            return 1;
-                        else
-                            return -1;
-                    }
-                }
-            }
-        }
-
-        private async void saveSessionHistoryToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (listView1.SelectedItems.Count != 1)
+            if (this.listView1.SelectedItems.Count != 1)
             {
                 return;
             }
             
-            int selectedIndex = listView1.SelectedIndices[0];
+            int selectedIndex = this.listView1.SelectedIndices[0];
 
             HistoricalDocument document = new HistoricalDocument()
             {
-                SessionName = listView1.Items[selectedIndex].SubItems[0].Text,
-                Branch = listView1.Items[selectedIndex].SubItems[1].Text,
-                NumSnapshots = int.Parse(listView1.Items[selectedIndex].SubItems[2].Text),
-                LastModified = listView1.Items[selectedIndex].SubItems[3].Text,
-                IsExpired = bool.Parse(listView1.Items[selectedIndex].SubItems[4].Text),
-                ActivityId = listView1.Items[selectedIndex].SubItems[5].Text,
+                SessionName = this.listView1.Items[selectedIndex].SubItems[0].Text,
+                Branch = this.listView1.Items[selectedIndex].SubItems[1].Text,
+                NumSnapshots = int.Parse(this.listView1.Items[selectedIndex].SubItems[2].Text),
+                LastModified = this.listView1.Items[selectedIndex].SubItems[3].Text,
+                IsExpired = bool.Parse(this.listView1.Items[selectedIndex].SubItems[4].Text),
+                ActivityId = this.listView1.Items[selectedIndex].SubItems[5].Text,
             };
 
-            string eToken = await Authentication.GetDevTokenSlientlyAsync(tbScid.Text, tbSandbox.Text);
+            string eToken = await ToolAuthentication.GetDevTokenSilentlyAsync(this.tbScid.Text, this.tbSandbox.Text);
 
-            lblExplanation.Text = "Downloading change history for the selected session...";
+            this.lblExplanation.Text = "Downloading change history for the selected session...";
 
-            Tuple<SessionHistoryDocumentResponse, string> queryResponse = await QueryForDocSessionHistoryAsync(eToken, document.SessionName, document.Branch);
+            Tuple<SessionHistoryDocumentResponse, string> queryResponse = await this.QueryForDocSessionHistoryAsync(eToken, document.SessionName, document.Branch);
 
             if (queryResponse.Item2 != null)
             {
-                downloadPanel.Hide();
+                this.downloadPanel.Hide();
 
                 MessageBox.Show(string.Format("{0}\n\nThe server may have been busy.\nPlease try again.", queryResponse.Item2), "Error!");
                 return;
@@ -1068,7 +999,7 @@ namespace SessionHistoryViewer
             {
                 foreach (var item in queryResponse.Item1.Results)
                 {
-                    Tuple<string, string> getSnapshotResponse = await QueryForDocSessionHistoryChangeAsync(document.SessionName, document.Branch, item.changeNumber);
+                    Tuple<string, string> getSnapshotResponse = await this.QueryForDocSessionHistoryChangeAsync(document.SessionName, document.Branch, item.ChangeNumber);
                     string snapshotBody = getSnapshotResponse.Item1;
                     errMsg = getSnapshotResponse.Item2;
 
@@ -1079,13 +1010,13 @@ namespace SessionHistoryViewer
 
                     DocumentStateSnapshot snapshot = new DocumentStateSnapshot()
                     {
-                        Change = item.changeNumber,
-                        ModifiedByXuids = item.changedBy,
-                        Timestamp = item.timestamp,
-                        TitleId = item.titleId,
-                        ServiceId = item.serviceId,
-                        CorrelationId = item.correlationId,
-                        ChangeDetails = item.details,
+                        Change = item.ChangeNumber,
+                        ModifiedByXuids = item.ChangedBy,
+                        Timestamp = item.Timestamp,
+                        TitleId = item.TitleId,
+                        ServiceId = item.ServiceId,
+                        CorrelationId = item.CorrelationId,
+                        ChangeDetails = item.Details,
                         Body = snapshotBody != null ? snapshotBody : string.Empty
                     };
 
@@ -1093,7 +1024,7 @@ namespace SessionHistoryViewer
                 }
             }
 
-            downloadPanel.Hide();
+            this.downloadPanel.Hide();
 
             if (errMsg != null)
             {
@@ -1106,7 +1037,7 @@ namespace SessionHistoryViewer
 
                 var saveDialog = new SaveFileDialog()
                 {
-                    Filter = sessionHistoryFileFilter,
+                    Filter = SessionHistoryFileFilter,
                     FileName = string.Format("{0}~{1}", document.SessionName, document.Branch)
                 };
 
@@ -1120,25 +1051,25 @@ namespace SessionHistoryViewer
             }
         }
 
-        private void btnCancel_Click(object sender, EventArgs e)
+        private void BtnCancel_Click(object sender, EventArgs e)
         {
-            QueryCancelled = true;
-            downloadPanel.Hide();
+            this.queryCancelled = true;
+            this.downloadPanel.Hide();
         }
 
-        private void downloadPanel_VisibleChanged(object sender, EventArgs e)
+        private void DownloadPanel_VisibleChanged(object sender, EventArgs e)
         {
-            if (downloadPanel.Visible == true)
+            if (this.downloadPanel.Visible == true)
             {
                 // center the panel to the application
-                downloadPanel.Left = downloadPanel.Parent.Width / 2 - downloadPanel.Width / 2;
-                downloadPanel.Top = downloadPanel.Parent.Height / 2 - downloadPanel.Height / 2;
+                this.downloadPanel.Left = (this.downloadPanel.Parent.Width / 2) - (this.downloadPanel.Width / 2);
+                this.downloadPanel.Top = (this.downloadPanel.Parent.Height / 2) - (this.downloadPanel.Height / 2);
             }
         }
 
-        private void lblExplanation_TextChanged(object sender, EventArgs e)
+        private void LblExplanation_TextChanged(object sender, EventArgs e)
         {
-            downloadPanel.Show();
+            this.downloadPanel.Show();
         }
 
         private async void SingInout_Click(object sender, EventArgs e)
@@ -1146,20 +1077,20 @@ namespace SessionHistoryViewer
             try
             {
                 this.btnSingInout.Enabled = false;
-                if (signedInuser != null)
+                if (this.signedInuser != null)
                 {
-                    Authentication.SignOut();
-                    signedInuser = null;
+                    ToolAuthentication.SignOut();
+                    this.signedInuser = null;
                 }
                 else
                 {
                     DevAccountSource accountSource = DevAccountSource.WindowsDevCenter;
-                    if (cmbAccountSource.SelectedIndex == 1)
+                    if (this.cmbAccountSource.SelectedIndex == 1)
                     {
                         accountSource = DevAccountSource.XboxDeveloperPortal;
                     }
 
-                    this.signedInuser = await Authentication.SignInAsync(accountSource, null);
+                    this.signedInuser = await ToolAuthentication.SignInAsync(accountSource, null);
                 }
             }
             catch (Exception exception)
@@ -1168,35 +1099,105 @@ namespace SessionHistoryViewer
             }
             finally
             {
-                UpdateAccountPanel();
+                this.UpdateAccountPanel();
                 this.btnSingInout.Enabled = true;
             }
-
         }
 
-        private void cmbAccountSource_SelectedIndexChanged(object sender, EventArgs e)
+        private void CmbAccountSource_SelectedIndexChanged(object sender, EventArgs e)
         {
-            userSettings.AccountSource = cmbAccountSource.SelectedIndex;
+            this.userSettings.AccountSource = this.cmbAccountSource.SelectedIndex;
         }
 
         private void UpdateAccountPanel()
         {
-            this.signedInuser = Authentication.LoadLastSignedInUser();
-            if (signedInuser != null)
+            this.signedInuser = ToolAuthentication.LoadLastSignedInUser();
+            if (this.signedInuser != null)
             {
-                btnSingInout.Text = "Sign Out";
-                cmbAccountSource.Enabled = false;
-                labelUserName.Text = signedInuser.Name;
-                btnQuery.Enabled = true;
+                this.btnSingInout.Text = "Sign Out";
+                this.cmbAccountSource.Enabled = false;
+                this.labelUserName.Text = this.signedInuser.Name;
+                this.btnQuery.Enabled = true;
             }
             else
             {
-                btnSingInout.Text = "Sign In";
-                cmbAccountSource.Enabled = true;
-                labelUserName.Text = "";
-                btnQuery.Enabled = false;
+                this.btnSingInout.Text = "Sign In";
+                this.cmbAccountSource.Enabled = true;
+                this.labelUserName.Text = string.Empty;
+                this.btnQuery.Enabled = false;
             }
-            
+        }
+
+        // Implements the manual sorting of items by columns.
+        private class ListViewItemComparer : IComparer
+        {
+            private int col;
+            private bool isDescending;
+
+            public ListViewItemComparer()
+            {
+                this.col = 0;
+            }
+
+            public ListViewItemComparer(int column, bool isDescending)
+            {
+                this.col = column;
+                this.isDescending = isDescending;
+            }
+
+            public int Compare(object x, object y)
+            {
+                long value1;
+                bool isNumber = long.TryParse(((ListViewItem)x).SubItems[this.col].Text, out value1);
+
+                if (!isNumber)
+                {
+                    if (this.isDescending)
+                    {
+                        return string.Compare(((ListViewItem)x).SubItems[this.col].Text, ((ListViewItem)y).SubItems[this.col].Text);
+                    }
+                    else
+                    {
+                        return string.Compare(((ListViewItem)y).SubItems[this.col].Text, ((ListViewItem)x).SubItems[this.col].Text);
+                    }
+                }
+                else
+                {
+                    long value2;
+
+                    if (string.IsNullOrWhiteSpace(((ListViewItem)y).SubItems[this.col].Text))
+                    {
+                        value2 = 0;
+                    }
+                    else
+                    {
+                        if (!long.TryParse(((ListViewItem)y).SubItems[this.col].Text, out value2))
+                        {
+                            value2 = SessionHistory.MaxChangeValue;
+                        }
+                    }
+
+                    if (value1 == value2)
+                    {
+                        return 0;
+                    }
+
+                    if (this.isDescending)
+                    {
+                        if (value1 < value2)
+                            return -1;
+                        else
+                            return 1;
+                    }
+                    else
+                    {
+                        if (value1 < value2)
+                            return 1;
+                        else
+                            return -1;
+                    }
+                }
+            }
         }
     }
 }

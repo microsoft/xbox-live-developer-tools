@@ -8,40 +8,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     /// </summary>
     public class DevAccount
     {
-        /// <summary>
-        ///  ID of the developer account
-        /// </summary>
-        public string Id { get; set; }
-
-        /// <summary>
-        /// User name of the developer account
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// The Id of the account under which the developer is acting. Also known as publisher ID
-        /// </summary>
-        public string AccountId { get; set; }
-
-        /// <summary>
-        /// The account type under which the developer is acting.
-        /// </summary>
-        public string AccountType { get; set; }
-
-        /// <summary>
-        /// The moniker of the account for which the token is issued. 
-        /// </summary>
-        public string AccountMoniker { get; set; }
-
-        /// <summary>
-        /// The account source where the account was registered.
-        /// </summary>
-        public DevAccountSource AccountSource { get; set; }
-
-        internal DevAccount()
-        {
-        }
-
         internal DevAccount(XdtsTokenResponse etoken, DevAccountSource accountSource)
         {
             if (etoken.DisplayClaims.TryGetValue("eid", out object value))
@@ -71,5 +37,35 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
             this.AccountSource = accountSource;
         }
+
+        /// <summary>
+        ///  ID of the developer account
+        /// </summary>
+        public string Id { get; set; }
+
+        /// <summary>
+        /// User name of the developer account
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// The Id of the account under which the developer is acting. Also known as publisher ID
+        /// </summary>
+        public string AccountId { get; set; }
+
+        /// <summary>
+        /// The account type under which the developer is acting.
+        /// </summary>
+        public string AccountType { get; set; }
+
+        /// <summary>
+        /// The moniker of the account for which the token is issued. 
+        /// </summary>
+        public string AccountMoniker { get; set; }
+
+        /// <summary>
+        /// The account source where the account was registered.
+        /// </summary>
+        public DevAccountSource AccountSource { get; set; }
     }
 }

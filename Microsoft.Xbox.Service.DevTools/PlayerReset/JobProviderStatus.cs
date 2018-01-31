@@ -20,7 +20,8 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         /// <summary>
         /// The provider status of reset job.
         /// </summary>
-        [JsonProperty("status"),JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty("status")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public ResetProviderStatus Status { get; set; }
 
         /// <summary>

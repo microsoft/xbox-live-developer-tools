@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Xbox.Services.DevTools.Common;
-
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
     using System.Collections.Generic;
@@ -14,12 +12,12 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             if (!string.IsNullOrEmpty(scid))
             {
-                Properties["Scid"] = scid;
+                this.Properties["Scid"] = scid;
             }
 
             if (sandboxes!=null)
             {
-                Properties["Sandboxes"] = string.Join(" ", sandboxes);
+                this.Properties["Sandboxes"] = string.Join(" ", sandboxes);
             }
         }
 
@@ -28,6 +26,5 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         public string RelyingParty { get; set; } = ClientSettings.Singleton.XDTSToolRelyingParty;
 
         public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
-
     }
 }

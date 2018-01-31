@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Windows.Forms;
-
 namespace SessionHistoryViewer
 {
+    using System.Windows.Forms;
+
     public static class ListViewExtensions
     {
         public static void AddColumn(this ListView lv, string columnHeaderText, string[] headerWidths, int columnIndex, int defaultWidth)

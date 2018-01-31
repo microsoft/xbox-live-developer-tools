@@ -3,8 +3,9 @@
 
 namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 {
-    using Newtonsoft.Json;
     using System.Collections.Generic;
+    using Newtonsoft.Json;
+
     internal class JobStatusResponse
     {
         [JsonProperty("jobId")]

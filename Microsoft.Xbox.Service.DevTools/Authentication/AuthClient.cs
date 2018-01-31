@@ -1,29 +1,26 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Xbox.Services.DevTools.Common;
-
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
-    using Newtonsoft.Json;
     using System;
+    using System.Collections.Generic;
     using System.Net.Http;
     using System.Threading.Tasks;
     using DevTools.Common;
-    using System.Collections.Generic;
+    using Newtonsoft.Json;
 
     internal class AuthClient
     {
+        public AuthClient()
+        {
+        }
+
         public IAuthContext AuthContext { get; set; }
 
         public DevAccount Account { get; private set; }
 
         public Lazy<XdtsTokenCache> ETokenCache { get; } = new Lazy<XdtsTokenCache>();
-
-        public AuthClient()
-        {
-            
-        }
 
         public bool HasCredential
         {
@@ -32,7 +29,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public virtual async Task<string> GetETokenAsync(string scid, IEnumerable<string> sandboxes, bool forceRefresh)
         {
-            if (AuthContext == null)
+            if (this.AuthContext == null)
             {
                 throw new InvalidOperationException("User Info is not found.");
             }
@@ -43,14 +40,14 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             {
                 // return cachaed token if we have one and didn't expire
                 string cacheKey =
-                    XdtsTokenCache.GetCacheKey(AuthContext.UserName, AuthContext.AccountSource, scid, sandboxes);
+                    XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, scid, sandboxes);
                 this.ETokenCache.Value.TryGetCachedToken(cacheKey, out eToken);
             }
 
             if (string.IsNullOrEmpty(eToken))
             {
                 var aadToken = await this.AuthContext.AcquireTokenSilentAsync();
-                var xtdsToken = await FetchXdtsToken(aadToken, scid, sandboxes);
+                var xtdsToken = await this.FetchXdtsToken(aadToken, scid, sandboxes);
                 eToken = xtdsToken.Token;
             }
 
@@ -59,13 +56,13 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public async Task<DevAccount> SignInAsync()
         {
-            if (AuthContext == null)
+            if (this.AuthContext == null)
             {
                 throw new InvalidOperationException("User Info is not found.");
             }
 
-            string aadToken = await AuthContext.AcquireTokenAsync();
-            XdtsTokenResponse token = await FetchXdtsToken(aadToken, string.Empty, null);
+            string aadToken = await this.AuthContext.AcquireTokenAsync();
+            XdtsTokenResponse token = await this.FetchXdtsToken(aadToken, string.Empty, null);
 
             this.Account = new DevAccount(token, this.AuthContext.AccountSource);
 
@@ -95,7 +92,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 string content = await response.Content.ReadAsStringAsync();
                 var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(content);
 
-                string key = XdtsTokenCache.GetCacheKey(AuthContext.UserName, AuthContext.AccountSource, scid, sandboxes);
+                string key = XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, scid, sandboxes);
                 this.ETokenCache.Value.UpdateToken(key, token);
 
                 return token;

@@ -1,13 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-
 namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 {
-    using System;
-
-/// <summary>
+    /// <summary>
     /// Metadata of a title storage blob.
     /// </summary>
     public class TitleStorageBlobMetadata
@@ -25,6 +21,6 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <summary>
         /// Gets the number of bytes of the blob data.
         /// </summary>
-        public UInt64 Size { get; internal set; }
+        public ulong Size { get; internal set; }
     }
 }

@@ -1,20 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Net.Http;
-
 namespace Microsoft.Xbox.Services.DevTools.Unittest
 {
+    using System;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using DevTools.Authentication;
-    using DevTools.Common;
+    using Microsoft.Xbox.Services.DevTools.Authentication;
+    using Microsoft.Xbox.Services.DevTools.Common;
     using Moq;
     using Newtonsoft.Json;
     using RichardSzalay.MockHttp;
-    using System;
-    using System.IO;
-    using System.Net;
-    using System.Threading.Tasks;
 
     [TestClass]
     public class AuthTest
@@ -33,7 +31,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
         public void ComposeETokenPayload(TimeSpan expireTime, string scid, string sandbox, out string request, out string response)
         {
-            request = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, (String.IsNullOrEmpty(sandbox)? null : new string[]{ sandbox })));
+            request = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, string.IsNullOrEmpty(sandbox)? null : new string[] { sandbox }));
 
             var utcNowString = DateTime.UtcNow.ToString();
             var expiredTimeString = (DateTime.UtcNow + expireTime).ToString();
@@ -44,27 +42,26 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         private void SetupMockAad()
         {
             this.authMock = new Mock<IAuthContext>();
-            authMock.Setup(o => o.AcquireTokenSilentAsync())
+            this.authMock.Setup(o => o.AcquireTokenSilentAsync())
                 .ReturnsAsync("aadtoken");
 
-            authMock.Setup(o => o.AcquireTokenAsync())
+            this.authMock.Setup(o => o.AcquireTokenAsync())
                 .ReturnsAsync("aadtoken");
 
-            authMock.Setup(o => o.UserName).Returns(string.Empty);
-            authMock.Setup(o => o.AccountSource).Returns(DevAccountSource.WindowsDevCenter);
-            authMock.Setup(o => o.XtdsEndpoint).Returns(DefaultXtdsEndpoint);
+            this.authMock.Setup(o => o.UserName).Returns(string.Empty);
+            this.authMock.Setup(o => o.AccountSource).Returns(DevAccountSource.WindowsDevCenter);
+            this.authMock.Setup(o => o.XtdsEndpoint).Returns(DefaultXtdsEndpoint);
         }
 
-        async Task<DevAccount> SignInAsync(DevAccountSource accountSource, string userName)
+        private async Task<DevAccount> SignInAsync(DevAccountSource accountSource, string userName)
         {
-            return await Authentication.SignInAsync(accountSource, userName, this.authMock.Object);
+            return await ToolAuthentication.SignInAsync(accountSource, userName, this.authMock.Object);
         }
-
 
         [TestInitialize]
         public void TestInit()
         {
-            SetupMockAad();
+            this.SetupMockAad();
             ClientSettings.Singleton.CacheFolder = ".\\tokencache";
         }
 
@@ -72,7 +69,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         public void TestCleanup()
         {
             TestHook.MockHttpHandler = null;
-            Authentication.SignOut();
+            ToolAuthentication.SignOut();
         }
 
         [TestMethod]
@@ -80,10 +77,10 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out string defaultRequest,
+            this.ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out string defaultRequest,
                 out string defaultXdtsResponse);
 
-            ComposeETokenPayload(new TimeSpan(1, 0, 0), DefaultScid, DefaultSandbox, out string sandboxRequest,
+            this.ComposeETokenPayload(new TimeSpan(1, 0, 0), DefaultScid, DefaultSandbox, out string sandboxRequest,
                 out string sandboxResponse);
 
             mockHttp.Expect(DefaultXtdsEndpoint)
@@ -104,17 +101,16 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Assert.AreEqual(DefaultAccountType, devAccount.AccountType);
             Assert.AreEqual(DevAccountSource.WindowsDevCenter, devAccount.AccountSource);
 
-            var token2 = await Authentication.GetDevTokenSlientlyAsync(DefaultScid, DefaultSandbox);
-            Assert.AreEqual(token2, Authentication.PrepareForAuthHeader(DefaultEToken+DefaultScid+DefaultSandbox));
+            var token2 = await ToolAuthentication.GetDevTokenSilentlyAsync(DefaultScid, DefaultSandbox);
+            Assert.AreEqual(token2, ToolAuthentication.PrepareForAuthHeader(DefaultEToken+DefaultScid+DefaultSandbox));
         }
-
 
         [TestMethod]
         public async Task GetETokenFailTest()
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out string defaultRequest,
+            this.ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out string defaultRequest,
                 out string defaultXdtsResponse);
 
             mockHttp.Expect(DefaultXtdsEndpoint)
@@ -131,8 +127,6 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             {
                 Assert.IsFalse(string.IsNullOrEmpty(ex.Message));
                 Assert.IsTrue(ex.Message.Contains("400"));
-                //Assert.AreEqual(ex.Response.StatusCode, HttpStatusCode.BadRequest);
-
                 return;
             }
 
@@ -144,10 +138,10 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            ComposeETokenPayload(TimeSpan.Zero, string.Empty, string.Empty, out string defaultRequest,
+            this.ComposeETokenPayload(TimeSpan.Zero, string.Empty, string.Empty, out string defaultRequest,
                 out string defaultXdtsResponse);
 
-            // Excepct to be hit twice
+            // Expect to be hit twice
             mockHttp.Expect(DefaultXtdsEndpoint)
                 .WithContent(defaultRequest)
                 .Respond("application/json", defaultXdtsResponse);
@@ -167,11 +161,10 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 .WithContent(defaultRequest)
                 .Respond("application/json", defaultXdtsResponse);
 
-            var token = await Authentication.GetDevTokenSlientlyAsync(string.Empty, string.Empty);
-            Assert.AreEqual(token, Authentication.PrepareForAuthHeader(DefaultEToken));
+            var token = await ToolAuthentication.GetDevTokenSilentlyAsync(string.Empty, string.Empty);
+            Assert.AreEqual(token, ToolAuthentication.PrepareForAuthHeader(DefaultEToken));
 
             mockHttp.VerifyNoOutstandingExpectation();
-
         }
 
         [TestMethod]
@@ -179,10 +172,10 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            ComposeETokenPayload(new TimeSpan(1,0,0), string.Empty, string.Empty, out string defaultRequest,
+            this.ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out string defaultRequest,
                 out string defaultXdtsResponse);
 
-            // Excepct to be hit twice, the second call for token will be fetched from cache
+            // Expect to be hit twice, the second call for token will be fetched from cache
             mockHttp.Expect(DefaultXtdsEndpoint)
                 .WithContent(defaultRequest)
                 .Respond("application/json", defaultXdtsResponse);
@@ -198,11 +191,10 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Assert.AreEqual(devAccount.AccountType, DefaultAccountType);
             Assert.AreEqual(devAccount.AccountSource, DevAccountSource.WindowsDevCenter);
 
-            var token = await Authentication.GetDevTokenSlientlyAsync(string.Empty, string.Empty);
-            Assert.AreEqual(token, Authentication.PrepareForAuthHeader(DefaultEToken));
+            var token = await ToolAuthentication.GetDevTokenSilentlyAsync(string.Empty, string.Empty);
+            Assert.AreEqual(token, ToolAuthentication.PrepareForAuthHeader(DefaultEToken));
 
             mockHttp.VerifyNoOutstandingExpectation();
-
         }
     }
 }

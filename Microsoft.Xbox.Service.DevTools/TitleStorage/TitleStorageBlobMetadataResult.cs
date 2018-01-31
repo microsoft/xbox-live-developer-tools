@@ -1,11 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Linq;
-
 namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 {
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -21,9 +20,23 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <summary>
         /// If current result collection has next page.
         /// </summary>
-        public bool HasNext {
+        public bool HasNext
+        {
             get { return !string.IsNullOrEmpty(this.ContinuationToken); }
         }
+
+        /// <summary>
+        /// Total count of the items.
+        /// </summary>
+        public uint TotalItems { get; internal set; } = 0;
+
+        internal string ContinuationToken { get; set; }
+
+        internal string ServiceConfigurationId { get; set; }
+
+        internal string Sandbox { get; set; }
+
+        internal string Path { get; set; }
 
         /// <summary>
         /// Get next page of the current result collection.
@@ -39,16 +52,5 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 
             return await TitleStorage.GetGlobalStorageBlobMetaDataAsync(this.ServiceConfigurationId, this.Sandbox, this.Path, maxItems, 0, this.ContinuationToken);
         }
-
-        /// <summary>
-        /// Total count of the items.
-        /// </summary>
-        public uint TotalItems { get; internal set; } = 0;
-
-        internal string ContinuationToken { get; set; }
-        internal string ServiceConfigurationId { get; set; }
-        internal string Sandbox { get; set; }
-        internal string Path { get; set; }
     }
-
 }

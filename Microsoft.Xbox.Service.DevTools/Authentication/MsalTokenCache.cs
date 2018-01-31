@@ -1,29 +1,26 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Xbox.Services.DevTools.Common;
-
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
-    using Microsoft.Identity.Client;
     using System.IO;
-    using DevTools.Common;
+    using Microsoft.Identity.Client;
+    using Microsoft.Xbox.Services.DevTools.Common;
 
     internal class MsalTokenCache
     {
-        public TokenCache TokenCache { get; } = new TokenCache();
-
         private const string CacheFile = "msal.cache";
-
         private static readonly object FileLock = new object();
 
         public MsalTokenCache()
         {
-            TokenCache.SetBeforeAccess(BeforeAccessNotification);
-            TokenCache.SetAfterAccess(AfterAccessNotification);
+            this.TokenCache.SetBeforeAccess(this.BeforeAccessNotification);
+            this.TokenCache.SetAfterAccess(this.AfterAccessNotification);
 
             Directory.CreateDirectory(ClientSettings.Singleton.CacheFolder);
         }
+
+        public TokenCache TokenCache { get; } = new TokenCache();
 
         private void BeforeAccessNotification(TokenCacheNotificationArgs args)
         {

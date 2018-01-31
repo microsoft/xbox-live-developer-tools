@@ -1,14 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Web.Configuration;
-using Microsoft.Xbox.Services.DevTools.Common;
-
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
-    using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using System.IO;
-    using DevTools.Common;
+    using Microsoft.IdentityModel.Clients.ActiveDirectory;
+    using Microsoft.Xbox.Services.DevTools.Common;
 
     internal class AdalTokenCache : TokenCache
     {
@@ -18,8 +15,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public AdalTokenCache()
         {
-            this.AfterAccess = AfterAccessNotification;
-            this.BeforeAccess = BeforeAccessNotification;
+            this.AfterAccess = this.AfterAccessNotification;
+            this.BeforeAccess = this.BeforeAccessNotification;
 
             Directory.CreateDirectory(ClientSettings.Singleton.CacheFolder);
         }
