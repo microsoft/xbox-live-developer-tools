@@ -6,8 +6,11 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
     internal class UserResetJob
     {
         public string JobId { get; set; }
+
         public string CorrelationId { get; set; }
+
         public string Sandbox { get; set; }
+
         public string Scid { get; set; }
     }
 }

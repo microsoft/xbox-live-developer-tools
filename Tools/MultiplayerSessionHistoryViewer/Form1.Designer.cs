@@ -113,7 +113,7 @@
             this.tbScid.Name = "tbScid";
             this.tbScid.Size = new System.Drawing.Size(282, 20);
             this.tbScid.TabIndex = 2;
-            this.tbScid.Validated += new System.EventHandler(this.tbScid_Validated);
+            this.tbScid.Validated += new System.EventHandler(this.TbScid_Validated);
             // 
             // label4
             // 
@@ -130,7 +130,7 @@
             this.tbTemplateName.Name = "tbTemplateName";
             this.tbTemplateName.Size = new System.Drawing.Size(282, 20);
             this.tbTemplateName.TabIndex = 3;
-            this.tbTemplateName.Validated += new System.EventHandler(this.tbTemplateName_Validated);
+            this.tbTemplateName.Validated += new System.EventHandler(this.TbTemplateName_Validated);
             // 
             // groupBox1
             // 
@@ -165,7 +165,7 @@
             this.btnPriorQuery.Text = "<---   Go Back";
             this.btnPriorQuery.UseVisualStyleBackColor = true;
             this.btnPriorQuery.Visible = false;
-            this.btnPriorQuery.Click += new System.EventHandler(this.btnPriorQuery_Click);
+            this.btnPriorQuery.Click += new System.EventHandler(this.BtnPriorQuery_Click);
             // 
             // cmbQueryType
             // 
@@ -179,7 +179,7 @@
             this.cmbQueryType.Name = "cmbQueryType";
             this.cmbQueryType.Size = new System.Drawing.Size(145, 21);
             this.cmbQueryType.TabIndex = 5;
-            this.cmbQueryType.SelectedIndexChanged += new System.EventHandler(this.cmbQueryType_SelectedIndexChanged);
+            this.cmbQueryType.SelectedIndexChanged += new System.EventHandler(this.CmbQueryType_SelectedIndexChanged);
             // 
             // tbSandbox
             // 
@@ -187,7 +187,7 @@
             this.tbSandbox.Name = "tbSandbox";
             this.tbSandbox.Size = new System.Drawing.Size(105, 20);
             this.tbSandbox.TabIndex = 1;
-            this.tbSandbox.Validated += new System.EventHandler(this.tbSandbox_Validated);
+            this.tbSandbox.Validated += new System.EventHandler(this.TbSandbox_Validated);
             // 
             // label3
             // 
@@ -238,7 +238,7 @@
             this.btnQuery.TabIndex = 8;
             this.btnQuery.Text = "Query";
             this.btnQuery.UseVisualStyleBackColor = true;
-            this.btnQuery.Click += new System.EventHandler(this.btnQuery_Click);
+            this.btnQuery.Click += new System.EventHandler(this.BtnQuery_Click);
             // 
             // tbQueryKey
             // 
@@ -246,7 +246,7 @@
             this.tbQueryKey.Name = "tbQueryKey";
             this.tbQueryKey.Size = new System.Drawing.Size(282, 20);
             this.tbQueryKey.TabIndex = 4;
-            this.tbQueryKey.Validated += new System.EventHandler(this.tbQueryKey_Validated);
+            this.tbQueryKey.Validated += new System.EventHandler(this.TbQueryKey_Validated);
             // 
             // label11
             // 
@@ -284,14 +284,14 @@
             this.loadSessionHistoryToolStripMenuItem.Name = "loadSessionHistoryToolStripMenuItem";
             this.loadSessionHistoryToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.loadSessionHistoryToolStripMenuItem.Text = "&Load Session History...";
-            this.loadSessionHistoryToolStripMenuItem.Click += new System.EventHandler(this.loadSessionHistoryToolStripMenuItem_Click);
+            this.loadSessionHistoryToolStripMenuItem.Click += new System.EventHandler(this.LoadSessionHistoryToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
-            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            this.exitToolStripMenuItem.Click += new System.EventHandler(this.ExitToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem
             // 
@@ -307,14 +307,14 @@
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.aboutToolStripMenuItem.Text = "A&bout...";
-            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
             // sendFeedbackToolStripMenuItem
             // 
             this.sendFeedbackToolStripMenuItem.Name = "sendFeedbackToolStripMenuItem";
             this.sendFeedbackToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.sendFeedbackToolStripMenuItem.Text = "Send &Feedback...";
-            this.sendFeedbackToolStripMenuItem.Click += new System.EventHandler(this.sendFeedbackToolStripMenuItem_Click);
+            this.sendFeedbackToolStripMenuItem.Click += new System.EventHandler(this.SendFeedbackToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -330,7 +330,7 @@
             this.displayDateTimesAsUTCToolStripMenuItem.Name = "displayDateTimesAsUTCToolStripMenuItem";
             this.displayDateTimesAsUTCToolStripMenuItem.Size = new System.Drawing.Size(210, 22);
             this.displayDateTimesAsUTCToolStripMenuItem.Text = "Display DateTimes as &UTC";
-            this.displayDateTimesAsUTCToolStripMenuItem.Click += new System.EventHandler(this.displayDateTimesAsUTCToolStripMenuItem_Click);
+            this.displayDateTimesAsUTCToolStripMenuItem.Click += new System.EventHandler(this.DisplayDateTimesAsUTCToolStripMenuItem_Click);
             // 
             // splitContainer1
             // 
@@ -355,7 +355,7 @@
             this.splitContainer1.Size = new System.Drawing.Size(1150, 603);
             this.splitContainer1.SplitterDistance = 170;
             this.splitContainer1.TabIndex = 75;
-            this.splitContainer1.SplitterMoved += new System.Windows.Forms.SplitterEventHandler(this.splitContainer1_SplitterMoved);
+            this.splitContainer1.SplitterMoved += new System.Windows.Forms.SplitterEventHandler(this.SplitContainer1_SplitterMoved);
             // 
             // lblChangesHelp
             // 
@@ -377,7 +377,7 @@
             this.downloadPanel.Size = new System.Drawing.Size(431, 221);
             this.downloadPanel.TabIndex = 76;
             this.downloadPanel.Visible = false;
-            this.downloadPanel.VisibleChanged += new System.EventHandler(this.downloadPanel_VisibleChanged);
+            this.downloadPanel.VisibleChanged += new System.EventHandler(this.DownloadPanel_VisibleChanged);
             // 
             // lblExplanation
             // 
@@ -388,7 +388,7 @@
             this.lblExplanation.Size = new System.Drawing.Size(0, 19);
             this.lblExplanation.TabIndex = 6;
             this.lblExplanation.UseWaitCursor = true;
-            this.lblExplanation.TextChanged += new System.EventHandler(this.lblExplanation_TextChanged);
+            this.lblExplanation.TextChanged += new System.EventHandler(this.LblExplanation_TextChanged);
             // 
             // btnCancel
             // 
@@ -401,7 +401,7 @@
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.UseWaitCursor = true;
-            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            this.btnCancel.Click += new System.EventHandler(this.BtnCancel_Click);
             // 
             // pictureBox1
             // 
@@ -422,8 +422,8 @@
             this.listView2.Size = new System.Drawing.Size(1125, 134);
             this.listView2.TabIndex = 72;
             this.listView2.UseCompatibleStateImageBehavior = false;
-            this.listView2.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView2_ColumnClick);
-            this.listView2.SelectedIndexChanged += new System.EventHandler(this.listView2_SelectedIndexChanged);
+            this.listView2.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.ListView2_ColumnClick);
+            this.listView2.SelectedIndexChanged += new System.EventHandler(this.ListView2_SelectedIndexChanged);
             // 
             // lblChangeCount
             // 
@@ -470,8 +470,8 @@
             this.rtbSnapshotRight.Size = new System.Drawing.Size(545, 279);
             this.rtbSnapshotRight.TabIndex = 76;
             this.rtbSnapshotRight.Text = "";
-            this.rtbSnapshotRight.VScroll += new System.EventHandler(this.rtbSnapshotRight_VScroll);
-            this.rtbSnapshotRight.MouseDown += new System.Windows.Forms.MouseEventHandler(this.rtbSnapshotRight_MouseDown);
+            this.rtbSnapshotRight.VScroll += new System.EventHandler(this.RtbSnapshotRight_VScroll);
+            this.rtbSnapshotRight.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RtbSnapshotRight_MouseDown);
             // 
             // rtbSnapshotLeft
             // 
@@ -481,8 +481,8 @@
             this.rtbSnapshotLeft.Size = new System.Drawing.Size(574, 279);
             this.rtbSnapshotLeft.TabIndex = 75;
             this.rtbSnapshotLeft.Text = "";
-            this.rtbSnapshotLeft.VScroll += new System.EventHandler(this.rtbSnapshotLeft_VScroll);
-            this.rtbSnapshotLeft.MouseDown += new System.Windows.Forms.MouseEventHandler(this.rtbSnapshotLeft_MouseDown);
+            this.rtbSnapshotLeft.VScroll += new System.EventHandler(this.RtbSnapshotLeft_VScroll);
+            this.rtbSnapshotLeft.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RtbSnapshotLeft_MouseDown);
             // 
             // SessionDocumentContextMenuStrip
             // 
@@ -496,7 +496,7 @@
             this.saveSessionHistoryToolStripMenuItem.Name = "saveSessionHistoryToolStripMenuItem";
             this.saveSessionHistoryToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
             this.saveSessionHistoryToolStripMenuItem.Text = "&Save Session History...";
-            this.saveSessionHistoryToolStripMenuItem.Click += new System.EventHandler(this.saveSessionHistoryToolStripMenuItem_Click);
+            this.saveSessionHistoryToolStripMenuItem.Click += new System.EventHandler(this.SaveSessionHistoryToolStripMenuItem_Click);
             // 
             // listView1
             // 
@@ -509,9 +509,9 @@
             this.listView1.Size = new System.Drawing.Size(1125, 121);
             this.listView1.TabIndex = 72;
             this.listView1.UseCompatibleStateImageBehavior = false;
-            this.listView1.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView1_ColumnClick);
-            this.listView1.SelectedIndexChanged += new System.EventHandler(this.listView1_SelectedIndexChanged);
-            this.listView1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.listView1_MouseDown);
+            this.listView1.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.ListView1_ColumnClick);
+            this.listView1.SelectedIndexChanged += new System.EventHandler(this.ListView1_SelectedIndexChanged);
+            this.listView1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ListView1_MouseDown);
             // 
             // lblDocCount
             // 
@@ -555,7 +555,7 @@
             this.cmbAccountSource.Name = "cmbAccountSource";
             this.cmbAccountSource.Size = new System.Drawing.Size(161, 21);
             this.cmbAccountSource.TabIndex = 2;
-            this.cmbAccountSource.SelectedIndexChanged += new System.EventHandler(this.cmbAccountSource_SelectedIndexChanged);
+            this.cmbAccountSource.SelectedIndexChanged += new System.EventHandler(this.CmbAccountSource_SelectedIndexChanged);
             // 
             // labelUserName
             // 

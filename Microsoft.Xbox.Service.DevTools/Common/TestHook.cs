@@ -6,10 +6,10 @@ namespace Microsoft.Xbox.Services.DevTools.Common
     using System.Net.Http;
 
     /// <summary>
-    ///Internal test hook for mocking HttpClient's response
+    /// Internal test hook for mocking HttpClient's response
     /// </summary>
     internal class TestHook
     {
-        public static HttpMessageHandler MockHttpHandler { set; get; }
+        public static HttpMessageHandler MockHttpHandler { get; set; }
     }
 }

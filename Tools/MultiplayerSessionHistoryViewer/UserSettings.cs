@@ -1,31 +1,31 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-using System;
-using Microsoft.Win32;
-
 namespace SessionHistoryViewer
 {
+    using System;
+    using Microsoft.Win32;
+
     public class UserSettings
     {
-        private RegistryKey SessionHistoryKey { get; set; }
-
         public UserSettings()
         {
             RegistryKey key = Registry.CurrentUser.OpenSubKey("Software\\Microsoft", true);
-            SessionHistoryKey = key.CreateSubKey("SessionHistoryViewer");
+            this.SessionHistoryKey = key.CreateSubKey("SessionHistoryViewer");
         }
+
+        private RegistryKey SessionHistoryKey { get; set; }
 
         public string Sandbox
         {
             get
             {
-                return (string)SessionHistoryKey.GetValue("sandbox", string.Empty);
+                return (string)this.SessionHistoryKey.GetValue("sandbox", string.Empty);
             }
+
             set
             {
-                SessionHistoryKey.SetValue("sandbox", value);
+                this.SessionHistoryKey.SetValue("sandbox", value);
             }
         }
 
@@ -33,11 +33,12 @@ namespace SessionHistoryViewer
         {
             get
             {
-                return (string)SessionHistoryKey.GetValue("scid", string.Empty);
+                return (string)this.SessionHistoryKey.GetValue("scid", string.Empty);
             }
+
             set
             {
-                SessionHistoryKey.SetValue("scid", value);
+                this.SessionHistoryKey.SetValue("scid", value);
             }
         }
 
@@ -45,24 +46,25 @@ namespace SessionHistoryViewer
         {
             get
             {
-                return (string)SessionHistoryKey.GetValue("template", string.Empty);
+                return (string)this.SessionHistoryKey.GetValue("template", string.Empty);
             }
+
             set
             {
-                SessionHistoryKey.SetValue("template", value);
+                this.SessionHistoryKey.SetValue("template", value);
             }
         }
-
 
         public string QueryKey
         {
             get
             {
-                return (string)SessionHistoryKey.GetValue("queryKey", string.Empty);
+                return (string)this.SessionHistoryKey.GetValue("queryKey", string.Empty);
             }
+
             set
             {
-                SessionHistoryKey.SetValue("queryKey", value);
+                this.SessionHistoryKey.SetValue("queryKey", value);
             }
         }
 
@@ -70,11 +72,12 @@ namespace SessionHistoryViewer
         {
             get
             {
-                return (int)SessionHistoryKey.GetValue("queryType", 0);
+                return (int)this.SessionHistoryKey.GetValue("queryType", 0);
             }
+
             set
             {
-                SessionHistoryKey.SetValue("queryType", value);
+                this.SessionHistoryKey.SetValue("queryType", value);
             }
         }
 
@@ -82,11 +85,12 @@ namespace SessionHistoryViewer
         {
             get
             {
-                return (string)SessionHistoryKey.GetValue("lv1Colums", "231,231,55,140,65,250");
+                return (string)this.SessionHistoryKey.GetValue("lv1Colums", "231,231,55,140,65,250");
             }
+
             set
             {
-                SessionHistoryKey.SetValue("lv1Colums", value);
+                this.SessionHistoryKey.SetValue("lv1Colums", value);
             }
         }
 
@@ -94,11 +98,12 @@ namespace SessionHistoryViewer
         {
             get
             {
-                return (string)SessionHistoryKey.GetValue("lv2Colums", "50,120,120,80,100,250,450");
+                return (string)this.SessionHistoryKey.GetValue("lv2Colums", "50,120,120,80,100,250,450");
             }
+
             set
             {
-                SessionHistoryKey.SetValue("lv2Colums", value);
+                this.SessionHistoryKey.SetValue("lv2Colums", value);
             }
         }
 
@@ -108,7 +113,7 @@ namespace SessionHistoryViewer
             {
                 try
                 {
-                    string valueAsBool = (string)SessionHistoryKey.GetValue("showLocalTime", "true");
+                    string valueAsBool = (string)this.SessionHistoryKey.GetValue("showLocalTime", "true");
                     return bool.Parse(valueAsBool);
                 }
                 catch (FormatException)
@@ -116,9 +121,10 @@ namespace SessionHistoryViewer
                     return true;
                 }
             }
+
             set
             {
-                SessionHistoryKey.SetValue("showLocalTime", value);
+                this.SessionHistoryKey.SetValue("showLocalTime", value);
             }
         }
 
@@ -126,13 +132,13 @@ namespace SessionHistoryViewer
         {
             get
             {
-                return (int)SessionHistoryKey.GetValue("accountSource", 0);
+                return (int)this.SessionHistoryKey.GetValue("accountSource", 0);
             }
+
             set
             {
-                SessionHistoryKey.SetValue("accountSource", value);
+                this.SessionHistoryKey.SetValue("accountSource", value);
             }
         }
-
     }
 }

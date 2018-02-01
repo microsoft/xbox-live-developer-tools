@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="..\StyleCop.Analyzers.XboxLive.props" Condition="Exists('..\StyleCop.Analyzers.XboxLive.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -11,6 +12,8 @@
     <AssemblyName>Microsoft.Xbox.Services.DevTools</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -57,12 +60,12 @@
     <Compile Include="Authentication\AdalAuthContext.cs" />
     <Compile Include="Authentication\AdalTokenCache.cs" />
     <Compile Include="Authentication\AuthClient.cs" />
-    <Compile Include="Authentication\AuthContext.cs" />
+    <Compile Include="Authentication\IAuthContext.cs" />
     <Compile Include="Authentication\DevAccount.cs" />
     <Compile Include="Authentication\DevAccountSource.cs" />
     <Compile Include="Authentication\MsalAuthContext.cs" />
     <Compile Include="Authentication\MsalTokenCache.cs" />
-    <Compile Include="Authentication\ToolAuth.cs" />
+    <Compile Include="Authentication\ToolAuthentication.cs" />
     <Compile Include="Authentication\XdtsTokenCache.cs" />
     <Compile Include="Authentication\XdtsTokenRequest.cs" />
     <Compile Include="Common\Log.cs" />
@@ -92,6 +95,10 @@
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\StyleCop.Analyzers.1.0.2\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="..\packages\StyleCop.Analyzers.1.0.2\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

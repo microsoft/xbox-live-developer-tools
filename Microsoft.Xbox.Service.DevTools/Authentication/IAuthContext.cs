@@ -11,12 +11,12 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         bool HasCredential { get; }
 
-        Task<string> AcquireTokenSilentAsync();
-
-        Task<string> AcquireTokenAsync();
-
         DevAccountSource AccountSource { get; }
 
         string UserName { get; }
+
+        Task<string> AcquireTokenSilentAsync();
+
+        Task<string> AcquireTokenAsync();
     }
 }

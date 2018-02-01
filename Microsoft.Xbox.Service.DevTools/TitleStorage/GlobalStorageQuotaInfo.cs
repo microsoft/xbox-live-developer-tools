@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 {
     using Newtonsoft.Json;
-    using System;
 
     /// <summary>
     /// Class contains the amount of storage space allocated and used.
@@ -16,13 +14,13 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// Number of bytes used
         /// </summary>
         [JsonProperty("usedBytes")]
-        public UInt64 UsedBytes { get; private set; }
+        public ulong UsedBytes { get; private set; }
 
         /// <summary>
         /// Maximum number of bytes that can be used.
         /// Note that this is a soft limit and the used bytes may actually exceed this value.
         /// </summary>
         [JsonProperty("quotaBytes")]
-        public UInt64 QuotaBytes { get; private set; }
+        public ulong QuotaBytes { get; private set; }
     }
 }

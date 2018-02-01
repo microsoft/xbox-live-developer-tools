@@ -1,21 +1,27 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Xbox.Services.DevTools.Common;
-
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
-    using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using System;
     using System.Threading.Tasks;
-    using DevTools.Common;
+    using Microsoft.IdentityModel.Clients.ActiveDirectory;
+    using Microsoft.Xbox.Services.DevTools.Common;
 
     internal class AdalAuthContext : IAuthContext
     {
         private AdalTokenCache tokenCache = new AdalTokenCache();
-
         private AuthenticationContext authContext;
         private UserIdentifier userIdentifier;
+
+        public AdalAuthContext(string userName)
+        {
+            this.authContext = new AuthenticationContext(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, this.tokenCache);
+            this.UserName = userName;
+            this.userIdentifier = string.IsNullOrEmpty(userName) ?
+                UserIdentifier.AnyUser :
+                new UserIdentifier(this.UserName, UserIdentifierType.RequiredDisplayableId);
+        }
 
         public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter;
 
@@ -23,24 +29,17 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public virtual bool HasCredential
         {
-            get { return authContext != null && authContext.TokenCache.Count > 0; }
+            get { return this.authContext != null && this.authContext.TokenCache.Count > 0; }
         }
-        public string UserName { get; private set; }
 
-        public AdalAuthContext(string userName)
-        {
-            authContext = new AuthenticationContext(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, tokenCache);
-            this.UserName = userName;
-            this.userIdentifier = string.IsNullOrEmpty(userName) ? 
-                UserIdentifier.AnyUser : 
-                new UserIdentifier(UserName, UserIdentifierType.RequiredDisplayableId);
-        }
+        public string UserName { get; private set; }
 
         public virtual async Task<string> AcquireTokenSilentAsync()
         {
-            AuthenticationResult result = await this.authContext.AcquireTokenSilentAsync(ClientSettings.Singleton.AADResource,
+            AuthenticationResult result = await this.authContext.AcquireTokenSilentAsync(
+                ClientSettings.Singleton.AADResource,
                 ClientSettings.Singleton.AADApplicationId,
-                userIdentifier);
+                this.userIdentifier);
 
             return result.AccessToken;
         }
@@ -51,7 +50,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 ClientSettings.Singleton.AADResource,
                 ClientSettings.Singleton.AADApplicationId, new Uri("urn:ietf:wg:oauth:2.0:oob"),
                 new PlatformParameters(string.IsNullOrEmpty(this.UserName)? PromptBehavior.SelectAccount : PromptBehavior.Auto),
-                userIdentifier);
+                this.userIdentifier);
             this.UserName = result.UserInfo.DisplayableId;
             return result?.AccessToken;
         }

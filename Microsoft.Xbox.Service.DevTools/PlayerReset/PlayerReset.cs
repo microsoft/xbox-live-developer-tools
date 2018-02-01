@@ -1,25 +1,27 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Xbox.Services.DevTools.Common;
-
 namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 {
-    using Newtonsoft.Json;
     using System;
-    using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
-    using Authentication;
-    using DevTools.Common;
+    using Microsoft.Xbox.Services.DevTools.Authentication;
+    using Microsoft.Xbox.Services.DevTools.Common;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Class for PlayerReset tooling functionality.
     /// </summary>
     public class PlayerReset
     {
-        private static Uri baseUri = new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint);
         internal const int MaxPollingAttempts = 4;
+        private static Uri baseUri = new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint);
+
+        private PlayerReset()
+        {
+        }
+ 
         internal static int RetryDelay { get; set; } = 3000;
 
         /// <summary>
@@ -29,16 +31,14 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         /// <param name="sandbox">The target sandbox id for player resetting</param>
         /// <param name="xboxUserId">The Xbox user id of the player to be reset</param>
         /// <returns>The UserResetResult object for the reset result</returns>
-        static public async Task<UserResetResult> ResetPlayerDataAsync(string serviceConfigurationId, string sandbox, string xboxUserId)
+        public static async Task<UserResetResult> ResetPlayerDataAsync(string serviceConfigurationId, string sandbox, string xboxUserId)
         {
             // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
             // populate the auth error up-front.
-            await Authentication.GetDevTokenSlientlyAsync(serviceConfigurationId, sandbox);
+            await ToolAuthentication.GetDevTokenSilentlyAsync(serviceConfigurationId, sandbox);
 
             return await SubmitJobAndPollStatus(sandbox, serviceConfigurationId, xboxUserId);
         }
-
-        private PlayerReset() { }
 
         private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid)
         {
@@ -78,7 +78,6 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                         result.OverallResult = ResetOverallResult.Timeout;
                         result.ProviderStatus = jobStatus.ProviderStatus;
                     }
-
                 }
             }
             catch (Exception)
@@ -87,7 +86,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
             }
 
             // Log detail status
-            if(result.OverallResult != ResetOverallResult.Succeeded)
+            if (result.OverallResult != ResetOverallResult.Succeeded)
             {
                 Log.WriteLog($"Resetting player {xuid} result {result.OverallResult}: ");
                 if (jobStatus != null && jobStatus.ProviderStatus != null)
@@ -104,7 +103,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 
         private static async Task<UserResetJob> SubmitJobAsync(string sandbox, string scid, string xuid)
         {
-            var job = new UserResetJob{Sandbox = sandbox, Scid = scid};
+            var job = new UserResetJob { Sandbox = sandbox, Scid = scid };
 
             using (var submitRequest = new XboxLiveHttpRequest(true, scid, sandbox))
             {
@@ -123,7 +122,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 // remove "" if found one.
                 string responseContent = await response.Response.Content.ReadAsStringAsync();
                 job.JobId = responseContent.Trim(new char[] { '\\', '\"' });
-                job.CorrelationId = response.CollrelationId;
+                job.CorrelationId = response.CorrelationId;
 
                 Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} succeeded. Jobid: {job.JobId}");
             }
@@ -169,6 +168,5 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 return jobstatus;
             }
         }
-
     }
 }

@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 namespace Microsoft.Xbox.Services.DevTools.Common
 {
     using System;
@@ -16,7 +15,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
     {
         private HttpClient httpClient;
         private bool autoAttachAuthHeader = false;
-        public string scid = null;
+        private string scid = null;
         private string sandbox = null;
 
         public XboxLiveHttpRequest(bool autoAttachAuthHeader, string scid, string sandbox)
@@ -26,7 +25,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             this.sandbox = sandbox;
 
             var requestHandler = TestHook.MockHttpHandler ?? new WebRequestHandler();
-            httpClient = new HttpClient(requestHandler);
+            this.httpClient = new HttpClient(requestHandler);
         }
 
         // Take a Func<HttpRequestMessage> so that HttpRequestMessage will be construct in caller scope.
@@ -39,7 +38,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
 
             if (response != null)
             {
-                ExtractCollrelationId(response, ref xblResposne);
+                ExtractCorrelationId(response, ref xblResposne);
             }
 
             if (response.StatusCode == HttpStatusCode.Forbidden)
@@ -73,7 +72,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         {
             if (this.autoAttachAuthHeader)
             {
-                string eToken = await Authentication.Client.GetETokenAsync(scid, new string[]{ sandbox }, refreshToken);
+                string eToken = await ToolAuthentication.Client.GetETokenAsync(this.scid, new string[] { this.sandbox }, refreshToken);
                 request.Headers.Remove("Authorization");
                 request.Headers.Add("Authorization", "XBL3.0 x=-;" + eToken);
             }
@@ -81,7 +80,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             return await this.httpClient.SendAsync(request);
         }
 
-        private static void ExtractCollrelationId(HttpResponseMessage response, ref XboxLiveHttpResponse xblResponse)
+        private static void ExtractCorrelationId(HttpResponseMessage response, ref XboxLiveHttpResponse xblResponse)
         {
             if (response != null)
             {
@@ -89,7 +88,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
                 {
                     if (correlationIds != null && !string.IsNullOrEmpty(correlationIds.First()))
                     {
-                        xblResponse.CollrelationId = correlationIds.First();
+                        xblResponse.CorrelationId = correlationIds.First();
                     }
                 }
             }

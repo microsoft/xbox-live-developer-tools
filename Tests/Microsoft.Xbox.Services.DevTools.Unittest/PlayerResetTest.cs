@@ -3,17 +3,16 @@
 
 namespace Microsoft.Xbox.Services.DevTools.Unittest
 {
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Collections.Generic;
+    using System.Net;
+    using System.Threading.Tasks;
     using DevTools.Authentication;
     using DevTools.Common;
     using DevTools.PlayerReset;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using RichardSzalay.MockHttp;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Threading.Tasks;
 
     [TestClass]
     public class PlayerResetTest
@@ -24,14 +23,13 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         private const string DefaultEtoken = "etoken";
         private const string DefaultXuid = "xuid";
 
-
         private void SetUpMockAuth()
         {
             var mockAuth = new Mock<AuthClient>();
             mockAuth.Setup(o => o.GetETokenAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
-                .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => DefaultEtoken + scid + String.Join(" ", sandboxes));
-            Authentication.Client = mockAuth.Object;
-            Authentication.SetAuthInfo(DevAccountSource.WindowsDevCenter, DefaultUserName);
+                .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => DefaultEtoken + scid + string.Join(" ", sandboxes));
+            ToolAuthentication.Client = mockAuth.Object;
+            ToolAuthentication.SetAuthInfo(DevAccountSource.WindowsDevCenter, DefaultUserName);
         }
 
         private string ExpectedToken(string scid, string sandbox)
@@ -48,7 +46,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task ResetPlayerDataSuccess()
         {
-            SetUpMockAuth();
+            this.SetUpMockAuth();
 
             var mockHttp = new MockHttpMessageHandler();
             Guid jobId = Guid.NewGuid();
@@ -58,7 +56,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", submitJobResponse);
 
             var queryJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/jobs/"+jobId);
@@ -72,7 +70,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 $"]}}";
 
             mockHttp.Expect(queryJobUri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", queryJobResponse);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -89,16 +87,13 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Assert.AreEqual("TitleHistoryDelete", resetResult.ProviderStatus[1].Provider);
             Assert.AreEqual(ResetProviderStatus.CompletedSuccess, resetResult.ProviderStatus[1].Status);
 
-
             Assert.IsNull(resetResult.ProviderStatus[2].ErrorMessage);
             Assert.AreEqual("AchievementsDelete", resetResult.ProviderStatus[2].Provider);
             Assert.AreEqual(ResetProviderStatus.CompletedSuccess, resetResult.ProviderStatus[2].Status);
 
-
             Assert.IsNull(resetResult.ProviderStatus[3].ErrorMessage);
             Assert.AreEqual("GoalEngineDelete", resetResult.ProviderStatus[3].Provider);
             Assert.AreEqual(ResetProviderStatus.CompletedSuccess, resetResult.ProviderStatus[3].Status);
-
 
             Assert.IsNull(resetResult.ProviderStatus[4].ErrorMessage);
             Assert.AreEqual("Leaderboards", resetResult.ProviderStatus[4].Provider);
@@ -110,7 +105,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task ResetPlayerDataSuccessWith400()
         {
-            SetUpMockAuth();
+            this.SetUpMockAuth();
 
             var mockHttp = new MockHttpMessageHandler();
             Guid jobId = Guid.NewGuid();
@@ -120,7 +115,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", submitJobResponse);
 
             var queryJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/jobs/" + jobId);
@@ -135,19 +130,19 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             // Job might not get created in time, first hit 400, then retry until gets the result
             mockHttp.Expect(queryJobUri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond(HttpStatusCode.BadRequest);
 
             mockHttp.Expect(queryJobUri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond(HttpStatusCode.BadRequest);
 
             mockHttp.Expect(queryJobUri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond(HttpStatusCode.BadRequest);
 
             mockHttp.Expect(queryJobUri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", queryJobResponse);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -159,11 +154,10 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
-
         [TestMethod]
         public async Task ResetPlayerDataCompleteWithError()
         {
-            SetUpMockAuth();
+            this.SetUpMockAuth();
 
             var mockHttp = new MockHttpMessageHandler();
             Guid jobId = Guid.NewGuid();
@@ -173,7 +167,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", submitJobResponse);
 
             var queryJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/jobs/" + jobId);
@@ -189,7 +183,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 $"]}}";
 
             mockHttp.Expect(queryJobUri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", queryJobResponse);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -232,7 +226,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task ResetPlayerDataSuccessTimeOut()
         {
-            SetUpMockAuth();
+            this.SetUpMockAuth();
 
             var mockHttp = new MockHttpMessageHandler();
             Guid jobId = Guid.NewGuid();
@@ -242,14 +236,14 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", submitJobResponse);
 
             var queryJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/jobs/" + jobId);
             string queryJobResponse = $"{{\'jobId\':'{jobId}','overallStatus':'InProgress'}}";
 
             var mockRequest = mockHttp.When(queryJobUri.ToString())
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond("application/json", queryJobResponse);
 
             TestHook.MockHttpHandler = mockHttp;
@@ -262,11 +256,10 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Assert.AreEqual(PlayerReset.MaxPollingAttempts, mockHttp.GetMatchCount(mockRequest));
         }
 
-
         [TestMethod]
         public async Task ResetPlayerDataSubmitJobError()
         {
-            SetUpMockAuth();
+            this.SetUpMockAuth();
 
             var mockHttp = new MockHttpMessageHandler();
             Guid jobId = Guid.NewGuid();
@@ -275,7 +268,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
-                .WithHeaders("Authorization", ExpectedToken(DefaultScid, DefaultSandbox))
+                .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, DefaultSandbox))
                 .Respond(HttpStatusCode.BadRequest);
 
             TestHook.MockHttpHandler = mockHttp;

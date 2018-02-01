@@ -1,22 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-using System;
-using System.Runtime.Serialization;
-
 namespace SessionHistoryViewer
 {
+    using System;
+    using System.Runtime.Serialization;
+
     [DataContract]
     public class SessionHistoryQueryByXuidRequest
     {
-        [DataMember(EmitDefaultValue = false)]
-        public string xuid { get; set; }
+        [DataMember(Name = "xuid", EmitDefaultValue = false)]
+        public string Xuid { get; set; }
 
-        [DataMember(EmitDefaultValue = false)]
-        public DateTime startAt { get; set; }
+        [DataMember(Name = "startAt", EmitDefaultValue = false)]
+        public DateTime StartAt { get; set; }
 
-        [DataMember(EmitDefaultValue = false)]
-        public DateTime endAt { get; set; }
+        [DataMember(Name = "endAt", EmitDefaultValue = false)]
+        public DateTime EndAt { get; set; }
     }
 }

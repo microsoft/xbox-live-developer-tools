@@ -1,0 +1,30 @@
+﻿{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "indentation": {
+      "indentationSize": 4,
+      "tabSize": 4,
+      "useTabs": false
+    },
+    "orderingRules": {
+      "elementOrder": [
+        "kind",
+        "constant",
+        "static",
+        "readonly"
+      ],
+      "systemUsingDirectivesFirst": true,
+      "usingDirectivesPlacement": "insideNamespace"
+    },
+    "namingRules": {
+      "allowCommonHungarianPrefixes": true,
+      "allowedHungarianPrefixes": ["as","do","id","if","in","ip","is","no","on","to"]
+    },
+    "documentationRules": {
+      "companyName": "Microsoft Corporation",
+      "copyrightText": "Copyright (c) {companyName}\nLicensed under the MIT license. See LICENSE file in the project root for full license information.",
+      "xmlHeader": false,
+      "fileNamingConvention": "stylecop"
+    }
+  }
+}

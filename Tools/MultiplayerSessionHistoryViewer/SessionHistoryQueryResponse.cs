@@ -1,41 +1,41 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
-
 namespace SessionHistoryViewer
 {
+    using System.Collections.Generic;
+    using Newtonsoft.Json.Linq;
+
     public class SessionHistoryQueryResponse
     {
-        private List<SessionHistoryQueryResultData> QueryResult = new List<SessionHistoryQueryResultData>();
+        private List<SessionHistoryQueryResultData> queryResult = new List<SessionHistoryQueryResultData>();
 
         public SessionHistoryQueryResponse(string json)
         {
             dynamic response = JToken.Parse(json);
 
-            continuationToken = response["continuationToken"];
+            this.ContinuationToken = response["continuationToken"];
             for (int i = 0; i < response.results.Count; i++)
             {
-                QueryResult.Add(new SessionHistoryQueryResultData()
+                this.queryResult.Add(new SessionHistoryQueryResultData()
                     {
-                        sessionName = response.results[i].sessionName,
-                        branch = response.results[i].branch,
-                        changes = response.results[i].changes,
-                        lastModified = response.results[i].lastModified,
-                        isExpired = response.results[i].expired == null ? false : true,
-                        activityId = response.results[i].activityId,
+                        SessionName = response.results[i].sessionName,
+                        Branch = response.results[i].branch,
+                        Changes = response.results[i].changes,
+                        LastModified = response.results[i].lastModified,
+                        IsExpired = response.results[i].expired == null ? false : true,
+                        ActivityId = response.results[i].activityId,
                     });
             }
         }
 
-        public string continuationToken { get; set; }
+        public string ContinuationToken { get; set; }
+
         public List<SessionHistoryQueryResultData> Results
         {
             get
             {
-                return QueryResult;
+                return this.queryResult;
             }
         }
     }
