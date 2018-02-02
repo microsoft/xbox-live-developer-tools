@@ -8,6 +8,10 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     /// </summary>
     public class DevAccount
     {
+        internal DevAccount()
+        {
+        }
+
         internal DevAccount(XdtsTokenResponse etoken, DevAccountSource accountSource)
         {
             if (etoken.DisplayClaims.TryGetValue("eid", out object value))
