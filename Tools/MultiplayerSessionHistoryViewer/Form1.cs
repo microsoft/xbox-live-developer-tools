@@ -1113,7 +1113,7 @@ namespace SessionHistoryViewer
                 this.labelUserName.Text = this.signedInuser.Name;
                 this.btnQuery.Enabled = true;
                 this.cmbAccountSource.SelectedIndex =
-                    signedInuser.AccountSource == DevAccountSource.WindowsDevCenter ? 0 : 1;
+                    this.signedInuser.AccountSource == DevAccountSource.WindowsDevCenter ? 0 : 1;
             }
             else
             {
