@@ -99,7 +99,6 @@ namespace SessionHistoryViewer
             this.tbTemplateName.Text = this.userSettings.TemplateName;
             this.tbQueryKey.Text = this.userSettings.QueryKey;
             this.cmbQueryType.SelectedIndex = this.userSettings.QueryType;
-            this.cmbAccountSource.SelectedIndex = this.userSettings.AccountSource;
 
             this.UpdateAccountPanel();
         }
@@ -1104,11 +1103,6 @@ namespace SessionHistoryViewer
             }
         }
 
-        private void CmbAccountSource_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            this.userSettings.AccountSource = this.cmbAccountSource.SelectedIndex;
-        }
-
         private void UpdateAccountPanel()
         {
             this.signedInuser = ToolAuthentication.LoadLastSignedInUser();
@@ -1118,6 +1112,8 @@ namespace SessionHistoryViewer
                 this.cmbAccountSource.Enabled = false;
                 this.labelUserName.Text = this.signedInuser.Name;
                 this.btnQuery.Enabled = true;
+                this.cmbAccountSource.SelectedIndex =
+                    signedInuser.AccountSource == DevAccountSource.WindowsDevCenter ? 0 : 1;
             }
             else
             {
@@ -1125,6 +1121,7 @@ namespace SessionHistoryViewer
                 this.cmbAccountSource.Enabled = true;
                 this.labelUserName.Text = string.Empty;
                 this.btnQuery.Enabled = false;
+                this.cmbAccountSource.SelectedIndex = -1;
             }
         }
 

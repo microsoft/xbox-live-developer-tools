@@ -555,7 +555,6 @@
             this.cmbAccountSource.Name = "cmbAccountSource";
             this.cmbAccountSource.Size = new System.Drawing.Size(161, 21);
             this.cmbAccountSource.TabIndex = 2;
-            this.cmbAccountSource.SelectedIndexChanged += new System.EventHandler(this.CmbAccountSource_SelectedIndexChanged);
             // 
             // labelUserName
             // 
