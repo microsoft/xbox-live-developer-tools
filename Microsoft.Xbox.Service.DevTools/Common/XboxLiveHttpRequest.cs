@@ -8,37 +8,71 @@ namespace Microsoft.Xbox.Services.DevTools.Common
     using System.Linq;
     using System.Net;
     using System.Net.Http;
+    using System.Reflection;
     using System.Threading.Tasks;
     using DevTools.Authentication;
 
     internal class XboxLiveHttpRequest : IDisposable
     {
+        private RequestParameters requestParameters;
         private HttpClient httpClient;
-        private bool autoAttachAuthHeader = false;
-        private string scid = null;
-        private string sandbox = null;
 
-        public XboxLiveHttpRequest(bool autoAttachAuthHeader, string scid, string sandbox)
+        public XboxLiveHttpRequest(RequestParameters requestParameters)
         {
-            this.autoAttachAuthHeader = autoAttachAuthHeader;
-            this.scid = scid;
-            this.sandbox = sandbox;
-
+            this.requestParameters = requestParameters;
             var requestHandler = TestHook.MockHttpHandler ?? new WebRequestHandler();
             this.httpClient = new HttpClient(requestHandler);
         }
 
-        // Take a Func<HttpRequestMessage> so that HttpRequestMessage will be construct in caller scope.
-        // It is needed for retry as HttpRequestMessage will be disposed after send, cannot be reused.
+        public XboxLiveHttpRequest(bool autoAttachAuthHeader, Guid scid, params string[] sandboxes)
+            : this(new RequestParameters()
+            {
+                AutoAttachAuthHeader = autoAttachAuthHeader,
+                Scid = scid,
+                Sandboxes = new HashSet<string>(sandboxes)
+            })
+        {
+        }
+
+        public XboxLiveHttpRequest(bool autoAttachAuthHeader, string scid, params string[] sandboxes)
+            : this(new RequestParameters()
+            {
+                AutoAttachAuthHeader = autoAttachAuthHeader,
+                Scid = new Guid(scid),
+                Sandboxes = new HashSet<string>(sandboxes)
+            })
+        {
+        }
+
+        public XboxLiveHttpRequest()
+            : this(new RequestParameters())
+        {
+        }
+        
+        static XboxLiveHttpRequest()
+        {
+            AssemblyName executingAssemblyName = Assembly.GetExecutingAssembly().GetName();
+            AssemblyName entryAssemblyName = Assembly.GetEntryAssembly()?.GetName();
+            UserAgent = $"{executingAssemblyName.Name}/{executingAssemblyName.Version}";
+            if (entryAssemblyName != null)
+            {
+                UserAgent += $" {entryAssemblyName.Name}/{entryAssemblyName.Version}";
+            }
+        }
+
+        public static string UserAgent { get; set; }
+
+        // Take a Func<HttpRequestMessage> so that HttpRequestMessage will be constructed in caller scope.
+        // It is needed for retry as HttpRequestMessage will be disposed after send; cannot be reused.
         public async Task<XboxLiveHttpResponse> SendAsync(Func<HttpRequestMessage> requestGenerator)
         {
-            var xblResposne = new XboxLiveHttpResponse();
+            XboxLiveHttpResponse xblResponse = new XboxLiveHttpResponse();
 
             HttpResponseMessage response = await this.SendInternalAsync(requestGenerator(), false);
 
             if (response != null)
             {
-                ExtractCorrelationId(response, ref xblResposne);
+                ExtractCorrelationId(response, ref xblResponse);
             }
 
             if (response.StatusCode == HttpStatusCode.Forbidden)
@@ -47,13 +81,11 @@ namespace Microsoft.Xbox.Services.DevTools.Common
                 response = await this.SendInternalAsync(requestGenerator(), true);
             }
 
-            xblResposne.Response = response;
-            return xblResposne;
+            xblResponse.Response = response;
+            return xblResponse;
         }
 
-        /// <summary>
-        /// Part of the IDisposable implementation.
-        /// </summary>
+        // Part of the IDisposable implementation.
         public void Dispose()
         {
             this.Dispose(true);
@@ -70,11 +102,19 @@ namespace Microsoft.Xbox.Services.DevTools.Common
 
         private async Task<HttpResponseMessage> SendInternalAsync(HttpRequestMessage request, bool refreshToken)
         {
-            if (this.autoAttachAuthHeader)
+            if (this.requestParameters.AutoAttachAuthHeader)
             {
-                string eToken = await ToolAuthentication.Client.GetETokenAsync(this.scid, new string[] { this.sandbox }, refreshToken);
+                string scid = (this.requestParameters.Scid == Guid.Empty) ? null : this.requestParameters.Scid.ToString();
+                string eToken = await ToolAuthentication.Client.GetETokenAsync(scid, this.requestParameters.Sandboxes, refreshToken);
                 request.Headers.Remove("Authorization");
                 request.Headers.Add("Authorization", "XBL3.0 x=-;" + eToken);
+            }
+
+            request.Headers.UserAgent.ParseAdd(UserAgent);
+
+            if (!request.Headers.Contains("Accept"))
+            {
+                request.Headers.Accept.ParseAdd("application/json");
             }
 
             return await this.httpClient.SendAsync(request);
@@ -89,6 +129,13 @@ namespace Microsoft.Xbox.Services.DevTools.Common
                     if (correlationIds != null && !string.IsNullOrEmpty(correlationIds.First()))
                     {
                         xblResponse.CorrelationId = correlationIds.First();
+                    }
+                }
+                else if (response.Headers.TryGetValues("MS-CV", out IEnumerable<string> correlationVectors))
+                {
+                    if (correlationVectors != null && !string.IsNullOrEmpty(correlationVectors.First()))
+                    {
+                        xblResponse.CorrelationId = correlationVectors.First();
                     }
                 }
             }

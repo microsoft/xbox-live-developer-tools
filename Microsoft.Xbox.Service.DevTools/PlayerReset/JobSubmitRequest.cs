@@ -5,9 +5,9 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 {
     using Newtonsoft.Json;
 
-    internal class JobSubmitReqeust
+    internal class JobSubmitRequest
     {
-        public JobSubmitReqeust(string scid, string xuid)
+        public JobSubmitRequest(string scid, string xuid)
         {
             this.UserId = xuid;
             this.Scid = scid;

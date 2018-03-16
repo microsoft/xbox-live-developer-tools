@@ -37,23 +37,32 @@
     <LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Identity.Client, Version=1.1.0.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Identity.Client.1.1.0-preview\lib\net45\Microsoft.Identity.Client.dll</HintPath>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.Identity.Client, Version=1.1.2.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Identity.Client.1.1.2-preview0008\lib\net45\Microsoft.Identity.Client.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory, Version=3.17.3.35304, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.17.3\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
+    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory, Version=3.19.1.3001, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.19.1\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory.Platform, Version=3.17.3.35304, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.17.3\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll</HintPath>
+    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory.Platform, Version=3.19.1.3001, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.19.1\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
@@ -69,12 +78,15 @@
     <Compile Include="Authentication\XdtsTokenCache.cs" />
     <Compile Include="Authentication\XdtsTokenRequest.cs" />
     <Compile Include="Common\Log.cs" />
+    <Compile Include="Common\RequestParameters.cs" />
+    <Compile Include="Common\HelperExtensions.cs" />
     <Compile Include="Common\TestHook.cs" />
+    <Compile Include="Common\XboxLiveException.cs" />
     <Compile Include="Common\XboxLiveHttpResponse.cs" />
     <Compile Include="Common\XboxLiveHttpRequest.cs" />
     <Compile Include="PlayerReset\JobProviderStatus.cs" />
     <Compile Include="PlayerReset\JobStatusResponse.cs" />
-    <Compile Include="PlayerReset\JobSubmitReqeust.cs" />
+    <Compile Include="PlayerReset\JobSubmitRequest.cs" />
     <Compile Include="PlayerReset\PlayerReset.cs" />
     <Compile Include="PlayerReset\ResetOverallResult.cs" />
     <Compile Include="PlayerReset\ResetProviderStatus.cs" />
@@ -88,6 +100,37 @@
     <Compile Include="TitleStorage\TitleStorageBlobMetadata.cs" />
     <Compile Include="TitleStorage\TitleStorageBlobMetadataResult.cs" />
     <Compile Include="TitleStorage\TitleStorageBlobType.cs" />
+    <Compile Include="XblConfig\AchievementImage.cs" />
+    <Compile Include="XblConfig\AlternateId.cs" />
+    <Compile Include="XblConfig\AlternateIdType.cs" />
+    <Compile Include="XblConfig\CertificateHelper.cs" />
+    <Compile Include="XblConfig\ConfigFileStream.cs" />
+    <Compile Include="XblConfig\ConfigResponseBase.cs" />
+    <Compile Include="XblConfig\ConfigurationManager.cs" />
+    <Compile Include="XblConfig\Contracts\AchievementImageUploadRequest.cs" />
+    <Compile Include="XblConfig\Contracts\CertRequest.cs" />
+    <Compile Include="XblConfig\Contracts\CertResponse.cs" />
+    <Compile Include="XblConfig\Contracts\HistoryResponse.cs" />
+    <Compile Include="XblConfig\Contracts\Sandbox.cs" />
+    <Compile Include="XblConfig\Contracts\SchemaTypes.cs" />
+    <Compile Include="XblConfig\Contracts\SchemaVersions.cs" />
+    <Compile Include="XblConfig\Contracts\SetMetadataResponse.cs" />
+    <Compile Include="XblConfig\Contracts\UploadImageResponse.cs" />
+    <Compile Include="XblConfig\Contracts\XachInitializeResponse.cs" />
+    <Compile Include="XblConfig\DocumentsResponse.cs" />
+    <Compile Include="XblConfig\DocumentType.cs" />
+    <Compile Include="XblConfig\ConfigResponse.cs" />
+    <Compile Include="XblConfig\History.cs" />
+    <Compile Include="XblConfig\Product.cs" />
+    <Compile Include="XblConfig\PublishResponse.cs" />
+    <Compile Include="XblConfig\RelyingParty.cs" />
+    <Compile Include="XblConfig\SchemaVersion.cs" />
+    <Compile Include="XblConfig\Severity.cs" />
+    <Compile Include="XblConfig\ValidationInfo.cs" />
+    <Compile Include="XblConfig\ValidationResponse.cs" />
+    <Compile Include="XblConfig\View.cs" />
+    <Compile Include="XblConfig\WebService.cs" />
+    <Compile Include="XblConfig\XboxLiveTier.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -99,6 +142,44 @@
   <ItemGroup>
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.0.2\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.0.2\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="CERTCLILib">
+      <Guid>{372FCE32-4324-11D0-8810-00A0C903B83C}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="CertCOMLib">
+      <Guid>{179B730B-9F8B-4E78-92AF-5F788A047EBD}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="CERTENROLLLib">
+      <Guid>{728AB348-217D-11DA-B2A4-000E7BBB2B09}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="CertEnrollProviderLib">
+      <Guid>{B63F6D78-DD60-49D7-AD69-349DA00B092F}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
