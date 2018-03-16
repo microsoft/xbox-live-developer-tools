@@ -21,7 +21,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
     public class GlobalStorageTest
     {
         private const string DefaultUserName = "username";
-        private const string DefaultScid = "scid";
+        private const string DefaultScid = "00000000-0000-0000-0000-012345678901";
         private const string DefaultSandbox = "sandbox";
         private const string DefaultEtoken = "etoken";
         private const ulong DefaultQuota = ulong.MaxValue;
@@ -49,7 +49,8 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         {
             var mockAuth = new Mock<AuthClient>();
             mockAuth.Setup(o => o.GetETokenAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
-                .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => DefaultEtoken + scid + string.Join(" ", sandboxes));
+                .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => 
+                DefaultEtoken + scid + string.Join(" ", sandboxes));
             ToolAuthentication.Client = mockAuth.Object;
             ToolAuthentication.SetAuthInfo(DevAccountSource.WindowsDevCenter, DefaultUserName);
         }

@@ -127,5 +127,18 @@ namespace SessionHistoryViewer
                 this.SessionHistoryKey.SetValue("showLocalTime", value);
             }
         }
+
+        public int AccountSource
+        {
+            get
+            {
+                return (int)this.SessionHistoryKey.GetValue("accountSource", 0);
+            }
+
+            set
+            {
+                this.SessionHistoryKey.SetValue("accountSource", value);
+            }
+        }
     }
 }
