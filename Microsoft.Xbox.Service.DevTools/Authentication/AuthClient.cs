@@ -5,6 +5,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
     using DevTools.Common;
@@ -32,6 +33,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             if (this.AuthContext == null)
             {
                 throw new InvalidOperationException("User Info is not found.");
+            }
+
+            if (sandboxes != null && sandboxes.Count() == 0)
+            {
+                sandboxes = null;
             }
 
             string eToken = null;
@@ -71,7 +77,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         protected async Task<XdtsTokenResponse> FetchXdtsToken(string aadToken, string scid, IEnumerable<string> sandboxes)
         {
-            using (var tokenRequest = new XboxLiveHttpRequest(false, null, null))
+            using (var tokenRequest = new XboxLiveHttpRequest())
             {
                 HttpResponseMessage response = (await tokenRequest.SendAsync(() =>
                 {
@@ -89,8 +95,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 response.EnsureSuccessStatusCode();
                 Log.WriteLog("Fetch xdts Token succeeded.");
 
-                string content = await response.Content.ReadAsStringAsync();
-                var token = JsonConvert.DeserializeObject<XdtsTokenResponse>(content);
+                var token = await response.Content.DeserializeJsonAsync<XdtsTokenResponse>();
 
                 string key = XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, scid, sandboxes);
                 this.ETokenCache.Value.UpdateToken(key, token);

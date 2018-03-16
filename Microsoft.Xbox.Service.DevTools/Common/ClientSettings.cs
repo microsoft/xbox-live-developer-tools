@@ -39,6 +39,11 @@ namespace Microsoft.Xbox.Services.DevTools.Common
                 this.UDCAuthEndpoint = "https://devx.microsoft-tst.com/xdts/authorize";
                 this.XmintAuthEndpoint = "https://xmint.xboxlive.dnet.com/adfs/authorize?rp=https%3A%2F%2Fxdp.dnet.xboxlive.com%2F";
                 this.TitleStorageEndpoint = "https://titlestorage.dnet.xboxlive.com";
+                this.XConEndpoint = "https://config2.mgt.dnet.xboxlive.com/";
+                this.XOrcEndpoint = "https://xorc.dnet.xboxlive.com/";
+                this.XCertEndpoint = "https://cert.mgt.dnet.xboxlive.com/";
+                this.XAchEndpoint = "https://xach.mgt.dnet.xboxlive.com/";
+                this.XFusEndpoint = "https://upload.dnet.xboxlive.com/";
             }
 
             this.XdpBaseUri = new Uri(xdpBaseEndpoint);
@@ -97,5 +102,15 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         public string MsalXboxLiveClientId { get; private set; } = "b1eab458-325b-45a5-9692-ad6079c1eca8";
 
         public string XmintAuthEndpoint { get; private set; } = "https://xmint.xboxlive.com/adfs/authorize?rp=https%3A%2F%2Fxdp.xboxlive.com%2F";
+
+        public string XConEndpoint { get; private set; } = "https://config2.mgt.xboxlive.com/";
+
+        public string XOrcEndpoint { get; private set; } = "https://xorc.xboxlive.com/";
+
+        public string XCertEndpoint { get; private set; } = "https://cert.mgt.xboxlive.com/";
+
+        public string XAchEndpoint { get; private set; } = "https://xach.mgt.xboxlive.com/";
+
+        public string XFusEndpoint { get; private set; } = "https://upload.xboxlive.com/";
     }
 }

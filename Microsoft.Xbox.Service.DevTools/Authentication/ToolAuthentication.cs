@@ -115,11 +115,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             lock (initLock)
             {
-                if (Client.AuthContext == null)
-                {
-                    throw new InvalidOperationException("User Info is not found, call Auth.SignInAsync or Auth.LoadLastSignedInUser first.");
-                }
-
                 File.Delete(Path.Combine(ClientSettings.Singleton.CacheFolder, CacheFile));
                 Client.ETokenCache.Value.RemoveUserTokenCache(Client.AuthContext.UserName);
                 Client.AuthContext = null;

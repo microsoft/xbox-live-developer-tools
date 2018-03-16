@@ -18,7 +18,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
     public class AuthTest
     {
         private const string DefaultEToken = "defaultEToken";
-        private const string DefaultScid = "scid";
+        private const string DefaultScid = "00000000-0000-0000-0000-012345678901";
         private const string DefaultSandbox = "sandbox";
         private const string DefaultXtdsEndpoint = "http://XtdsEndpoint.com";
         private const string DefaultId = "id";
@@ -195,38 +195,6 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Assert.AreEqual(token, ToolAuthentication.PrepareForAuthHeader(DefaultEToken));
 
             mockHttp.VerifyNoOutstandingExpectation();
-        }
-
-        [TestMethod]
-        public async Task LoadSignedInUser()
-        {
-            // Clear cache and signed in user info.
-            if (ToolAuthentication.LoadLastSignedInUser() != null)
-            {
-                ToolAuthentication.SignOut();
-            }
-
-            var mockHttp = new MockHttpMessageHandler();
-
-            this.ComposeETokenPayload(new TimeSpan(1, 0, 0), string.Empty, string.Empty, out string defaultRequest,
-                out string defaultXdtsResponse);
-
-            mockHttp.Expect(DefaultXtdsEndpoint)
-                .WithContent(defaultRequest)
-                .Respond("application/json", defaultXdtsResponse);
-
-            TestHook.MockHttpHandler = mockHttp;
-
-            var devAccount = await this.SignInAsync(DevAccountSource.WindowsDevCenter, string.Empty);
-
-            var devAccountToVerify = ToolAuthentication.LoadLastSignedInUser();
-
-            Assert.AreEqual(devAccount.AccountId, devAccountToVerify.AccountId);
-            Assert.AreEqual(devAccount.AccountMoniker, devAccountToVerify.AccountMoniker);
-            Assert.AreEqual(devAccount.AccountSource, devAccountToVerify.AccountSource);
-            Assert.AreEqual(devAccount.AccountType, devAccountToVerify.AccountType);
-            Assert.AreEqual(devAccount.Id, devAccountToVerify.Id);
-            Assert.AreEqual(devAccount.Name, devAccountToVerify.Name);
         }
     }
 }

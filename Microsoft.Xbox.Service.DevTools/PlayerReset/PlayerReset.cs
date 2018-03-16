@@ -110,7 +110,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 var response = await submitRequest.SendAsync(()=> 
                 {
                     var requestMsg = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "submitJob"));
-                    var requestContent = JsonConvert.SerializeObject(new JobSubmitReqeust(scid, xuid));
+                    var requestContent = JsonConvert.SerializeObject(new JobSubmitRequest(scid, xuid));
                     requestMsg.Content = new StringContent(requestContent);
                     requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
@@ -160,8 +160,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 // Throw HttpRequestExcetpion for other HTTP status code
                 xblResponse.Response.EnsureSuccessStatusCode();
 
-                string responseConent = await xblResponse.Response.Content.ReadAsStringAsync();
-                var jobstatus = JsonConvert.DeserializeObject<JobStatusResponse>(responseConent);
+                var jobstatus = await xblResponse.Response.Content.DeserializeJsonAsync<JobStatusResponse>();
 
                 Log.WriteLog($"Checking {userResetJob.JobId} job stauts: {jobstatus.Status}");
 
