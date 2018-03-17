@@ -18,7 +18,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
     public class PlayerResetTest
     {
         private const string DefaultUserName = "username";
-        private const string DefaultScid = "scid";
+        private const string DefaultScid = "00000000-0000-0000-0000-012345678901";
         private const string DefaultSandbox = "sandbox";
         private const string DefaultEtoken = "etoken";
         private const string DefaultXuid = "xuid";
