@@ -137,6 +137,7 @@ namespace PlayerDataReset
                 }
             }
         }
+
         // Placeholder to force CommandLineParser take single verb. So that commandline exes' grammar are consistent. 
         [Verb("hidden", Hidden = true, HelpText = "")]
         internal class HiddenOptions

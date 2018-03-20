@@ -114,8 +114,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         public static void SignOut()
         {
             lock (initLock)
-            {
-
+            { 
                 if (Client.AuthContext == null)
                 {
                     throw new InvalidOperationException("User Info is not found, call Auth.SignInAsync or Auth.LoadLastSignedInUser first.");
