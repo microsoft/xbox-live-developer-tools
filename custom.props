@@ -23,7 +23,7 @@
     <RunStyleCop>true</RunStyleCop>
     <StyleCopTreatErrorsAsWarnings>false</StyleCopTreatErrorsAsWarnings>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
 </Project>
