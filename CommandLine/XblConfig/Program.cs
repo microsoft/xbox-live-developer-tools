@@ -735,14 +735,14 @@ namespace XblConfig
             public Guid ProductId { get; set; }
         }
 
-        [Verb("getRelyingParties", HelpText = "Gets relying parties.")]
+        [Verb("get-relying-parties", HelpText = "Gets relying parties.")]
         private class GetRelyingPartiesOptions : BaseOptions
         {
             [Option('a', "accountId", Required = false, HelpText = "The account ID that owns the relying parties.")]
             public Guid AccountId { get; set; }
         }
 
-        [Verb("get-relying-party-document", HelpText = "Gets a specific relying party document for a given account.")]
+        [Verb("get-relying-party-document", HelpText = "Gets a specific relying party document.")]
         private class GetRelyingPartyDocumentOptions : GetRelyingPartiesOptions
         {
             [Option('f', "filename", Required = true, HelpText = "The filename of the document to retrieve.")]
