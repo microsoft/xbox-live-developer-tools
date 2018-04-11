@@ -55,10 +55,13 @@ namespace XblConfig
 
                 // Find property called AccountId. If it not set, then set it to the logged in user's account Id.
                 PropertyInfo accountIdProperty = opts.GetType().GetProperty("AccountId");
-                Guid accountIdPropertyValue = (Guid)accountIdProperty.GetValue(opts);
-                if (accountIdPropertyValue == Guid.Empty)
+                if (accountIdProperty != null)
                 {
-                    accountIdProperty.SetValue(opts, new Guid(account.AccountId));
+                    Guid accountIdPropertyValue = (Guid)accountIdProperty.GetValue(opts);
+                    if (accountIdPropertyValue == Guid.Empty)
+                    {
+                        accountIdProperty.SetValue(opts, new Guid(account.AccountId));
+                    }
                 }
 
                 // Find the method which takes this class as an argument.
