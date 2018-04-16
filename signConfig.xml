@@ -6,5 +6,6 @@
     <file src="__RELBINPATH__\bin\PlayerDataReset\PlayerDataReset.exe" signType="Authenticode" dest="__RELBINPATH__\bin\PlayerDataReset\PlayerDataReset.exe" />
     <file src="__RELBINPATH__\bin\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe" signType="Authenticode" dest="__RELBINPATH__\bin\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe" />
     <file src="__RELBINPATH__\bin\XblDevAccount\XblDevAccount.exe" signType="Authenticode" dest="__RELBINPATH__\bin\XblDevAccount\XblDevAccount.exe" />
+    <file src="__RELBINPATH__\bin\XblConfig\XblConfig.exe" signType="Authenticode" dest="__RELBINPATH__\bin\XblConfig\XbxConfig.exe" />
   </job>
 </SignConfigXML>
