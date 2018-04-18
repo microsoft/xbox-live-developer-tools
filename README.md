@@ -116,7 +116,7 @@ GlobalStorage upload --scid xxx --file c:\test.txt --blob-path \text.txt --sandb
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### XblConfig.exe 
-XblConfig.exe is used to manage Xbox Live configuration data for games developed in Windows Dev Center. XblDevAccounnt.exe signin is required to be called at least once before first use.
+XblConfig.exe is used to manage Xbox Live configuration data for games developed in Windows Dev Center. XblDevAccount.exe signin is required to be called at least once before first use.
 
 #### Usage:
 ***get-documents:*** Get all Xbox Live configuration documents for a given title.
