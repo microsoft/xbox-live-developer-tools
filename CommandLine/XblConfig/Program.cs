@@ -377,7 +377,7 @@ namespace XblConfig
             Console.WriteLine(format, "Name", "Service ID", "Telemetry Access");
             foreach (var webService in response.Result)
             {
-                Console.WriteLine(format, webService.Name, webService.AccountId, webService.TelemetryAccess);
+                Console.WriteLine(format, webService.Name, webService.ServiceId, webService.TelemetryAccess);
             }
 
             return 0;
