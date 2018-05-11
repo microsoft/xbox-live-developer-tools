@@ -22,7 +22,7 @@ This executable is used to signin/out dev accounts and to save the credentials t
 #### Usage:
 ***signin:*** This command will pop up UI if needed. The last used account information will be saved for further use across all other executables.
 ``` 
-XblDevAccount.exe signin --userName xxx --accountSource XDP|WindowsDevCenter 
+XblDevAccount.exe signin --name xxx --source XDP|WindowsDevCenter 
 ```
 
 ***Success output example:***
