@@ -534,6 +534,7 @@ namespace XblConfig
                 }
             }
 
+            Console.WriteLine();
             return pwd;
         }
 
