@@ -53,27 +53,30 @@ namespace XblConfig
                     })
                     .WithNotParsed(err => exitCode = -1);
 
-                // Find property called AccountId. If it not set, then set it to the logged in user's account Id.
-                PropertyInfo accountIdProperty = opts.GetType().GetProperty("AccountId");
-                if (accountIdProperty != null)
+                if (opts != null)
                 {
-                    Guid accountIdPropertyValue = (Guid)accountIdProperty.GetValue(opts);
-                    if (accountIdPropertyValue == Guid.Empty)
+                    // Find property called AccountId. If it not set, then set it to the logged in user's account Id.
+                    PropertyInfo accountIdProperty = opts.GetType().GetProperty("AccountId");
+                    if (accountIdProperty != null)
                     {
-                        accountIdProperty.SetValue(opts, new Guid(account.AccountId));
+                        Guid accountIdPropertyValue = (Guid)accountIdProperty.GetValue(opts);
+                        if (accountIdPropertyValue == Guid.Empty)
+                        {
+                            accountIdProperty.SetValue(opts, new Guid(account.AccountId));
+                        }
                     }
-                }
 
-                // Find the method which takes this class as an argument.
-                MethodInfo method = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Where(c => c.GetParameters().FirstOrDefault()?.ParameterType == opts.GetType()).FirstOrDefault();
-                if (method == null)
-                {
-                    // This should never happen, but just in case...
-                    throw new InvalidOperationException($"Method with parameter {opts.GetType()} not found.");
-                }
+                    // Find the method which takes this class as an argument.
+                    MethodInfo method = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Where(c => c.GetParameters().FirstOrDefault()?.ParameterType == opts.GetType()).FirstOrDefault();
+                    if (method == null)
+                    {
+                        // This should never happen, but just in case...
+                        throw new InvalidOperationException($"Method with parameter {opts.GetType()} not found.");
+                    }
 
-                Task<int> methodResult = (Task<int>)method.Invoke(null, new object[] { opts });
-                exitCode = await methodResult;
+                    Task<int> methodResult = (Task<int>)method.Invoke(null, new object[] { opts });
+                    exitCode = await methodResult;
+                }
             }
             catch (HttpRequestException ex)
             {
