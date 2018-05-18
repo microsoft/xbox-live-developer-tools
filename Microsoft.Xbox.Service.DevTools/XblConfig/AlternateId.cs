@@ -17,5 +17,11 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         /// Gets or sets the ID value.
         /// </summary>
         public string Value { get; set; }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return $"{this.AlternateIdType} - {this.Value}";
+        }
     }
 }

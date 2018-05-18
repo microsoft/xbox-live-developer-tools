@@ -10,6 +10,7 @@ namespace XblConfig
     using System.Net;
     using System.Net.Http;
     using System.Reflection;
+    using System.Runtime.InteropServices;
     using System.Security;
     using System.Text;
     using System.Threading.Tasks;
@@ -19,8 +20,26 @@ namespace XblConfig
 
     internal class Program
     {
+        const int STD_OUTPUT_HANDLE = -11;
+        const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetStdHandle(int nStdHandle);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+
         private static async Task<int> Main(string[] args)
         {
+            var handle = GetStdHandle(STD_OUTPUT_HANDLE);
+            uint mode;
+            GetConsoleMode(handle, out mode);
+            mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            SetConsoleMode(handle, mode);
+
             int exitCode = 0;
             DevAccount account = ToolAuthentication.LoadLastSignedInUser();
             if (account == null)
@@ -315,7 +334,7 @@ namespace XblConfig
             Console.WriteLine("Obtaining product.");
 
             var response = await ConfigurationManager.GetProductAsync(options.ProductId);
-            Console.WriteLine(response.Result);
+            Console.WriteLine(ObjectPrinter.Print(response.Result));
             
             return 0;
         }
@@ -323,15 +342,17 @@ namespace XblConfig
         private static async Task<int> GetRelyingPartiesAsync(GetRelyingPartiesOptions options)
         {
             Console.WriteLine("Obtaining relying parties.");
+            Console.WriteLine();
 
             var response = await ConfigurationManager.GetRelyingPartiesAsync(options.AccountId);
-            var longestRelyingParty = response.Result.Aggregate((max, cur) => max.Name.Length > cur.Name.Length ? max : cur);
-            string format = $"{{0, -{longestRelyingParty.Name.Length}}}  {{1}}";
-            Console.WriteLine(format, "Name", "Filename");
-            foreach (var relyingParty in response.Result)
-            {
-                Console.WriteLine(format, relyingParty.Name, relyingParty.Filename);
-            }
+            Console.WriteLine(ObjectPrinter.Print(response.Result));
+            //var longestRelyingParty = response.Result.Aggregate((max, cur) => max.Name.Length > cur.Name.Length ? max : cur);
+            //string format = $"{{0, -{longestRelyingParty.Name.Length}}}  {{1}}";
+            //Console.WriteLine(format, "Name", "Filename");
+            //foreach (var relyingParty in response.Result)
+            //{
+            //    Console.WriteLine(format, relyingParty.Name, relyingParty.Filename);
+            //}
 
             return 0;
         }
@@ -478,7 +499,7 @@ namespace XblConfig
             using (FileStream stream = File.OpenRead(options.Filename))
             {
                 var response = await ConfigurationManager.UploadAchievementImageAsync(options.Scid, Path.GetFileName(stream.Name), stream);
-                Console.WriteLine($"Image uploaded to: {response.Result.CdnUrl}");
+                Console.WriteLine(ObjectPrinter.Print(response.Result));
             }
                 
             return 0;
@@ -488,7 +509,7 @@ namespace XblConfig
         {
             Console.WriteLine("Getting achievement image.");
             var response = await ConfigurationManager.GetAchievementImageAsync(options.Scid, options.AssetId);
-            Console.WriteLine(response.Result.CdnUrl);
+            Console.WriteLine(ObjectPrinter.Print(response.Result));
             return 0;
         }
 
@@ -650,7 +671,7 @@ namespace XblConfig
         }
 
         #endregion
-
+        
         #region Model Classes
 
         private class BaseOptions
