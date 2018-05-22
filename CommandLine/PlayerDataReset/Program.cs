@@ -20,7 +20,7 @@ namespace PlayerDataReset
             try
             {
                 ResetOptions options = null;
-                var parserResult = Parser.Default.ParseArguments<ResetOptions, HiddenOptions>(args)
+                var parserResult = Parser.Default.ParseArguments<ResetOptions>(args)
                     .WithParsed<ResetOptions>(parsedOptions => options = parsedOptions);
                 if (parserResult.Tag == ParserResultType.NotParsed)
                 {
@@ -136,12 +136,6 @@ namespace PlayerDataReset
                     yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx" });
                 }
             }
-        }
-
-        // Placeholder to force CommandLineParser take single verb. So that commandline exes' grammar are consistent. 
-        [Verb("hidden", Hidden = true, HelpText = "")]
-        internal class HiddenOptions
-        {
         }
     }
 }
