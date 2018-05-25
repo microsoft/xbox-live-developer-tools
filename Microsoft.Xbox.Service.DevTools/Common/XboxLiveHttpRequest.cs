@@ -20,7 +20,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         public XboxLiveHttpRequest(RequestParameters requestParameters)
         {
             this.requestParameters = requestParameters;
-            var requestHandler = TestHook.MockHttpHandler ?? new WebRequestHandler();
+            HttpMessageHandler requestHandler = TestHook.MockHttpHandler ?? new WebRequestHandler();
             this.httpClient = new HttpClient(requestHandler);
         }
 

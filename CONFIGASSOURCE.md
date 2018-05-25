@@ -62,6 +62,7 @@ This call returns a list of products you have access to:
 C:\Tools\XboxLive>XblConfig.exe get-products
 Using Dev account bob@contoso.com from WindowsDevCenter
 Obtaining products.
+
 Product ID                            Package Family Name                   Title ID    Tier
 00000000-0000-0000-0000-00000007bc9a  Contoso.FunTime_q0hwd5gyxxh55         1123314074  Full
 00000000-0000-0000-0000-000000061ca1  Contoso.BoulderDash_q0hwd5gyxxh55     1123304737  Full
@@ -80,15 +81,15 @@ For example:
 C:\Tools\XboxLive>XblConfig.exe get-product --productId 00000000-0000-0000-0000-00000007bc9a
 Using Dev account bob@contoso.com from WindowsDevCenter
 Obtaining product.
-ProductId:              00000000-0000-0000-0000-00000007bc9a
-AccountId:              816d422d-472f-48f7-a773-000003ca7c2
-MsaAppId:               0000000000003457
-PfnId:                  Contoso.FunTime_q0hwd5gyxxh55
-PrimaryServiceConfigId: 00000000-0000-0000-0000-00006047bc9a
-TitleId:                1123314074
-XboxLiveTier:           Full
-AlternateIds:
-  AppId:                9N8F1FUJGS6
+
+         Product ID: 00000000-0000-0000-0000-00000007bc9a
+         Account ID: 816d422d-472f-48f7-a773-0003003ca7c2
+         MSA App ID: 0000000000003457
+Package Family Name: Contoso.FunTime_q0hwd5gyxxh55
+               SCID: 00000000-0000-0000-0000-00000007bc9a
+           Title ID: 1123314074
+               Tier: Full
+      Alternate IDs: AppId - 9N8F1FUJGS6
 ```
 
 ### Sandboxes
@@ -106,6 +107,7 @@ If accountId is omitted, the account ID of the currently logged in user will be 
 C:\Tools\XboxLive>XblConfig.exe get-sandboxes
 Using Dev account bob@contoso.com from WindowsDevCenter
 Getting list of sandboxes.
+
 ACBXTT.0
 ACBXTT.1
 ACBXTT.58
@@ -127,11 +129,12 @@ If you omit all the optional arguments, then you will receive a list of all poss
 C:\Tools\XboxLive>XblConfig.exe get-schemas
 Using Dev account bob@contoso.com from WindowsDevCenter
 Obtaining document schema types.
- - accesspolicies
- - achievements
- - achievements2017
- - businesspartner
- - custominvitestrings
+
+accesspolicies
+achievements
+achievements2017
+businesspartner
+custominvitestrings
 [snipped]
 ```
 
@@ -143,8 +146,10 @@ Each document type has one or more versions associated with it. To obtain a list
 C:\Tools\XboxLive>XblConfig.exe get-schemas --type userstats
 Using Dev account bob@contoso.com from WindowsDevCenter
 Obtaining document schema versions for type userstats.
-1 - http://config.mgt.xboxlive.com/schema/userstats/1
-2 - http://config.mgt.xboxlive.com/schema/userstats/2
+
+Version  Namespace
+1        http://config.mgt.xboxlive.com/schema/userstats/1
+2        http://config.mgt.xboxlive.com/schema/userstats/2
 ```
 
 #### Schema Download
@@ -157,6 +162,7 @@ For example:
 C:\Tools\XboxLive>XblConfig.exe get-schemas --type userstats --version 2 --destination c:\
 Using Dev account bob@contoso.com from WindowsDevCenter
 Obtaining document schema userstats for version 2.
+
 Schema saved as c:\userstats_2.xsd
 ```
 
@@ -315,7 +321,32 @@ Once uploaded, the location of the uploaded image is returned so that you can ve
 C:\Tools\XboxLive>XblConfig.exe upload-achievement-image --scid 00000000-0000-0000-0000-00000007bc9a --file C:\temp\ach.jpg
 Using Dev account bob@contoso.com from WindowsDevCenter
 Uploading achievement image.
-Image uploaded to: http://assets1.xboxlive.com/11/1f4b45ab-f02c-4fd5-8d4d-d363fb898e08/ach.jpg
+
+     Asset ID: 001a9691-1761-4c60-875b-56bc13a5b793
+         SCID: 00000000-0000-0000-0000-00000007bc9a
+          URL: http://assets1.xboxlive.com/5/c45d6ccc-a368-4d5e-97e6-43d1c6afb0e0/ach.jpg
+Thumbnail URL: http://assets1.xboxlive.com/6/d07f0c1b-9a96-4206-88c4-e664a2365a76/ach_thumb.jpg
+        Width: 1920
+       Height: 1080
+   Image type: jpeg
+    Is public: True
+```
+
+### Achievement images for SCID
+To obtain a list of all achievement images associated with a SCID, use the following call:
+```
+XblConfig.exe get-achievement-images --scid xxx
+```
+
+For example:
+```
+C:\Tools\XboxLive>XblConfig.exe get-achievement-images --scid 00000000-0000-0000-0000-00000007bc9a
+Using Dev account bob@contoso.com from WindowsDevCenter
+Getting achievement images.
+
+Asset ID                              URL
+001a9681-1761-4c60-875b-56bc13a5b793  http://assets1.xboxlive.com/5/c45d6ccc-a368-4d5e-97e6-43d1c6afb0e0/ach.jpg
+fd17a30c-75f0-4f52-9cf9-7815b36ed62b  http://assets1.xboxlive.com/9/47848b9c-29c2-4901-b2a6-a388abd4879b/ach.jpg
 ```
 
 ### Achievement image details
@@ -326,10 +357,18 @@ XblConfig.exe get-achievement-image --scid xxx --assetId xxx
 
 For example:
 ```
-C:\Tools\XboxLive>XblConfig.exe get-achievement-image --assetId 5709dbfa-e08e-4556-a02e-df42cbdea49f --scid 00000000-0000-0000-0000-00000007bc9a
+C:\Tools\XboxLive>XblConfig.exe get-achievement-image --assetId 001a9691-1761-4c60-875b-56bc13a5b793 --scid 00000000-0000-0000-0000-00000007bc9a
 Using Dev account bob@contoso.com from WindowsDevCenter
 Getting achievement image.
-http://assets1.xboxlive.com/11/1f4b45ab-f02c-4fd5-8d4d-d363fb898e08/ach.jpg
+
+     Asset ID: 001a9691-1761-4c60-875b-56bc13a5b793
+         SCID: 00000000-0000-0000-0000-00000007bc9a
+          URL: http://assets1.xboxlive.com/5/c45d6ccc-a368-4d5e-97e6-43d1c6afb0e0/ach.jpg
+Thumbnail URL: http://assets1.xboxlive.com/6/d07f0c1b-9a96-4206-88c4-e664a2365a76/ach_thumb.jpg
+        Width: 1920
+       Height: 1080
+   Image type: jpeg
+    Is public: True
 ```
 
 
@@ -348,6 +387,7 @@ For example:
 C:\Tools\XboxLive>XblConfig.exe get-web-services
 Using Dev account bob@contoso.com from WindowsDevCenter
 Obtaining web services.
+
 Name                  Service ID                            Telemetry Access
 TestWebservice        816d422d-472f-48f7-a773-6dce323ca7c2  True
 ```
@@ -365,6 +405,7 @@ programmatically publish app channels for consumption on console through the One
 C:\Tools\XboxLive>XblConfig.exe create-web-service --name MyWebService --telemetryAccess --appChannelAccess
 Using Dev account bob@contoso.com from WindowsDevCenter
 Creating web service.
+
 Web service created with ID adc1b1bc-148e-4a86-9740-579a8fe4527f
 ```
 
@@ -379,6 +420,7 @@ For example:
 C:\Tools\XboxLive>XblConfig.exe update-web-service --serviceId adc1b1bc-148e-4a86-9740-579a8fe4527f --name MyWebService2
 Using Dev account bob@contoso.com from WindowsDevCenter
 Updating web service.
+
 Web service with ID adc1b1bc-148e-4a86-9740-579a8fe4527f successfully updated.
 ```
 
@@ -394,6 +436,7 @@ For example:
 C:\Tools\XboxLive>XblConfig.exe delete-web-service --serviceId adc1b1bc-148e-4a86-9740-579a8fe4527f
 Using Dev account bob@contoso.com from WindowsDevCenter
 Deleting web service.
+
 Web service with ID adc1b1bc-148e-4a86-9740-579a8fe4527f successefully deleted.
 ```
 
@@ -446,6 +489,7 @@ A validation response will be returned with warnings and errors. For example:
 C:\Tools\XboxLive>XblConfig.exe publish --scid 00000000-0000-0000-0000-00000007bc9a --from ABCDEF.0 --to ABCDEF.0
 Using Dev account bob@contoso.com from WindowsDevCenter
 Publishing.
+
 Warnings:
  - There must be at least one rich presence string configured
  - The number of Base achievements for this game must be 10 or more. There are currently 2.
@@ -468,5 +512,6 @@ The sandbox argument is the sandbox you are publishing to. For example:
 C:\Tools\XboxLive>XblConfig.exe get-publish-status --scid 00000000-0000-0000-0000-00000007bc9a --sandbox ABCDEF.0 
 Using Dev account bob@contoso.com from WindowsDevCenter
 Getting publish status.
+
 Status: Success
 ```

@@ -5,7 +5,6 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
 {
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
 
     /// <summary>
     /// Represents a product within Dev Center.
@@ -15,55 +14,55 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         /// <summary>
         /// Gets or sets the account ID associated with this product.
         /// </summary>
-        [Display(Name = "Account ID", Order = 7)]
+        [Display(Name = "Account ID", Order = 2, ListOmit = true)]
         public Guid AccountId { get; set; }
 
         /// <summary>
         /// Gets or sets any alternate IDs for this product.
         /// </summary>
-        [Display(Name = "Alternate IDs", Order = 6)]
+        [Display(Name = "Alternate IDs", Order = 8, ListOmit = true)]
         public IEnumerable<AlternateId> AlternateIds { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating if this product is a test product or not.
         /// </summary>
-        [Display(AutoGenerateField = false)]
+        [Display(Omit = true, ListOmit = true)]
         public bool IsTest { get; set; }
 
         /// <summary>
         /// Gets or sets the Microsoft Account application ID.
         /// </summary>
-        [Display(Name = "MSA App ID", Order = 4)]
+        [Display(Name = "MSA App ID", Order = 3, ListOmit = true)]
         public string MsaAppId { get; set; }
 
         /// <summary>
         /// Gets or sets the package family name ID.
         /// </summary>
-        [Display(Name = "PFN ID", Order = 3)]
+        [Display(Name = "Package Family Name", Order = 4, ListOrder = 2)]
         public string PfnId { get; set; }
 
         /// <summary>
         /// Gets or sets the primary service configuration ID.
         /// </summary>
-        [Display(Name = "SCID", Order = 1)]
+        [Display(Name = "SCID", Order = 5, ListOmit = true)]
         public Guid PrimaryServiceConfigId { get; set; }
 
         /// <summary>
         /// Gets or sets the product ID.
         /// </summary>
-        [Display(AutoGenerateField = false)]
+        [Display(Name = "Product ID", Order = 1, ListOrder = 1)]
         public Guid ProductId { get; set; }
 
         /// <summary>
         /// Gets or sets the title ID.
         /// </summary>
-        [Display(Name = "Title ID", Order = 2)]
+        [Display(Name = "Title ID", Order = 6, ListOrder = 3)]
         public uint TitleId { get; set; }
 
         /// <summary>
         /// Gets or sets the Xbox Live tier.
         /// </summary>
-        [Display(Name = "Xbox Live tier", Order = 5)]
+        [Display(Name = "Tier", Order = 7, ListOrder = 4)]
         public XboxLiveTier XboxLiveTier { get; set; }
     }
 }

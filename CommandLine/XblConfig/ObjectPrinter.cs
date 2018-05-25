@@ -6,7 +6,6 @@ namespace XblConfig
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
     using System.Linq;
     using System.Reflection;
     using System.Text;
@@ -14,9 +13,6 @@ namespace XblConfig
 
     internal static class ObjectPrinter
     {
-        private const string UNDERLINE = "\x1B[4m";
-        private const string RESET = "\x1B[0m";
-
         public static string Print(object obj, IEnumerable<PropertyInfo> properties)
         {
             StringBuilder sb = new StringBuilder();
@@ -25,13 +21,13 @@ namespace XblConfig
             int longest = propertyNames.Aggregate((max, cur) => max.Value.Length > cur.Value.Length ? max : cur).Value.Length;
 
             string format = $"{{0, {longest}}}: {{1}}";
-            foreach (var property in properties)
+            foreach (PropertyInfo property in properties)
             {
-                var propertyValue = property.GetValue(obj);
-                var propertyString = propertyValue.ToString();
+                object propertyValue = property.GetValue(obj);
+                string propertyString = propertyValue.ToString();
                 if (propertyValue is IEnumerable && !(propertyValue is string))
                 {
-                    var propVal = ((IEnumerable)propertyValue).Cast<object>().ToArray();
+                    object[] propVal = ((IEnumerable)propertyValue).Cast<object>().ToArray();
                     propertyString = string.Join(",", propVal);
                 }
 
@@ -44,14 +40,19 @@ namespace XblConfig
 
         public static string Print(object obj)
         {
-            IEnumerable<PropertyInfo> properties = SortAndFilterProperties(obj.GetType());
+            IEnumerable<PropertyInfo> properties = SortAndFilterProperties(obj.GetType(), false);
             return Print(obj, properties);
         }
 
         public static string Print(IEnumerable list)
         {
             IEnumerator enumerator = list.GetEnumerator();
-            IEnumerable<PropertyInfo> properties = enumerator.MoveNext() ? SortAndFilterProperties(enumerator.Current.GetType()) : null;
+            IEnumerable<PropertyInfo> properties = enumerator.MoveNext() ? SortAndFilterProperties(enumerator.Current.GetType(), true) : null;
+            if (properties == null)
+            {
+                return string.Join(Environment.NewLine, list.Cast<string>());
+            }
+
             return Print(list, properties);
         }
 
@@ -80,17 +81,16 @@ namespace XblConfig
                     }
                 }
 
-                headerFormatSB.Append($"{{{index}, -{maxLength + 8}}}  ");
+                headerFormatSB.Append($"{{{index}, -{maxLength + VirtualTerminal.Underline.Length + VirtualTerminal.Reset.Length}}}  ");
                 formatSB.Append($"{{{index++}, -{maxLength}}}  ");
-                
             }
 
             string format = formatSB.ToString().Trim();
             string headerFormat = headerFormatSB.ToString().Trim();
 
             StringBuilder sb = new StringBuilder();
-            var namesOld = propertyNames.Select(c => $"{c.Value}").ToArray();
-            var names = propertyNames.Select(c => $"{UNDERLINE}{c.Value}{RESET}").ToArray();
+            string[] namesOld = propertyNames.Select(c => $"{c.Value}").ToArray();
+            string[] names = propertyNames.Select(c => $"{VirtualTerminal.Underline}{c.Value}{VirtualTerminal.Reset}").ToArray();
             sb.AppendFormat(headerFormat, names);
             sb.AppendLine();
 
@@ -133,23 +133,42 @@ namespace XblConfig
             return names;
         }
 
-        private static IEnumerable<PropertyInfo> SortAndFilterProperties(Type type)
+        private static IEnumerable<PropertyInfo> SortAndFilterProperties(Type type, bool isList)
         {
+            if (type.Module.ScopeName == "CommonLanguageRuntimeLibrary")
+            {
+                return null;
+            }
+
             SortedDictionary<int, PropertyInfo> orderedProperties = new SortedDictionary<int, PropertyInfo>();
             List<PropertyInfo> unorderedProperties = new List<PropertyInfo>();
-
+            
             foreach (PropertyInfo property in type.GetProperties())
             {
-                var displayAttribute = property.GetCustomAttribute<DisplayAttribute>();
+                DisplayAttribute displayAttribute = property.GetCustomAttribute<DisplayAttribute>();
                 if (displayAttribute != null)
                 {
-                    if (displayAttribute.GetOrder().HasValue)
+                    if (isList)
                     {
-                        orderedProperties.Add(displayAttribute.Order, property);
+                        if (displayAttribute.GetListOrder().HasValue && !displayAttribute.ListOmit)
+                        {
+                            orderedProperties.Add(displayAttribute.ListOrder, property);
+                        }
+                        else if (!displayAttribute.ListOmit)
+                        {
+                            unorderedProperties.Add(property);
+                        }
                     }
-                    else if (displayAttribute.AutoGenerateField)
+                    else
                     {
-                        unorderedProperties.Add(property);
+                        if (displayAttribute.GetOrder().HasValue && !displayAttribute.Omit)
+                        {
+                            orderedProperties.Add(displayAttribute.Order, property);
+                        }
+                        else if (!displayAttribute.Omit)
+                        {
+                            unorderedProperties.Add(property);
+                        }
                     }
 
                     continue;

@@ -177,7 +177,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
                 {
                     if (string.IsNullOrEmpty(eTag))
                     {
-                        var emptySet = await GetAccountDocumentsAsync(accountId, "notused.xxx");
+                        DocumentsResponse emptySet = await GetAccountDocumentsAsync(accountId, "notused.xxx");
                         eTag = emptySet.ETag;
                     }
 
@@ -686,7 +686,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
                     var sandboxes = (await httpResponse.Content.DeserializeJsonAsync<IEnumerable<Sandbox>>())
                         .Select(c =>
                         {
-                            var sandbox = c.SandboxId.Split('.');
+                            string[] sandbox = c.SandboxId.Split('.');
                             if (sandbox.Length == 2 && int.TryParse(sandbox[1], out int x))
                             {
                                 return new
@@ -815,6 +815,31 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         }
 
         /// <summary>
+        /// Asynchronously gets a list of achievement images associated with a given SCID.
+        /// </summary>
+        /// <param name="scid">The service configuration ID that these images are for.</param>
+        public static async Task<ConfigResponse<IEnumerable<AchievementImage>>> GetAchievementImagesAsync(Guid scid)
+        {
+            using (XboxLiveHttpRequest request = new XboxLiveHttpRequest(true, scid))
+            {
+                XboxLiveHttpResponse response = await request.SendAsync(() =>
+                {
+                    return new HttpRequestMessage(HttpMethod.Get, new Uri(xachUri, $"/scids/{scid}/images/"));
+                });
+                using (HttpResponseMessage httpResponse = response.Response)
+                {
+                    httpResponse.EnsureSuccessStatusCode();
+                    AchievementImagesResponse imageResponse = await httpResponse.Content.DeserializeJsonAsync<AchievementImagesResponse>();
+                    return new ConfigResponse<IEnumerable<AchievementImage>>()
+                    {
+                        CorrelationId = response.CorrelationId,
+                        Result = imageResponse.Images
+                    };
+                }
+            }
+        }
+
+        /// <summary>
         /// Asynchronously uploads an achievement image for a given sandbox.
         /// </summary>
         /// <param name="scid">The service configuration ID that this image is for.</param>
@@ -930,7 +955,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
                 XboxLiveHttpResponse response = await request.SendAsync(() =>
                 {
                     HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, new Uri(xachUri, $"/scids/{scid}/images"));
-                    var requestBody = new AchievementImageUploadRequest() { XfusId = xfusId };
+                    AchievementImageUploadRequest requestBody = new AchievementImageUploadRequest() { XfusId = xfusId };
                     message.Content = new StringContent(requestBody.ToJson());
                     message.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
                     return message;

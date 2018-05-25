@@ -10,7 +10,6 @@ namespace XblConfig
     using System.Net;
     using System.Net.Http;
     using System.Reflection;
-    using System.Runtime.InteropServices;
     using System.Security;
     using System.Text;
     using System.Threading.Tasks;
@@ -20,25 +19,9 @@ namespace XblConfig
 
     internal class Program
     {
-        const int STD_OUTPUT_HANDLE = -11;
-        const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4;
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GetStdHandle(int nStdHandle);
-
-        [DllImport("kernel32.dll")]
-        private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
-
-        [DllImport("kernel32.dll")]
-        private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
-
         private static async Task<int> Main(string[] args)
         {
-            var handle = GetStdHandle(STD_OUTPUT_HANDLE);
-            uint mode;
-            GetConsoleMode(handle, out mode);
-            mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-            SetConsoleMode(handle, mode);
+            VirtualTerminal.Enable();
 
             int exitCode = 0;
             DevAccount account = ToolAuthentication.LoadLastSignedInUser();
@@ -140,6 +123,11 @@ namespace XblConfig
                 throw new ArgumentException("Sandbox must be specified when obtaining sandbox documents.");
             }
 
+            if (options.DocumentType == DocumentType.Sandbox && options.Scid == Guid.Empty)
+            {
+                throw new ArgumentException("SCID must be specified when obtaining sandbox documents.");
+            }
+
             if (options.DocumentType == DocumentType.Account)
             {
                 options.Sandbox = null;
@@ -171,10 +159,10 @@ namespace XblConfig
                 Console.WriteLine($"Version: {documents.Version}");
                 Console.WriteLine("Files: ");
 
-                foreach (var file in documents.Documents)
+                foreach (ConfigFileStream file in documents.Documents)
                 {
-                    var path = Path.Combine(options.Destination, file.Name);
-                    using (var fileStream = File.Create(path))
+                    string path = Path.Combine(options.Destination, file.Name);
+                    using (FileStream fileStream = File.Create(path))
                     {
                         await file.Stream.CopyToAsync(fileStream);
                     }
@@ -201,7 +189,7 @@ namespace XblConfig
                 options.Sandbox = null;
             }
 
-            var files = Glob(options.Files);
+            IEnumerable<string> files = Glob(options.Files);
             int fileCount = files.Count();
             if (fileCount == 0)
             {
@@ -211,7 +199,7 @@ namespace XblConfig
 
             Console.WriteLine($"Committing {fileCount} file(s) to Xbox Live.");
 
-            var eTag = options.ETag ?? GetETag(files, options.Sandbox);
+            string eTag = options.ETag ?? GetETag(files, options.Sandbox);
             if (options.Force)
             {
                 eTag = null;
@@ -235,7 +223,7 @@ namespace XblConfig
                 documentsTask = ConfigurationManager.CommitAccountDocumentsAsync(files, options.AccountId, eTag, options.ValidateOnly, options.Message);
             }
 
-            var result = await documentsTask;
+            ConfigResponse<ValidationResponse> result = await documentsTask;
 
             SaveETag(result.Result.ETag, Path.GetDirectoryName(files.First()), options.Sandbox);
 
@@ -253,19 +241,21 @@ namespace XblConfig
             {
                 // Get the schema types.
                 Console.WriteLine("Obtaining document schema types.");
-                var schemaTypes = await ConfigurationManager.GetSchemaTypesAsync();
-                foreach (var schemaType in schemaTypes.Result)
+                Console.WriteLine();
+
+                ConfigResponse<IEnumerable<string>> schemaTypes = await ConfigurationManager.GetSchemaTypesAsync();
+                Console.WriteLine(ObjectPrinter.Print(schemaTypes.Result));
+                if (!string.IsNullOrEmpty(options.Destination))
                 {
-                    Console.WriteLine($" - {schemaType}");
-                    if (!string.IsNullOrEmpty(options.Destination))
+                    foreach (string schemaType in schemaTypes.Result)
                     {
                         EnsureDirectory(options.Destination);
-                        var versions = await ConfigurationManager.GetSchemaVersionsAsync(schemaType);
-                        foreach (var version in versions.Result)
+                        ConfigResponse<IEnumerable<SchemaVersion>> versions = await ConfigurationManager.GetSchemaVersionsAsync(schemaType);
+                        foreach (SchemaVersion version in versions.Result)
                         {
-                            var schema = await ConfigurationManager.GetSchemaAsync(schemaType, version.Version);
-                            var path = Path.Combine(options.Destination, $"{schemaType.ToLowerInvariant()}_{version.Version}.xsd");
-                            using (var fileStream = File.Create(path))
+                            ConfigResponse<Stream> schema = await ConfigurationManager.GetSchemaAsync(schemaType, version.Version);
+                            string path = Path.Combine(options.Destination, $"{schemaType.ToLowerInvariant()}_{version.Version}.xsd");
+                            using (FileStream fileStream = File.Create(path))
                             {
                                 await schema.Result.CopyToAsync(fileStream);
                             }
@@ -277,16 +267,17 @@ namespace XblConfig
             {
                 // Get the schema versions.
                 Console.WriteLine($"Obtaining document schema versions for type {options.Type}.");
-                var schemaVersions = await ConfigurationManager.GetSchemaVersionsAsync(options.Type);
-                foreach (var schemaVersion in schemaVersions.Result)
-                {
-                    Console.WriteLine($"{schemaVersion.Version} - {schemaVersion.Namespace}");
-                }
+                Console.WriteLine();
+
+                ConfigResponse<IEnumerable<SchemaVersion>> schemaVersions = await ConfigurationManager.GetSchemaVersionsAsync(options.Type);
+                Console.WriteLine(ObjectPrinter.Print(schemaVersions.Result));
             }
             else
             {
                 Console.WriteLine($"Obtaining document schema {options.Type} for version {options.Version}.");
-                var schema = await ConfigurationManager.GetSchemaAsync(options.Type, options.Version);
+                Console.WriteLine();
+
+                ConfigResponse<Stream> schema = await ConfigurationManager.GetSchemaAsync(options.Type, options.Version);
 
                 if (string.IsNullOrEmpty(options.Destination))
                 {
@@ -297,8 +288,8 @@ namespace XblConfig
                 {
                     // The destination exists. Save the file to the directory.
                     EnsureDirectory(options.Destination);
-                    var path = Path.Combine(options.Destination, $"{options.Type.ToLowerInvariant()}_{options.Version}.xsd");
-                    using (var fileStream = File.Create(path))
+                    string path = Path.Combine(options.Destination, $"{options.Type.ToLowerInvariant()}_{options.Version}.xsd");
+                    using (FileStream fileStream = File.Create(path))
                     {
                         await schema.Result.CopyToAsync(fileStream);
                     }
@@ -313,27 +304,20 @@ namespace XblConfig
         private static async Task<int> GetProductsAsync(GetProductsOptions options)
         {
             Console.WriteLine("Obtaining products.");
+            Console.WriteLine();
 
-            var response = await ConfigurationManager.GetProductsAsync(options.AccountId);
-
-            // Determine the max length of the pfnId
-            var longestProduct = response.Result.Aggregate((max, cur) => max.PfnId.Length > cur.PfnId.Length ? max : cur);
-            string format = $"{{0, -36}}  {{1, -{longestProduct.PfnId.Length}}}  {{2, -10}}  {{3}}";
-            Console.WriteLine(format, "Product ID", "Package Family Name", "Title ID", "Tier");
-
-            foreach (var product in response.Result)
-            {
-                Console.WriteLine(format, product.ProductId, product.PfnId, product.TitleId, product.XboxLiveTier);
-            }
-
+            ConfigResponse<IEnumerable<Product>> response = await ConfigurationManager.GetProductsAsync(options.AccountId);
+            Console.WriteLine(ObjectPrinter.Print(response.Result));
+            
             return 0;
         }
 
         private static async Task<int> GetProductAsync(GetProductOptions options)
         {
             Console.WriteLine("Obtaining product.");
+            Console.WriteLine();
 
-            var response = await ConfigurationManager.GetProductAsync(options.ProductId);
+            ConfigResponse<Product> response = await ConfigurationManager.GetProductAsync(options.ProductId);
             Console.WriteLine(ObjectPrinter.Print(response.Result));
             
             return 0;
@@ -344,25 +328,19 @@ namespace XblConfig
             Console.WriteLine("Obtaining relying parties.");
             Console.WriteLine();
 
-            var response = await ConfigurationManager.GetRelyingPartiesAsync(options.AccountId);
+            ConfigResponse<IEnumerable<RelyingParty>> response = await ConfigurationManager.GetRelyingPartiesAsync(options.AccountId);
             Console.WriteLine(ObjectPrinter.Print(response.Result));
-            //var longestRelyingParty = response.Result.Aggregate((max, cur) => max.Name.Length > cur.Name.Length ? max : cur);
-            //string format = $"{{0, -{longestRelyingParty.Name.Length}}}  {{1}}";
-            //Console.WriteLine(format, "Name", "Filename");
-            //foreach (var relyingParty in response.Result)
-            //{
-            //    Console.WriteLine(format, relyingParty.Name, relyingParty.Filename);
-            //}
-
+            
             return 0;
         }
 
         private static async Task<int> GetRelyingPartyDocumentAsync(GetRelyingPartyDocumentOptions options)
         {
             Console.WriteLine("Obtaining relying party document.");
+            Console.WriteLine();
 
-            var response = await ConfigurationManager.GetRelyingPartyDocumentAsync(options.AccountId, options.Filename);
-            var document = response.Documents.First();
+            DocumentsResponse response = await ConfigurationManager.GetRelyingPartyDocumentAsync(options.AccountId, options.Filename);
+            ConfigFileStream document = response.Documents.First();
             using (Stream stream = document.Stream)
             {
                 if (string.IsNullOrEmpty(options.Destination))
@@ -375,7 +353,7 @@ namespace XblConfig
                 else
                 {
                     EnsureDirectory(options.Destination);
-                    var path = Path.Combine(options.Destination, document.Name);
+                    string path = Path.Combine(options.Destination, document.Name);
                     using (StreamWriter sw = File.CreateText(path))
                     {
                         await stream.CopyToAsync(sw.BaseStream);
@@ -391,62 +369,56 @@ namespace XblConfig
         private static async Task<int> GetWebServicesAsync(GetWebServicesOptions options)
         {
             Console.WriteLine("Obtaining web services.");
+            Console.WriteLine();
 
-            var response = await ConfigurationManager.GetWebServicesAsync(options.AccountId);
-            var longestWebService = response.Result.Aggregate((max, cur) => max.Name.Length > cur.Name.Length ? max : cur);
-            string format = $"{{0, -{longestWebService.Name.Length}}}  {{1, -36}}  {{2}}";
-            Console.WriteLine(format, "Name", "Service ID", "Telemetry Access");
-            foreach (var webService in response.Result)
-            {
-                Console.WriteLine(format, webService.Name, webService.ServiceId, webService.TelemetryAccess);
-            }
-
+            ConfigResponse<IEnumerable<WebService>> response = await ConfigurationManager.GetWebServicesAsync(options.AccountId);
+            Console.WriteLine(ObjectPrinter.Print(response.Result));
             return 0;
         }
 
         private static async Task<int> CreateWebServiceAsync(CreateWebServiceOptions options)
         {
             Console.WriteLine("Creating web service.");
+            Console.WriteLine();
 
-            var response = await ConfigurationManager.CreateWebServiceAsync(options.AccountId, options.Name, options.TelemetryAccess, options.AppChannelsAccess);
-
+            ConfigResponse<WebService> response = await ConfigurationManager.CreateWebServiceAsync(options.AccountId, options.Name, options.TelemetryAccess, options.AppChannelsAccess);
             Console.WriteLine($"Web service created with ID {response.Result.ServiceId}");
-
             return 0;
         }
 
         private static async Task<int> UpdateWebServiceAsync(UpdateWebServiceOptions options)
         {
             Console.WriteLine("Updating web service.");
+            Console.WriteLine();
 
-            var response = await ConfigurationManager.UpdateWebServiceAsync(options.ServiceId, options.AccountId, options.Name, options.TelemetryAccess, options.AppChannelsAccess);
-
+            ConfigResponse<WebService> response = await ConfigurationManager.UpdateWebServiceAsync(options.ServiceId, options.AccountId, options.Name, options.TelemetryAccess, options.AppChannelsAccess);
             Console.WriteLine($"Web service with ID {response.Result.ServiceId} successfully updated.");
-
             return 0;
         }
 
         private static async Task<int> DeleteWebServiceAsync(DeleteWebServiceOptions options)
         {
             Console.WriteLine("Deleting web service.");
+            Console.WriteLine();
 
-            var response = await ConfigurationManager.DeleteWebServiceAsync(options.AccountId, options.ServiceId);
-
+            await ConfigurationManager.DeleteWebServiceAsync(options.AccountId, options.ServiceId);
             Console.WriteLine($"Web service with ID {options.ServiceId} successefully deleted.");
-
             return 0;
         }
 
         private static async Task<int> GenerateWebServiceCertificateAsync(GenerateWebServiceCertificateOptions options)
         {
+            Console.WriteLine("Generating web service certificate.");
+            Console.WriteLine();
+
             FileInfo fi = new FileInfo(options.Destination);
             EnsureDirectory(fi.Directory.FullName);
-            Console.WriteLine("Generating web service certificate.");
+
             Console.Write("Please enter the password you would like to secure this certificate with: ");
             using (SecureString password = GetPassword())
             {
                 ConfigResponse<Stream> response = await ConfigurationManager.GenerateWebServiceCertificateAsync(options.AccountId, options.ServiceId, password);
-                using (var fileStream = File.Create(options.Destination))
+                using (FileStream fileStream = File.Create(options.Destination))
                 {
                     response.Result.CopyTo(fileStream);
                 }
@@ -460,6 +432,8 @@ namespace XblConfig
         private static async Task<int> PublishAsync(PublishOptions options)
         {
             Console.WriteLine(options.ValidateOnly ? "Validating." : "Publishing.");
+            Console.WriteLine();
+
             ConfigResponse<PublishResponse> response;
             if (options.ConfigSetVersion.HasValue)
             {
@@ -483,7 +457,9 @@ namespace XblConfig
         private static async Task<int> GetPublishStatusAsync(PublishStatusOptions options)
         {
             Console.WriteLine("Getting publish status.");
-            var response = await ConfigurationManager.GetPublishStatusAsync(options.Scid, options.Sandbox);
+            Console.WriteLine();
+
+            ConfigResponse<PublishResponse> response = await ConfigurationManager.GetPublishStatusAsync(options.Scid, options.Sandbox);
             Console.WriteLine($"Status: {response.Result.Status}");
             if (!string.IsNullOrEmpty(response.Result.StatusMessage))
             {
@@ -496,9 +472,11 @@ namespace XblConfig
         private static async Task<int> UploadAchievementImageAsync(UploadAchievementImageOptions options)
         {
             Console.WriteLine("Uploading achievement image.");
+            Console.WriteLine();
+
             using (FileStream stream = File.OpenRead(options.Filename))
             {
-                var response = await ConfigurationManager.UploadAchievementImageAsync(options.Scid, Path.GetFileName(stream.Name), stream);
+                ConfigResponse<AchievementImage> response = await ConfigurationManager.UploadAchievementImageAsync(options.Scid, Path.GetFileName(stream.Name), stream);
                 Console.WriteLine(ObjectPrinter.Print(response.Result));
             }
                 
@@ -508,7 +486,19 @@ namespace XblConfig
         private static async Task<int> GetAchievementImageAsync(GetAchievementImageOptions options)
         {
             Console.WriteLine("Getting achievement image.");
-            var response = await ConfigurationManager.GetAchievementImageAsync(options.Scid, options.AssetId);
+            Console.WriteLine();
+
+            ConfigResponse<AchievementImage> response = await ConfigurationManager.GetAchievementImageAsync(options.Scid, options.AssetId);
+            Console.WriteLine(ObjectPrinter.Print(response.Result));
+            return 0;
+        }
+
+        private static async Task<int> GetAchievementImagesAsync(GetAchievevmentImagesOptions options)
+        {
+            Console.WriteLine("Getting achievement images.");
+            Console.WriteLine();
+
+            ConfigResponse<IEnumerable<AchievementImage>> response = await ConfigurationManager.GetAchievementImagesAsync(options.Scid);
             Console.WriteLine(ObjectPrinter.Print(response.Result));
             return 0;
         }
@@ -516,12 +506,10 @@ namespace XblConfig
         private static async Task<int> GetSandboxesAsync(GetSandboxOptions options)
         {
             Console.WriteLine("Getting list of sandboxes.");
-            var response = await ConfigurationManager.GetSandboxesAsync(options.AccountId);
-            foreach (var sandbox in response.Result)
-            {
-                Console.WriteLine(sandbox);
-            }
+            Console.WriteLine();
 
+            ConfigResponse<IEnumerable<string>> response = await ConfigurationManager.GetSandboxesAsync(options.AccountId);
+            Console.WriteLine(ObjectPrinter.Print(response.Result));
             return 0;
         }
 
@@ -529,7 +517,7 @@ namespace XblConfig
 
         private static SecureString GetPassword()
         {
-            var pwd = new SecureString();
+            SecureString pwd = new SecureString();
             while (true)
             {
                 ConsoleKeyInfo i = Console.ReadKey(true);
@@ -570,7 +558,7 @@ namespace XblConfig
         private static IEnumerable<string> Glob(IEnumerable<string> files)
         {
             List<string> fileList = new List<string>();
-            foreach (var file in files)
+            foreach (string file in files)
             {
                 if (File.Exists(file))
                 {
@@ -578,13 +566,13 @@ namespace XblConfig
                     continue;
                 }
 
-                var pathRoot = Path.GetDirectoryName(file);
+                string pathRoot = Path.GetDirectoryName(file);
                 if (string.IsNullOrEmpty(pathRoot))
                 {
                     pathRoot = Directory.GetCurrentDirectory();
                 }
 
-                var filename = Path.GetFileName(file);
+                string filename = Path.GetFileName(file);
                 fileList.AddRange(Directory.GetFiles(pathRoot, filename));
             }
 
@@ -599,7 +587,7 @@ namespace XblConfig
                 return null;
             }
 
-            using (var file = File.OpenText(filename))
+            using (StreamReader file = File.OpenText(filename))
             {
                 return file.ReadToEnd();
             }
@@ -607,9 +595,9 @@ namespace XblConfig
 
         private static string GetETag(IEnumerable<string> files, string sandbox)
         {
-            foreach (var file in files)
+            foreach (string file in files)
             {
-                var eTag = GetETag(Path.GetDirectoryName(file), sandbox ?? "Account");
+                string eTag = GetETag(Path.GetDirectoryName(file), sandbox ?? "Account");
                 if (eTag != null)
                 {
                     return eTag;
@@ -641,13 +629,13 @@ namespace XblConfig
 
         private static void PrintValidationInfo(IEnumerable<ValidationInfo> validationList)
         {
-            var warnings = validationList.Where(c => c.Severity == Severity.Warning);
-            var errors = validationList.Where(c => c.Severity == Severity.Error);
+            IEnumerable<ValidationInfo> warnings = validationList.Where(c => c.Severity == Severity.Warning);
+            IEnumerable<ValidationInfo> errors = validationList.Where(c => c.Severity == Severity.Error);
             if (warnings.Count() > 0)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Warnings:");
-                foreach (var validationInfo in warnings)
+                foreach (ValidationInfo validationInfo in warnings)
                 {
                     Console.WriteLine($" - {validationInfo.Message}");
                 }
@@ -660,7 +648,7 @@ namespace XblConfig
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Error.WriteLine("Errors:");
-                foreach (var validationInfo in errors)
+                foreach (ValidationInfo validationInfo in errors)
                 {
                     Console.Error.WriteLine($" - {validationInfo.Message}");
                 }
@@ -804,10 +792,22 @@ namespace XblConfig
         }
 
         [Verb("update-web-service", HelpText = "Update a web service.")]
-        private class UpdateWebServiceOptions : CreateWebServiceOptions
+        private class UpdateWebServiceOptions : BaseOptions
         {
             [Option('s', "serviceId", Required = true, HelpText = "The ID of the web service.")]
             public Guid ServiceId { get; set; }
+
+            [Option('a', "accountId", Required = false, HelpText = "The account ID that owns the web service.")]
+            public Guid AccountId { get; set; }
+
+            [Option('n', "name", Required = false, HelpText = "The name to give the web service.")]
+            public string Name { get; set; }
+
+            [Option('t', "telemetryAccess", Required = false, HelpText = "A boolean value allowing your service to retrieve game telemetry data for any of your games.")]
+            public bool TelemetryAccess { get; set; }
+
+            [Option('c', "appChannelAccess", Required = false, HelpText = "A boolean value that gives the media provider owning the service the authority to programmatically publish app channels for consumption on console through the OneGuide twist.")]
+            public bool AppChannelsAccess { get; set; }
         }
 
         [Verb("delete-web-service", HelpText = "Delete a web service.")]
@@ -870,6 +870,13 @@ namespace XblConfig
 
             [Option('a', "assetId", Required = true, HelpText = "The ID of the image.")]
             public Guid AssetId { get; set; }
+        }
+
+        [Verb("get-achievement-images", HelpText = "Gets the details of all achievement images associated with this SCID.")]
+        private class GetAchievevmentImagesOptions : BaseOptions
+        {
+            [Option('s', "scid", Required = true, HelpText = "The service configuration ID.")]
+            public Guid Scid { get; set; }
         }
 
         [Verb("upload-achievement-image", HelpText = "Uploads an achievement image to a specific SCID.")]
