@@ -34,7 +34,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
         private void SetUpMockAuth()
         {
-            var mockAuth = new Mock<AuthClient>();
+            Mock<AuthClient> mockAuth = new Mock<AuthClient>();
             mockAuth.Setup(o => o.GetETokenAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
                 .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => DefaultEtoken + scid + string.Join(" ", sandboxes ?? new string[0]));
             ToolAuthentication.Client = mockAuth.Object;
@@ -112,12 +112,12 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 }
             };
 
-            var uri = new Uri(new Uri(ClientSettings.Singleton.XConEndpoint), "/schema");
+            Uri uri = new Uri(new Uri(ClientSettings.Singleton.XConEndpoint), "/schema");
 
             this.mockHandler.Expect(uri.ToString())
                 .Respond(res => this.ExpectedJsonResponse(expectedSchemaTypes));
 
-            var schemaTypes = await ConfigurationManager.GetSchemaTypesAsync();
+            ConfigResponse<IEnumerable<string>> schemaTypes = await ConfigurationManager.GetSchemaTypesAsync();
 
             Assert.AreEqual(DefaultCorrelationVector, schemaTypes.CorrelationId);
             Assert.AreEqual(2, schemaTypes.Result.Count());
@@ -127,12 +127,12 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [ExpectedException(typeof(HttpRequestException))]
         public async Task GetSchemaTypesFailure()
         {
-            var uri = new Uri(new Uri(ClientSettings.Singleton.XConEndpoint), "/schema");
+            Uri uri = new Uri(new Uri(ClientSettings.Singleton.XConEndpoint), "/schema");
 
             this.mockHandler.Expect(uri.ToString())
                 .Respond(HttpStatusCode.ServiceUnavailable);
 
-            var schemaTypes = await ConfigurationManager.GetSchemaTypesAsync();
+            ConfigResponse<IEnumerable<string>> schemaTypes = await ConfigurationManager.GetSchemaTypesAsync();
         }
 
         [TestMethod]
@@ -147,11 +147,11 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 }
             };
 
-            var uri = new Uri(new Uri(ClientSettings.Singleton.XConEndpoint), "/schema/achievements");
+            Uri uri = new Uri(new Uri(ClientSettings.Singleton.XConEndpoint), "/schema/achievements");
             this.mockHandler.Expect(uri.ToString())
                 .Respond(res => this.ExpectedJsonResponse(expectedSchemaVersions));
 
-            var schemaVersions = await ConfigurationManager.GetSchemaVersionsAsync("achievements");
+            ConfigResponse<IEnumerable<SchemaVersion>> schemaVersions = await ConfigurationManager.GetSchemaVersionsAsync("achievements");
 
             Assert.AreEqual(DefaultCorrelationVector, schemaVersions.CorrelationId);
             Assert.AreEqual(schemaNamespace, schemaVersions.Result.FirstOrDefault().Namespace);
@@ -161,13 +161,13 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task GetSchemasSuccess()
         {
-            var uri = new Uri(new Uri(ClientSettings.Singleton.XConEndpoint), $"/schema/achievements/1");
-            var responseString = "foo";
+            Uri uri = new Uri(new Uri(ClientSettings.Singleton.XConEndpoint), $"/schema/achievements/1");
+            string responseString = "foo";
 
             this.mockHandler.Expect(uri.ToString())
                 .Respond(res => this.ExpectedBinaryResponse(Encoding.UTF8.GetBytes(responseString)));
 
-            var response = await ConfigurationManager.GetSchemaAsync("achievements", 1);
+            ConfigResponse<Stream> response = await ConfigurationManager.GetSchemaAsync("achievements", 1);
             Assert.AreEqual(DefaultCorrelationVector, response.CorrelationId);
             Assert.IsTrue(response.Result.CanRead);
             Assert.AreEqual(0, response.Result.Position);
@@ -181,9 +181,9 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         public async Task GetSandboxesSuccess()
         {
             this.SetUpMockAuth();
-            var uri = new Uri(new Uri(ClientSettings.Singleton.XOrcEndpoint), $"/sandboxes?accountId={DefaultAccountId}");
+            Uri uri = new Uri(new Uri(ClientSettings.Singleton.XOrcEndpoint), $"/sandboxes?accountId={DefaultAccountId}");
 
-            var responseArray = new Sandbox[]
+            Sandbox[] responseArray = new Sandbox[]
             {
                 new Sandbox() { AccountId = Guid.Parse(DefaultAccountId), SandboxId = "XYZ.2" },
                 new Sandbox() { AccountId = Guid.Parse(DefaultAccountId), SandboxId = "XYZ.10" },
@@ -195,7 +195,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 .WithHeaders("Authorization", this.ExpectedToken(null, null))
                 .Respond(res => this.ExpectedJsonResponse(responseArray));
 
-            var response = await ConfigurationManager.GetSandboxesAsync(Guid.Parse(DefaultAccountId));
+            ConfigResponse<IEnumerable<string>> response = await ConfigurationManager.GetSandboxesAsync(Guid.Parse(DefaultAccountId));
 
             // Ensure that the sandboxes are ordered correctly.
             Assert.AreEqual("RETAIL", response.Result.ElementAt(0));
@@ -208,9 +208,9 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         public async Task GetProductsSuccess()
         {
             this.SetUpMockAuth();
-            var uri = new Uri(new Uri(ClientSettings.Singleton.XOrcEndpoint), $"/products?accountId={DefaultAccountId}&count=500");
+            Uri uri = new Uri(new Uri(ClientSettings.Singleton.XOrcEndpoint), $"/products?accountId={DefaultAccountId}&count=500");
 
-            var responseArray = new Product[]
+            Product[] responseArray = new Product[]
             {
                 this.CreateProduct()
             };
@@ -219,7 +219,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 .WithHeaders("Authorization", this.ExpectedToken(null, null))
                 .Respond(res => this.ExpectedJsonResponse(responseArray));
 
-            var response = await ConfigurationManager.GetProductsAsync(new Guid(DefaultAccountId));
+            ConfigResponse<IEnumerable<Product>> response = await ConfigurationManager.GetProductsAsync(new Guid(DefaultAccountId));
             Assert.AreEqual(DefaultCorrelationVector, response.CorrelationId);
             Assert.AreEqual(1, response.Result.Count());
         }
@@ -228,15 +228,15 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         public async Task GetProductSuccess()
         {
             this.SetUpMockAuth();
-            var uri = new Uri(new Uri(ClientSettings.Singleton.XOrcEndpoint), $"/products/{DefaultScid}");
+            Uri uri = new Uri(new Uri(ClientSettings.Singleton.XOrcEndpoint), $"/products/{DefaultScid}");
 
-            var responseProduct = this.CreateProduct();
+            Product responseProduct = this.CreateProduct();
 
             this.mockHandler.Expect(uri.ToString())
                 .WithHeaders("Authorization", this.ExpectedToken(DefaultScid, null))
                 .Respond(res => this.ExpectedJsonResponse(responseProduct));
 
-            var response = await ConfigurationManager.GetProductAsync(new Guid(DefaultScid));
+            ConfigResponse<Product> response = await ConfigurationManager.GetProductAsync(new Guid(DefaultScid));
             Assert.AreEqual(DefaultCorrelationVector, response.CorrelationId);
             Assert.AreEqual(new Guid(DefaultScid), response.Result.PrimaryServiceConfigId);
         }
@@ -244,7 +244,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [TestMethod]
         public async Task UploadAchievementImageSuccess()
         {
-            var achievementImage = Assembly.GetExecutingAssembly().GetManifestResourceStream("Microsoft.Xbox.Services.Tool.Unittest.AchievementImage.png");
+            Stream achievementImage = Assembly.GetExecutingAssembly().GetManifestResourceStream("Microsoft.Xbox.Services.Tool.Unittest.AchievementImage.png");
             await this.UploadAchievementImage("filename", achievementImage);
         }
 
@@ -252,7 +252,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [ExpectedException(typeof(ArgumentException))]
         public async Task UploadAchievementImageWrongSize()
         {
-            var achievementImage = Assembly.GetExecutingAssembly().GetManifestResourceStream("Microsoft.Xbox.Services.Tool.Unittest.AchievementImageSmall.png");
+            Stream achievementImage = Assembly.GetExecutingAssembly().GetManifestResourceStream("Microsoft.Xbox.Services.Tool.Unittest.AchievementImageSmall.png");
             await this.UploadAchievementImage("filename", achievementImage);
         }
 
@@ -260,7 +260,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [ExpectedException(typeof(ArgumentException))]
         public async Task UploadAchievementImageInvalidType()
         {
-            var achievementImage = new MemoryStream();
+            MemoryStream achievementImage = new MemoryStream();
             await this.UploadAchievementImage("filename", achievementImage);
         }
 
@@ -268,7 +268,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         [ExpectedException(typeof(ArgumentNullException))]
         public async Task UploadAchievementImageInvalidFilename()
         {
-            var achievementImage = new MemoryStream();
+            MemoryStream achievementImage = new MemoryStream();
             await this.UploadAchievementImage(null, achievementImage);
         }
 
@@ -279,16 +279,16 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             int fileSize = (int)image.Length;
             Guid xfusId = Guid.NewGuid();
             string xfusToken = "1234";
-            var initUri = new Uri(new Uri(ClientSettings.Singleton.XAchEndpoint), "/assets/initialize");
+            Uri initUri = new Uri(new Uri(ClientSettings.Singleton.XAchEndpoint), "/assets/initialize");
 
-            var initResponse = new XachInitializeResponse()
+            XachInitializeResponse initResponse = new XachInitializeResponse()
             {
                 XfusId = xfusId,
                 XfusToken = xfusToken,
                 XfusUploadWindowLocation = "5678"
             };
 
-            var setMetadataResponse = new SetMetadataResponse()
+            SetMetadataResponse setMetadataResponse = new SetMetadataResponse()
             {
                 BlobPartitions = 1,
                 ChunkList = new int[] { 1 },
@@ -300,7 +300,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 ServerLocation = string.Empty
             };
 
-            var uploadResponse = new UploadImageResponse()
+            UploadImageResponse uploadResponse = new UploadImageResponse()
             {
                 AbsoluteUri = string.Empty,
                 ChunkNum = 1,
@@ -313,7 +313,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 State = string.Empty
             };
 
-            var finalizeResponse = new AchievementImage()
+            AchievementImage finalizeResponse = new AchievementImage()
             {
                 AssetId = Guid.NewGuid(),
                 CdnUrl = new Uri("https://xboxlive.com/"),
@@ -331,31 +331,31 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 .WithHeaders("Authorization", expectedToken)
                 .Respond(res => this.ExpectedJsonResponse(initResponse));
 
-            var setMetadataUri = new Uri(new Uri(ClientSettings.Singleton.XFusEndpoint), $"/upload/SetMetadata?filename={filename}&fileSize={fileSize}&id={xfusId}&token={xfusToken}");
+            Uri setMetadataUri = new Uri(new Uri(ClientSettings.Singleton.XFusEndpoint), $"/upload/SetMetadata?filename={filename}&fileSize={fileSize}&id={xfusId}&token={xfusToken}");
 
             this.mockHandler.Expect(setMetadataUri.ToString())
                 .WithHeaders("Authorization", expectedToken)
                 .Respond(res => this.ExpectedJsonResponse(setMetadataResponse));
 
-            var uploadChunkUri = new Uri(new Uri(ClientSettings.Singleton.XFusEndpoint), $"/upload/uploadchunk/{xfusId}?blockNumber=1&token={xfusToken}");
+            Uri uploadChunkUri = new Uri(new Uri(ClientSettings.Singleton.XFusEndpoint), $"/upload/uploadchunk/{xfusId}?blockNumber=1&token={xfusToken}");
 
             this.mockHandler.Expect(uploadChunkUri.ToString())
                 .WithHeaders("Authorization", expectedToken)
                 .Respond(res => this.ExpectedJsonResponse(uploadResponse));
 
-            var finishUploadUri = new Uri(new Uri(ClientSettings.Singleton.XFusEndpoint), $"/upload/finished/{xfusId}?token={xfusToken}");
+            Uri finishUploadUri = new Uri(new Uri(ClientSettings.Singleton.XFusEndpoint), $"/upload/finished/{xfusId}?token={xfusToken}");
 
             this.mockHandler.Expect(finishUploadUri.ToString())
                 .WithHeaders("Authorization", expectedToken)
                 .Respond(res => this.ExpectedJsonResponse(uploadResponse));
 
-            var finalizeUri = new Uri(new Uri(ClientSettings.Singleton.XAchEndpoint), $"/scids/{DefaultScid}/images");
+            Uri finalizeUri = new Uri(new Uri(ClientSettings.Singleton.XAchEndpoint), $"/scids/{DefaultScid}/images");
 
             this.mockHandler.Expect(finalizeUri.ToString())
                 .WithHeaders("Authorization", expectedToken)
                 .Respond(res => this.ExpectedJsonResponse(finalizeResponse));
 
-            var response = await ConfigurationManager.UploadAchievementImageAsync(new Guid(DefaultScid), filename, image);
+            ConfigResponse<AchievementImage> response = await ConfigurationManager.UploadAchievementImageAsync(new Guid(DefaultScid), filename, image);
 
             Assert.AreEqual(finalizeResponse.AssetId, response.Result.AssetId);
         }

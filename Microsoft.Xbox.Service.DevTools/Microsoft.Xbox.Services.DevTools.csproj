@@ -51,6 +51,7 @@
       <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -107,6 +108,7 @@
     <Compile Include="XblConfig\ConfigFileStream.cs" />
     <Compile Include="XblConfig\ConfigResponseBase.cs" />
     <Compile Include="XblConfig\ConfigurationManager.cs" />
+    <Compile Include="XblConfig\Contracts\AchievementImagesResponse.cs" />
     <Compile Include="XblConfig\Contracts\AchievementImageUploadRequest.cs" />
     <Compile Include="XblConfig\Contracts\CertRequest.cs" />
     <Compile Include="XblConfig\Contracts\CertResponse.cs" />
@@ -117,6 +119,7 @@
     <Compile Include="XblConfig\Contracts\SetMetadataResponse.cs" />
     <Compile Include="XblConfig\Contracts\UploadImageResponse.cs" />
     <Compile Include="XblConfig\Contracts\XachInitializeResponse.cs" />
+    <Compile Include="XblConfig\DisplayAttribute.cs" />
     <Compile Include="XblConfig\DocumentsResponse.cs" />
     <Compile Include="XblConfig\DocumentType.cs" />
     <Compile Include="XblConfig\ConfigResponse.cs" />
@@ -144,35 +147,8 @@
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.0.2\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
-    <COMReference Include="CERTCLILib">
-      <Guid>{372FCE32-4324-11D0-8810-00A0C903B83C}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-    <COMReference Include="CertCOMLib">
-      <Guid>{179B730B-9F8B-4E78-92AF-5F788A047EBD}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
     <COMReference Include="CERTENROLLLib">
       <Guid>{728AB348-217D-11DA-B2A4-000E7BBB2B09}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-    <COMReference Include="CertEnrollProviderLib">
-      <Guid>{B63F6D78-DD60-49D7-AD69-349DA00B092F}</Guid>
       <VersionMajor>1</VersionMajor>
       <VersionMinor>0</VersionMinor>
       <Lcid>0</Lcid>

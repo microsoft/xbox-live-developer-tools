@@ -14,65 +14,55 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         /// <summary>
         /// Gets or sets the account ID associated with this product.
         /// </summary>
+        [Display(Name = "Account ID", Order = 2, ListOmit = true)]
         public Guid AccountId { get; set; }
 
         /// <summary>
         /// Gets or sets any alternate IDs for this product.
         /// </summary>
+        [Display(Name = "Alternate IDs", Order = 8, ListOmit = true)]
         public IEnumerable<AlternateId> AlternateIds { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating if this product is a test product or not.
         /// </summary>
+        [Display(Omit = true, ListOmit = true)]
         public bool IsTest { get; set; }
 
         /// <summary>
         /// Gets or sets the Microsoft Account application ID.
         /// </summary>
+        [Display(Name = "MSA App ID", Order = 3, ListOmit = true)]
         public string MsaAppId { get; set; }
 
         /// <summary>
         /// Gets or sets the package family name ID.
         /// </summary>
+        [Display(Name = "Package Family Name", Order = 4, ListOrder = 2)]
         public string PfnId { get; set; }
 
         /// <summary>
         /// Gets or sets the primary service configuration ID.
         /// </summary>
+        [Display(Name = "SCID", Order = 5, ListOmit = true)]
         public Guid PrimaryServiceConfigId { get; set; }
 
         /// <summary>
         /// Gets or sets the product ID.
         /// </summary>
+        [Display(Name = "Product ID", Order = 1, ListOrder = 1)]
         public Guid ProductId { get; set; }
 
         /// <summary>
         /// Gets or sets the title ID.
         /// </summary>
+        [Display(Name = "Title ID", Order = 6, ListOrder = 3)]
         public uint TitleId { get; set; }
 
         /// <summary>
         /// Gets or sets the Xbox Live tier.
         /// </summary>
+        [Display(Name = "Tier", Order = 7, ListOrder = 4)]
         public XboxLiveTier XboxLiveTier { get; set; }
-
-        /// <inheritdoc/>
-        public override string ToString()
-        {
-            string alternateIds = $"AlternateIds:{Environment.NewLine}";
-            foreach (AlternateId alternateId in this.AlternateIds)
-            {
-                alternateIds += $"  {alternateId.AlternateIdType + ":", -22}{alternateId.Value}{Environment.NewLine}";
-            }
-
-            return $@"ProductId:              {this.ProductId}
-AccountId:              {this.AccountId}
-MsaAppId:               {this.MsaAppId}
-PfnId:                  {this.PfnId}
-PrimaryServiceConfigId: {this.PrimaryServiceConfigId}
-TitleId:                {this.TitleId}
-XboxLiveTier:           {this.XboxLiveTier}
-{alternateIds}";
-        }
     }
 }
