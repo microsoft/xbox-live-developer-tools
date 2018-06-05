@@ -59,7 +59,7 @@ namespace XblDevAccount
             try
             {
                 var devAccount = await ToolAuthentication.SignInAsync((DevAccountSource)signInOptions.AccountSource, signInOptions.UserName);
-                Console.WriteLine($"Developer account {devAccount.Name} has successfully signed in. ");
+                Console.WriteLine($"Developer account {devAccount.Name} has successfully signed in.");
                 DisplayDevAccount(devAccount, "\t");
                 return 0;
             }
@@ -68,7 +68,7 @@ namespace XblDevAccount
                 Console.WriteLine("Error: signin failed");
                 if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
                 {
-                    Console.WriteLine("Unable to authorize this account with XboxLive service, please check your account.");
+                    Console.WriteLine("Unable to authorize this account with Xbox Live. Please check your account.");
                 }
                 else
                 {
@@ -94,7 +94,7 @@ namespace XblDevAccount
             if (account != null)
             {
                 ToolAuthentication.SignOut();
-                Console.WriteLine($"Developer account {account.Name} from {account.AccountSource} has successfully signed out. ");
+                Console.WriteLine($"Developer account {account.Name} from {account.AccountSource} has successfully signed out.");
                 return 0;
             }
             else
@@ -109,7 +109,7 @@ namespace XblDevAccount
             DevAccount account = ToolAuthentication.LoadLastSignedInUser();
             if (account != null)
             {
-                Console.WriteLine($"Developer account {account.Name} from {account.AccountSource} is currently signed in. ");
+                Console.WriteLine($"Developer account {account.Name} from {account.AccountSource} is currently signed in.");
                 DisplayDevAccount(account, "\t");
                 return 0;
             }
@@ -120,12 +120,12 @@ namespace XblDevAccount
             }
         }
 
-        [Verb("signin", HelpText = "Sign in a Xbox Live developer account.")]
+        [Verb("signin", HelpText = "Sign in an Xbox Live developer account.")]
         private class SignInOptions
         {
             [Option('s', "source", Required = true,
                 HelpText =
-                    "The account source where the developer account was registered. Accept 'WindowsDevCenter' or 'XDP'")]
+                    "The account source where the developer account was registered. Accept 'WindowsDevCenter' or 'XDP'.")]
             public AccountSourceOption AccountSource { get; set; }
 
             [Option('u', "name", Required = true,
@@ -138,7 +138,7 @@ namespace XblDevAccount
                 get
                 {
                     yield return new Example(
-                        "Sign In a XBOX Live developer account",
+                        "Sign in an Xbox Live developer account.",
                         new SignInOptions
                         {
                             AccountSource = AccountSourceOption.WindowsDevCenter,
@@ -156,7 +156,7 @@ namespace XblDevAccount
             {
                 get
                 {
-                    yield return new Example("Sign out the Xbox Live developer account", new SignOutOptions());
+                    yield return new Example("Sign out the Xbox Live developer account.", new SignOutOptions());
                 }
             }
         }
