@@ -1,5 +1,7 @@
 ## Welcome!
 
+Please refer to the official [Xbox Live Tools documentation](https://docs.microsoft.com/en-us/windows/uwp/xbox-live/tools/tools) site for further information.
+
 The Microsoft Xbox Live Tooling API provides a way to:
 
 * Reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history.
@@ -53,7 +55,7 @@ PlayerReset is used to reset a player's data in test sandboxes. Data includes ac
 
 #### Usage:
 ```
-PlayerReset.exe –scid xxx --sandbox xxx --xuid xxxx
+PlayerReset.exe â€“scid xxx --sandbox xxx --xuid xxxx
 ```
 
 ***Success output example:*** 
@@ -76,7 +78,7 @@ GlobalStorage.exe is used to manage title global storage in test sandboxes, befo
 #### Usage:
 ***quota:*** Get title global storage quota information.
 ```
-GlobalStorage.exe quota –scid xxx --sandbox xxx
+GlobalStorage.exe quota â€“scid xxx --sandbox xxx
 ```
 
 
