@@ -144,12 +144,6 @@ namespace XblConfig
             else
             {
                 Console.WriteLine("Obtaining account documents.");
-                if (options.AccountId == Guid.Empty)
-                {
-                    DevAccount user = ToolAuthentication.LoadLastSignedInUser();
-                    options.AccountId = new Guid(user.AccountId);
-                }
-
                 documentsTask = ConfigurationManager.GetAccountDocumentsAsync(options.AccountId);
             }
 
@@ -214,12 +208,6 @@ namespace XblConfig
             else
             {
                 Console.WriteLine("Committing account documents.");
-                if (options.AccountId == Guid.Empty)
-                {
-                    DevAccount user = ToolAuthentication.LoadLastSignedInUser();
-                    options.AccountId = new Guid(user.AccountId);
-                }
-
                 documentsTask = ConfigurationManager.CommitAccountDocumentsAsync(files, options.AccountId, eTag, options.ValidateOnly, options.Message);
             }
 
@@ -402,7 +390,7 @@ namespace XblConfig
             Console.WriteLine();
 
             await ConfigurationManager.DeleteWebServiceAsync(options.AccountId, options.ServiceId);
-            Console.WriteLine($"Web service with ID {options.ServiceId} successefully deleted.");
+            Console.WriteLine($"Web service with ID {options.ServiceId} successfully deleted.");
             return 0;
         }
 
@@ -747,7 +735,7 @@ namespace XblConfig
         [Verb("get-product", HelpText = "Gets a product.")]
         private class GetProductOptions : BaseOptions
         {
-            [Option('p', "productId", Required = false, HelpText = "The product ID of the product to get.")]
+            [Option('p', "productId", Required = true, HelpText = "The product ID of the product to get.")]
             public Guid ProductId { get; set; }
         }
 
@@ -829,7 +817,7 @@ namespace XblConfig
             [Option('s', "serviceId", Required = true, HelpText = "The ID of the web service.")]
             public Guid ServiceId { get; set; }
 
-            [Option('d', "destination", Required = false, HelpText = "The location to save the certificate to.")]
+            [Option('d', "destination", Required = true, HelpText = "The location to save the certificate to.")]
             public string Destination { get; set; }
         }
 

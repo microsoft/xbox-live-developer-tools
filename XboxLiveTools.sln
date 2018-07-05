@@ -28,6 +28,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SessionHistoryViewer", "Too
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XblConfig", "CommandLine\XblConfig\XblConfig.csproj", "{A705E70A-EB3E-4BD5-8E11-78D41695D517}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XblConfig.PS", "Powershell\XblConfig\XblConfig.PS.csproj", "{D4EECE52-5613-44BF-9731-82293CD284BB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Powershell", "Powershell", "{7151E362-680A-42AF-B7DE-5B10E8E7A7E7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,6 +66,10 @@ Global
 		{A705E70A-EB3E-4BD5-8E11-78D41695D517}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A705E70A-EB3E-4BD5-8E11-78D41695D517}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A705E70A-EB3E-4BD5-8E11-78D41695D517}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4EECE52-5613-44BF-9731-82293CD284BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4EECE52-5613-44BF-9731-82293CD284BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4EECE52-5613-44BF-9731-82293CD284BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4EECE52-5613-44BF-9731-82293CD284BB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,6 +79,7 @@ Global
 		{A01FD43D-9812-4510-BA86-8C99AE0136BD} = {82A7D026-105D-4E30-BFE4-765C9EF223A8}
 		{E4C6687F-0074-42C7-A06C-1AEC98ADD148} = {82A7D026-105D-4E30-BFE4-765C9EF223A8}
 		{A705E70A-EB3E-4BD5-8E11-78D41695D517} = {82A7D026-105D-4E30-BFE4-765C9EF223A8}
+		{D4EECE52-5613-44BF-9731-82293CD284BB} = {7151E362-680A-42AF-B7DE-5B10E8E7A7E7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1FDA92CB-440E-43D6-9E46-AAE9E9B40F80}
