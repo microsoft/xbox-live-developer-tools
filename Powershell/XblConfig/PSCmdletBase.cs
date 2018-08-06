@@ -10,7 +10,10 @@ namespace XblConfig
     using System.IO;
     using System.Linq;
     using System.Management.Automation;
+    using System.Net;
+    using System.Net.Http;
     using System.Reflection;
+    using System.Security;
     using System.Text;
     using Microsoft.Xbox.Services.DevTools.Authentication;
     using Microsoft.Xbox.Services.DevTools.XblConfig;
@@ -66,9 +69,20 @@ namespace XblConfig
             {
                 this.Process();
             }
-            catch (AggregateException ex)
+            catch (AggregateException aex)
             {
-                throw ex.InnerExceptions.First();
+                aex.Handle((ex) =>
+                {
+                    if (ex is HttpRequestException)
+                    {
+                        if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
+                        {
+                            throw new SecurityException("Unable to authorize this account with Xbox Live. Please check your account.");
+                        }
+                    }
+
+                    throw aex.Flatten().InnerException;
+                });
             }
             catch (Exception)
             {
