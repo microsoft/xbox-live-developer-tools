@@ -16,33 +16,9 @@ namespace XblConfig
     /// </summary>
     [Cmdlet(VerbsCommon.Get, "Schemas")]
     [CmdletBinding(PositionalBinding = false)]
-    public class GetSchemas : PSCmdletBase<GetSchemas.ITemplate>
+    public class GetSchemas : PSCmdletBase<GetSchemas.Template>
     {
         private IEnumerable<string> schemaTypes;
-
-        /// <summary>
-        /// Represents the properties for obtaining document schemas.
-        /// </summary>
-        public interface ITemplate
-        {
-            /// <summary>
-            /// <para type="description">The document type to get.</para>
-            /// </summary>
-            [Parameter(HelpMessage = "The document type to get.", Position = 0, ValueFromPipeline = true)]
-            string Type { get; set; }
-
-            /// <summary>
-            /// <para type="description">The version of the schema to get.</para>
-            /// </summary>
-            [Parameter(Mandatory = false, HelpMessage = "The version of the schema to get.", Position = 1, ValueFromPipeline = true)]
-            int Version { get; set; }
-
-            /// <summary>
-            /// <para type="description">The directory to save the documents in.</para>
-            /// </summary>
-            [Parameter(Mandatory = false, HelpMessage = "The directory to save the documents in.", Position = 2, ValueFromPipeline = true)]
-            string Destination { get; set; }
-        }
 
         /// <inheritdoc/>
         public override object GetDynamicParameters()
@@ -54,7 +30,7 @@ namespace XblConfig
 
             base.GetDynamicParameters();
 
-            this.RuntimeParameters[nameof(ITemplate.Type)].Attributes.Add(new ValidateSetAttribute(this.GetSchemaTypes().ToArray()));
+            this.RuntimeParameters[nameof(Template.Type)].Attributes.Add(new ValidateSetAttribute(this.GetSchemaTypes().ToArray()));
 
             return this.RuntimeParameters;
         }
@@ -140,6 +116,30 @@ namespace XblConfig
                     this.WriteVerbose($"Schema saved as {path}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Represents the properties for obtaining document schemas.
+        /// </summary>
+        public class Template
+        {
+            /// <summary>
+            /// <para type="description">The document type to get.</para>
+            /// </summary>
+            [Parameter(HelpMessage = "The document type to get.", Position = 0, ValueFromPipeline = true)]
+            public string Type { get; set; }
+
+            /// <summary>
+            /// <para type="description">The version of the schema to get.</para>
+            /// </summary>
+            [Parameter(Mandatory = false, HelpMessage = "The version of the schema to get.", Position = 1, ValueFromPipeline = true)]
+            public int Version { get; set; }
+
+            /// <summary>
+            /// <para type="description">The directory to save the documents in.</para>
+            /// </summary>
+            [Parameter(Mandatory = false, HelpMessage = "The directory to save the documents in.", Position = 2, ValueFromPipeline = true)]
+            public string Destination { get; set; }
         }
     }
 }

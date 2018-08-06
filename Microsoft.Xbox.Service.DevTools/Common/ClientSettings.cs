@@ -95,9 +95,9 @@ namespace Microsoft.Xbox.Services.DevTools.Common
 
         public string AADApplicationId { get; private set; } = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1";
 
-        public string AADResource { get; private set; } = "https://developer.microsoft.com/";
+        public string AADResource { get; private set; } = "https://partner.microsoft.com/";
 
-        public string UDCAuthEndpoint { get; private set; } = "https://developer.microsoft.com/xdts/authorize";
+        public string UDCAuthEndpoint { get; private set; } = "https://partner.microsoft.com/xdts/authorize";
 
         public string MsalXboxLiveClientId { get; private set; } = "b1eab458-325b-45a5-9692-ad6079c1eca8";
 

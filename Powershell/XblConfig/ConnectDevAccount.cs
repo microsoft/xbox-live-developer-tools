@@ -31,9 +31,9 @@ namespace XblConfig
         /// <summary>
         /// <para type="description">The account source where the developer account was registered. Can be either 'WindowsDevCenter' or 'XDP'.</para>
         /// </summary>
-        [Parameter(Mandatory = true, HelpMessage = "The account source where the developer account was registered. Can be either 'WindowsDevCenter' or 'XDP'.", Position = 0, ValueFromPipeline = true)]
+        [Parameter(Mandatory = false, HelpMessage = "The account source where the developer account was registered. Can be either 'WindowsDevCenter' or 'XDP'.", Position = 0, ValueFromPipeline = true)]
         [ValidateSet("XDP", "WindowsDevCenter")]
-        public string AccountSource { get; set; }
+        public string AccountSource { get; set; } = "WindowsDevCenter";
 
         /// <inheritdoc/>
         protected override void BeginProcessing()
@@ -44,28 +44,14 @@ namespace XblConfig
         /// <inheritdoc/>
         protected override void Process()
         {
-            try
+            if (!Enum.TryParse(this.AccountSource, out AccountSourceOption source))
             {
-                if (!Enum.TryParse(this.AccountSource, out AccountSourceOption source))
-                {
-                    throw new ArgumentException("Invalid account source. Must be either 'WindowsDevCenter' or 'XDP'.", nameof(this.AccountSource));
-                }
+                throw new ArgumentException("Invalid account source. Must be either 'WindowsDevCenter' or 'XDP'.", nameof(this.AccountSource));
+            }
 
-                DevAccount devAccount = ToolAuthentication.SignInAsync((DevAccountSource)source, this.UserName).Result;
-                this.WriteObject($"Developer account {devAccount.Name} has successfully signed in.");
-                this.WriteObject(devAccount);
-            }
-            catch (HttpRequestException ex)
-            {
-                if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
-                {
-                    throw new SecurityException("Unable to authorize this account with Xbox Live. Please check your account.");
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            DevAccount devAccount = ToolAuthentication.SignInAsync((DevAccountSource)source, this.UserName).Result;
+            this.WriteObject($"Developer account {devAccount.Name} has successfully signed in.");
+            this.WriteObject(devAccount);
         }
     }
 }
