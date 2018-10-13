@@ -13,9 +13,9 @@ To get access to Xbox Live services you must be a managed developer, enrolled in
 
 
 ## Repo Structure
-* [/Microsoft.Xbox.Service.Tool/](Microsoft.Xbox.Service.Tool): Xbox Live tooling dll, contains code for talking to Xbox Live service tooling endpoints.
+* [/Microsoft.Xbox.Service.DevTools/](Microsoft.Xbox.Service.DevTools): Xbox Live tooling dll, contains code for talking to Xbox Live service tooling endpoints.
 * [/CommandLine/](CommandLine): Command line executables for Xbox Live tooling.
-* [/Test/](Test): Test code.
+* [/Tests/](Tests): Test code.
 
 ## Command Line Executable Usage:
 ### XblDevAccount.exe
