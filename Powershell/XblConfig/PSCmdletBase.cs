@@ -197,18 +197,16 @@ namespace XblConfig
         /// <param name="validationList">The list of ValidationInfo objects to print.</param>
         protected void PrintValidationInfo(IEnumerable<ValidationInfo> validationList)
         {
-          using (PowerShell PowerShellInstance = PowerShell.Create())
+            using (PowerShell powershell = PowerShell.Create())
             {
                 foreach (ValidationInfo validationInfo in validationList.Where(c => c.Severity == Severity.Warning))
                 {
-                    this.Host.UI.WriteWarningLine(validationInfo.Message);
-                    PowerShellInstance.Streams.Error.DataAdded += Console.WriteLine(validationInfo.Message);
+                    powershell.Streams.Error.DataAdded += Console.WriteLine(validationInfo.Message);
                 }
 
                 foreach (ValidationInfo validationInfo in validationList.Where(c => c.Severity == Severity.Error))
                 {
-                    this.Host.UI.WriteErrorLine(validationInfo.Message);
-                    PowerShellInstance.Streams.Warning.DataAdded += Console.WriteLine(validationInfo.Message);
+                    powershell.Streams.Warning.DataAdded += Console.WriteLine(validationInfo.Message);
                 }
             }
         }
