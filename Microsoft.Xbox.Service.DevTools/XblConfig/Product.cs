@@ -64,5 +64,11 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         /// </summary>
         [Display(Name = "Tier", Order = 7, ListOrder = 4)]
         public XboxLiveTier XboxLiveTier { get; set; }
+
+        /// <summary>
+        /// Gets or sets the product name.
+        /// </summary>
+        [Display(Name = "Product Name", Order = 9, ListOrder = 1)]
+        public string ProductName { get; set; }
     }
 }
