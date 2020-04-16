@@ -16,7 +16,6 @@ namespace XblDevAccount
     {
         private enum AccountSourceOption
         {
-            XDP = DevAccountSource.XboxDeveloperPortal,
             WindowsDevCenter = DevAccountSource.WindowsDevCenter,
         }
 
@@ -123,9 +122,6 @@ namespace XblDevAccount
         [Verb("signin", HelpText = "Sign in an Xbox Live developer account.")]
         private class SignInOptions
         {
-            [Option('s', "source", Required = true,
-                HelpText =
-                    "The account source where the developer account was registered. Accept 'WindowsDevCenter' or 'XDP'.")]
             public AccountSourceOption AccountSource { get; set; }
 
             [Option('u', "name", Required = true,

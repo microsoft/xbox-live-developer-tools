@@ -153,8 +153,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             {
                 case DevAccountSource.WindowsDevCenter:
                     return new AdalAuthContext(userName);
-                case DevAccountSource.XboxDeveloperPortal:
-                    return new MsalAuthContext(userName);
                 default:
                     throw new ArgumentException("Unsupported developer type");
             }

@@ -9,13 +9,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     public enum DevAccountSource
     {
         /// <summary>
-        /// Account is from Xbox developer portal: xdp.xboxlive.com
-        /// </summary>
-        XboxDeveloperPortal = 0,
-
-        /// <summary>
         /// Account is from Windows Dev Center: developer.microsoft.com/windows
         /// </summary>
-        WindowsDevCenter = 1
+        WindowsDevCenter = 0
     }
 }

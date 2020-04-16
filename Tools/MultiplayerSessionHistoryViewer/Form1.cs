@@ -1085,11 +1085,6 @@ namespace SessionHistoryViewer
                 else
                 {
                     DevAccountSource accountSource = DevAccountSource.WindowsDevCenter;
-                    if (this.cmbAccountSource.SelectedIndex == 1)
-                    {
-                        accountSource = DevAccountSource.XboxDeveloperPortal;
-                    }
-
                     this.signedInuser = await ToolAuthentication.SignInAsync(accountSource, null);
                 }
             }

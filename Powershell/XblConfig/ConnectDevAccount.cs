@@ -18,7 +18,6 @@ namespace XblConfig
     {
         private enum AccountSourceOption
         {
-            XDP = DevAccountSource.XboxDeveloperPortal,
             WindowsDevCenter = DevAccountSource.WindowsDevCenter,
         }
 
@@ -29,10 +28,9 @@ namespace XblConfig
         public string UserName { get; set; }
 
         /// <summary>
-        /// <para type="description">The account source where the developer account was registered. Can be either 'WindowsDevCenter' or 'XDP'.</para>
+        /// <para type="description">The account source where the developer account was registered. Can be either 'WindowsDevCenter'.</para>
         /// </summary>
-        [Parameter(Mandatory = false, HelpMessage = "The account source where the developer account was registered. Can be either 'WindowsDevCenter' or 'XDP'.", Position = 0, ValueFromPipeline = true)]
-        [ValidateSet("XDP", "WindowsDevCenter")]
+        [ValidateSet("WindowsDevCenter")]
         public string AccountSource { get; set; } = "WindowsDevCenter";
 
         /// <inheritdoc/>
@@ -46,7 +44,7 @@ namespace XblConfig
         {
             if (!Enum.TryParse(this.AccountSource, out AccountSourceOption source))
             {
-                throw new ArgumentException("Invalid account source. Must be either 'WindowsDevCenter' or 'XDP'.", nameof(this.AccountSource));
+                throw new ArgumentException("Invalid account source. Must be either 'WindowsDevCenter'.", nameof(this.AccountSource));
             }
 
             DevAccount devAccount = ToolAuthentication.SignInAsync((DevAccountSource)source, this.UserName).Result;
