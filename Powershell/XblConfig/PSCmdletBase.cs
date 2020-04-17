@@ -201,12 +201,20 @@ namespace XblConfig
             {
                 foreach (ValidationInfo validationInfo in validationList.Where(c => c.Severity == Severity.Warning))
                 {
-                    powershell.Streams.Error.DataAdded += Console.WriteLine(validationInfo.Message);
+                    Console.WriteLine(validationInfo.Message);
+                    if (powershell.Streams.Warning.IsOpen)
+                    {
+                        powershell.Streams.Warning.Add(new WarningRecord(validationInfo.DocumentName, validationInfo.Message));
+                    }
                 }
 
                 foreach (ValidationInfo validationInfo in validationList.Where(c => c.Severity == Severity.Error))
                 {
-                    powershell.Streams.Warning.DataAdded += Console.WriteLine(validationInfo.Message);
+                    Console.WriteLine(validationInfo.Error);
+                    if (powershell.Streams.Error.IsOpen)
+                    {
+                        powershell.Streams.Error.Add(new ErrorRecord(new Exception(validationInfo.Error), validationInfo.DocumentName, ErrorCategory.WriteError, null));
+                    }
                 }
             }
         }
