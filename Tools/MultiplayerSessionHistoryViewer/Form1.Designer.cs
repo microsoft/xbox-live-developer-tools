@@ -548,9 +548,7 @@
             // 
             this.cmbAccountSource.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbAccountSource.ImeMode = System.Windows.Forms.ImeMode.Off;
-            this.cmbAccountSource.Items.AddRange(new object[] {
-            "Windows Developer Center",
-            "Xbox Developer Portal"});
+            this.cmbAccountSource.Items.AddRange(new object[] {"Windows Developer Center"});
             this.cmbAccountSource.Location = new System.Drawing.Point(19, 63);
             this.cmbAccountSource.Name = "cmbAccountSource";
             this.cmbAccountSource.Size = new System.Drawing.Size(161, 21);

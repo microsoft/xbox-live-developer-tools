@@ -21,23 +21,14 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             Log.WriteLog($"client setting environment: {environment}");
 
             // Default values are for production
-            string xdpBaseEndpoint = "https://xdp.xboxlive.com";
-            string windowsLiveUriEndpoint = "https://login.live.com";
-            string stsAdfsAuthenticationEndpoint = "https://edadfs.partners.extranet.microsoft.com/adfs/ls/";
             this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/common";
-            this.WindowsLiveAuthenticationType = "uri:WindowsLiveID";
             this.OmegaResetToolEndpoint = "https://eraser.xboxlive.com";
 
             // Override values for other environments
             if (environment.ToUpper() == "DNET")
             {
-                xdpBaseEndpoint = "https://xdp.dnet.xboxlive.com";
-                windowsLiveUriEndpoint = "https://login.live-int.com";
-                stsAdfsAuthenticationEndpoint = "https://edstssit.partners.extranet.microsoft.com/adfs/ls/";
-                this.WindowsLiveAuthenticationType = "uri:WindowsLiveIDINT";
                 this.OmegaResetToolEndpoint = "https://eraser.dnet.xboxlive.com";
                 this.UDCAuthEndpoint = "https://devx.microsoft-tst.com/xdts/authorize";
-                this.XmintAuthEndpoint = "https://xmint.xboxlive.dnet.com/adfs/authorize?rp=https%3A%2F%2Fxdp.dnet.xboxlive.com%2F";
                 this.TitleStorageEndpoint = "https://titlestorage.dnet.xboxlive.com";
                 this.XConEndpoint = "https://config2.mgt.dnet.xboxlive.com/";
                 this.XOrcEndpoint = "https://xorc.dnet.xboxlive.com/";
@@ -45,11 +36,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
                 this.XAchEndpoint = "https://xach.mgt.dnet.xboxlive.com/";
                 this.XFusEndpoint = "https://upload.dnet.xboxlive.com/";
             }
-
-            this.XdpBaseUri = new Uri(xdpBaseEndpoint);
-            this.WindowsLiveUri = new Uri(windowsLiveUriEndpoint);
-            this.StsAdfsAuthenticationUri = new Uri(stsAdfsAuthenticationEndpoint);
-
+            
             // Cache folder
             this.CacheFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -73,17 +60,9 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         }
 
         public string CacheFolder { get; set; } 
-
-        public Uri XdpBaseUri { get; private set; }
-
-        public Uri WindowsLiveUri { get; private set; }
-
-        public Uri StsAdfsAuthenticationUri { get; private set; }
-
+        
         public string ActiveDirectoryAuthenticationEndpoint { get; private set; }
-
-        public string WindowsLiveAuthenticationType { get; private set; }
-
+        
         public string OmegaResetToolEndpoint { get; private set; }
 
         public string TitleStorageEndpoint { get; private set; } = "https://titlestorage.xboxlive.com";
@@ -98,10 +77,6 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         public string AADResource { get; private set; } = "https://partner.microsoft.com/";
 
         public string UDCAuthEndpoint { get; private set; } = "https://partner.microsoft.com/xdts/authorize";
-
-        public string MsalXboxLiveClientId { get; private set; } = "b1eab458-325b-45a5-9692-ad6079c1eca8";
-
-        public string XmintAuthEndpoint { get; private set; } = "https://xmint.xboxlive.com/adfs/authorize?rp=https%3A%2F%2Fxdp.xboxlive.com%2F";
 
         public string XConEndpoint { get; private set; } = "https://config2.mgt.xboxlive.com/";
 
