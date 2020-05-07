@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <SignConfigXML>
   <job platform="AnyCPU" configuration="Release" dest="" jobname="XSAPI Sign" approvers="vigarg;gstolt">
-    <file src="__RELBINPATH__\bin\GlobalStorage\GlobalStorage.exe" signType="Authenticode" dest="__RELBINPATH__\bin\GlobalStorage\GlobalStorage.exe" />
-    <file src="__RELBINPATH__\bin\Microsoft.Xbox.Services.DevTools\Microsoft.Xbox.Services.DevTools.dll" signType="Authenticode" dest="__RELBINPATH__\bin\Microsoft.Xbox.Services.DevTools\Microsoft.Xbox.Services.DevTools.dll" />
-    <file src="__RELBINPATH__\bin\PlayerDataReset\PlayerDataReset.exe" signType="Authenticode" dest="__RELBINPATH__\bin\PlayerDataReset\PlayerDataReset.exe" />
-    <file src="__RELBINPATH__\bin\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe" signType="Authenticode" dest="__RELBINPATH__\bin\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe" />
-    <file src="__RELBINPATH__\bin\XblDevAccount\XblDevAccount.exe" signType="Authenticode" dest="__RELBINPATH__\bin\XblDevAccount\XblDevAccount.exe" />
-    <file src="__RELBINPATH__\bin\XblConfig\XblConfig.exe" signType="Authenticode" dest="__RELBINPATH__\bin\XblConfig\XblConfig.exe" />
+    <file src="__RELBINPATH__\bin\GlobalStorage\GlobalStorage.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\GlobalStorage\GlobalStorage.exe" />
+    <file src="__RELBINPATH__\bin\Microsoft.Xbox.Services.DevTools\Microsoft.Xbox.Services.DevTools.dll" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\Microsoft.Xbox.Services.DevTools\Microsoft.Xbox.Services.DevTools.dll" />
+    <file src="__RELBINPATH__\bin\PlayerDataReset\PlayerDataReset.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\PlayerDataReset\PlayerDataReset.exe" />
+    <file src="__RELBINPATH__\bin\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe" />
+    <file src="__RELBINPATH__\bin\XblDevAccount\XblDevAccount.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\XblDevAccount\XblDevAccount.exe" />
+    <file src="__RELBINPATH__\bin\XblConfig\XblConfig.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\XblConfig\XblConfig.exe" />
   </job>
 </SignConfigXML>
