@@ -50,7 +50,12 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 string correlationId = string.Empty;
                 var jobResponse = await SubmitJobAsync(sandbox, scid, xuid);
 
-                if (!string.IsNullOrEmpty(jobResponse.JobId))
+                if (!string.IsNullOrEmpty(jobResponse.HttpErrorMessage))
+                {
+                    result.OverallResult = ResetOverallResult.CompletedError;
+                    result.HttpErrorMessage = jobResponse.HttpErrorMessage;
+                }
+                else if (!string.IsNullOrEmpty(jobResponse.JobId))
                 {
                     for (int i = 0; i < MaxPollingAttempts; i++)
                     {
@@ -117,14 +122,20 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                     return requestMsg;
                 });
 
-                response.Response.EnsureSuccessStatusCode();
+                if (response.Response.IsSuccessStatusCode)
+                {
+                    // remove "" if found one.
+                    string responseContent = await response.Response.Content.ReadAsStringAsync();
+                    job.JobId = responseContent.Trim(new char[] { '\\', '\"' });
+                    job.CorrelationId = response.CorrelationId;
 
-                // remove "" if found one.
-                string responseContent = await response.Response.Content.ReadAsStringAsync();
-                job.JobId = responseContent.Trim(new char[] { '\\', '\"' });
-                job.CorrelationId = response.CorrelationId;
-
-                Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} succeeded. Jobid: {job.JobId}");
+                    Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} succeeded. Jobid: {job.JobId}");
+                }
+                else
+                {
+                    job.HttpErrorMessage = await response.Response.Content.ReadAsStringAsync();
+                    Log.WriteLog($"Submitting delete job for scid:{scid}, user:{xuid}, sandbox:{sandbox} failed. Error: {job.HttpErrorMessage}");
+                }
             }
 
             return job;

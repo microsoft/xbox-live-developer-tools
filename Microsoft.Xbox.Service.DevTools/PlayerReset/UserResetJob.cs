@@ -12,5 +12,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         public string Sandbox { get; set; }
 
         public string Scid { get; set; }
+        
+        public string HttpErrorMessage { get; set; }
     }
 }
