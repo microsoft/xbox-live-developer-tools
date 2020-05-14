@@ -80,6 +80,10 @@ namespace PlayerDataReset
                         return 0;
                     case ResetOverallResult.CompletedError:
                         Console.WriteLine("Resetting has completed with some error:");
+                        if (!string.IsNullOrEmpty(result.HttpErrorMessage))
+                        {
+                            Console.WriteLine($"\t{result.HttpErrorMessage}");
+                        }
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
                     case ResetOverallResult.Timeout:
