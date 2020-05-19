@@ -18,7 +18,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Xbox.Services.Dev
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CommandLine", "CommandLine", "{82A7D026-105D-4E30-BFE4-765C9EF223A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlayerDataReset", "CommandLine\PlayerDataReset\PlayerDataReset.csproj", "{F9F58297-9823-4911-B148-27C5B22C3304}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XblPlayerDataReset", "CommandLine\XblPlayerDataReset\XblPlayerDataReset.csproj", "{F9F58297-9823-4911-B148-27C5B22C3304}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XblDevAccount", "CommandLine\XblDevAccount\XblDevAccount.csproj", "{A01FD43D-9812-4510-BA86-8C99AE0136BD}"
 EndProject
