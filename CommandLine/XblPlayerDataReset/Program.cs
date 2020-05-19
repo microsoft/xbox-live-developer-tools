@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace PlayerDataReset
+namespace XblPlayerDataReset
 {
     using System;
     using System.Collections.Generic;
@@ -84,6 +84,7 @@ namespace PlayerDataReset
                         {
                             Console.WriteLine($"\t{result.HttpErrorMessage}");
                         }
+
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
                     case ResetOverallResult.Timeout:
@@ -132,7 +133,7 @@ namespace PlayerDataReset
                 HelpText = "The Xbox Live user ID of the player to be reset")]
             public string XboxUserId { get; set; }
 
-            [Usage(ApplicationAlias = "PlayerDataReset")]
+            [Usage(ApplicationAlias = "XblPlayerDataReset")]
             public static IEnumerable<Example> Examples
             {
                 get
