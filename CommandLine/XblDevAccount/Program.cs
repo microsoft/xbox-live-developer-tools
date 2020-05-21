@@ -122,6 +122,11 @@ namespace XblDevAccount
         [Verb("signin", HelpText = "Sign in an Xbox Live developer account.")]
         private class SignInOptions
         {
+            public SignInOptions()
+            {
+                this.AccountSource = AccountSourceOption.WindowsDevCenter;
+            }
+
             public AccountSourceOption AccountSource { get; set; }
 
             [Option('u', "name", Required = true,
