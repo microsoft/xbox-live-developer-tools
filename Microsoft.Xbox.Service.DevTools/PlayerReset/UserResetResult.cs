@@ -23,6 +23,6 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         /// <summary>
         /// The http error message.
         /// </summary>
-        public string HttpErrorMessage { get; internal set; } = "";
+        public string HttpErrorMessage { get; internal set; } = string.Empty;
     }
 }
