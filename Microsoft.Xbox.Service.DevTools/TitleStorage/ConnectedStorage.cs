@@ -43,7 +43,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
             string continuationToken = null;
             do
             {
-                ListTitleDataResponse response = await ListSavedGamesAsync(xuid, serviceConfigurationId, sandbox, maxItems, skipItems, continuationToken);
+                ListTitleDataResponse response = await ListSavedGamesAsync(xuid, serviceConfigurationId, sandbox, path, maxItems, skipItems, continuationToken);
                 continuationToken = response.PagingInfo.ContinuationToken;
                 savedGames.AddRange(response.Blobs);
             } while (!string.IsNullOrEmpty(continuationToken));
@@ -59,7 +59,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <param name="sandbox">The target sandbox id for title storage</param>
         /// <param name="pathAndFileName">Blob path and file name on XboxLive service.</param>
         /// <returns>The byte array contains downloaded blob data</returns>
-        public static async Task<SavedGameV2Response> DownloadSavedGameAsync(ulong xuid, string serviceConfigurationId, string sandbox, string pathAndFileName)
+        public static async Task<SavedGameV2Response> DownloadSavedGameAsync(ulong xuid, Guid serviceConfigurationId, string sandbox, string pathAndFileName)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
@@ -93,7 +93,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <param name="sandbox">The target sandbox id for title storage</param>
         /// <param name="pathAndFileName">Blob path and file name to store on XboxLive service.(example: "foo\bar\blob.txt")</param>
         /// <returns>The byte array contains downloaded blob data</returns>
-        public static async Task<byte[]> DownloadAtomAsync(ulong xuid, string serviceConfigurationId, string sandbox, string pathAndFileName)
+        public static async Task<byte[]> DownloadAtomAsync(ulong xuid, Guid serviceConfigurationId, string sandbox, string pathAndFileName)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
@@ -128,14 +128,14 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
             }
         }
 
-        internal static async Task<ListTitleDataResponse> ListSavedGamesAsync(ulong xuid, string serviceConfigurationId, string sandbox, uint maxItems,
+        internal static async Task<ListTitleDataResponse> ListSavedGamesAsync(ulong xuid, string serviceConfigurationId, string sandbox, string path, uint maxItems,
             uint skipItems, string continuationToken)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
                 var uriBuilder = new UriBuilder(baseUri)
                 { 
-                    Path = $"/connectedstorage/users/xuid({xuid})/scids/{serviceConfigurationId}"
+                    Path = $"/connectedstorage/users/xuid({xuid})/scids/{serviceConfigurationId}/{path}"
                 };
 
                 AppendPagingInfo(ref uriBuilder, maxItems, skipItems, continuationToken);
