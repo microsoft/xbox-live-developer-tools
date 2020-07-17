@@ -98,7 +98,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Common\ClientSettings.cs" />
     <Compile Include="Authentication\XdtsTokenResponse.cs" />
+    <Compile Include="TitleStorage\ConnectedStorage.cs" />
+    <Compile Include="TitleStorage\ExtendedAtomInfo.cs" />
     <Compile Include="TitleStorage\GlobalStorageQuotaInfo.cs" />
+    <Compile Include="TitleStorage\ListTitleDataResponse.cs" />
+    <Compile Include="TitleStorage\PagingInfo.cs" />
+    <Compile Include="TitleStorage\SavedGameV2Response.cs" />
+    <Compile Include="TitleStorage\TitleBlobInfo.cs" />
     <Compile Include="TitleStorage\TitleStorage.cs" />
     <Compile Include="TitleStorage\TitleStorageBlobMetadata.cs" />
     <Compile Include="TitleStorage\TitleStorageBlobMetadataResult.cs" />
