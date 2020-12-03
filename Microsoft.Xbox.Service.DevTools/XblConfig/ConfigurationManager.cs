@@ -555,6 +555,36 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         }
 
         /// <summary>
+        /// Asynchronously gets a single product by a title ID.
+        /// </summary>
+        /// <param name="titleId">The Title ID of the product to obtain.</param>
+        public static async Task<ConfigResponse<Product>> GetProductAsync(string titleId)
+        {
+            using (XboxLiveHttpRequest request = new XboxLiveHttpRequest(new RequestParameters() { AutoAttachAuthHeader = true, TitleId = titleId }))
+            {
+                XboxLiveHttpResponse response = await request.SendAsync(() =>
+                {
+                    return new HttpRequestMessage(HttpMethod.Get, new Uri(xorcUri, $"/products/?titleId={titleId}"));
+                });
+                using (HttpResponseMessage httpResponse = response.Response)
+                {
+                    httpResponse.EnsureSuccessStatusCode();
+                    IEnumerable<Product> products = await httpResponse.Content.DeserializeJsonAsync<IEnumerable<Product>>();
+                    Product product = null;
+                    if (products.Count() == 1)
+                    {
+                        product = products.First();
+                    }
+                    return new ConfigResponse<Product>()
+                    {
+                        CorrelationId = response.CorrelationId,
+                        Result = product
+                    };
+                }
+            }
+        }
+
+        /// <summary>
         /// Asynchronously gets a single product by scid.
         /// </summary>
         /// <param name="scid">The service configuration ID to obtain.</param>

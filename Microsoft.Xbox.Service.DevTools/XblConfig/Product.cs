@@ -70,5 +70,11 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         /// </summary>
         [Display(Name = "Product Name", Order = 9, ListOrder = 1)]
         public string ProductName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the product name.
+        /// </summary>
+        [Display(Name = "Bound Title ID", Order = 10, ListOrder = 1)]
+        public string BoundTitleId { get; set; }
     }
 }

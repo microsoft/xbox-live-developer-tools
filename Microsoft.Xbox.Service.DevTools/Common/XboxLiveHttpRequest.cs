@@ -22,6 +22,11 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             this.requestParameters = requestParameters;
             HttpMessageHandler requestHandler = TestHook.MockHttpHandler ?? new WebRequestHandler();
             this.httpClient = new HttpClient(requestHandler);
+
+            // .Net is supposed to default to the latest TLS version on the machine,
+            // but I experienced an issue where it didn't so this change sets it
+            // explicitly. We need to use TLS 1.2 to communicate with XORC.
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         }
 
         public XboxLiveHttpRequest(bool autoAttachAuthHeader, Guid scid, params string[] sandboxes)
