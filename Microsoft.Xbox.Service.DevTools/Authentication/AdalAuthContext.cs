@@ -14,9 +14,16 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         private AuthenticationContext authContext;
         private UserIdentifier userIdentifier;
 
-        public AdalAuthContext(string userName)
+        public AdalAuthContext(string userName, string tenant)
         {
-            this.authContext = new AuthenticationContext(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, this.tokenCache);
+            if (string.IsNullOrEmpty(tenant))
+            {
+                tenant = "common";
+            }
+
+            this.authContext = new AuthenticationContext(
+                string.Format(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, tenant), 
+                this.tokenCache);
             this.UserName = userName;
             this.userIdentifier = string.IsNullOrEmpty(userName) ?
                 UserIdentifier.AnyUser :

@@ -57,7 +57,7 @@ namespace XblDevAccount
         {
             try
             {
-                var devAccount = await ToolAuthentication.SignInAsync((DevAccountSource)signInOptions.AccountSource, signInOptions.UserName);
+                var devAccount = await ToolAuthentication.SignInAsync((DevAccountSource)signInOptions.AccountSource, signInOptions.UserName, signInOptions.Tenant);
                 Console.WriteLine($"Developer account {devAccount.Name} has successfully signed in.");
                 DisplayDevAccount(devAccount, "\t");
                 return 0;
@@ -132,6 +132,10 @@ namespace XblDevAccount
             [Option('u', "name", Required = true,
                 HelpText = "The user name of the account.")]
             public string UserName { get; set; }
+
+            [Option('t', "tenant", Required = false,
+                HelpText = "The AAD tenant of the account. This will default to \"common\".")]
+            public string Tenant { get; set; }
 
             [Usage]
             public static IEnumerable<Example> Examples

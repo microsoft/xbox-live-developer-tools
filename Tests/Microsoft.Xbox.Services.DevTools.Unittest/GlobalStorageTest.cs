@@ -52,7 +52,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 .ReturnsAsync((string scid, IEnumerable<string> sandboxes, bool refresh) => 
                 DefaultEtoken + scid + string.Join(" ", sandboxes));
             ToolAuthentication.Client = mockAuth.Object;
-            ToolAuthentication.SetAuthInfo(DevAccountSource.WindowsDevCenter, DefaultUserName);
+            ToolAuthentication.SetAuthInfo(DevAccountSource.WindowsDevCenter, DefaultUserName, "common");
         }
 
         private string ExpectedToken(string scid, string sandbox)

@@ -60,7 +60,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return eToken;
         }
 
-        public async Task<DevAccount> SignInAsync()
+        public async Task<DevAccount> SignInAsync(string tenant)
         {
             if (this.AuthContext == null)
             {
@@ -70,7 +70,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             string aadToken = await this.AuthContext.AcquireTokenAsync();
             XdtsTokenResponse token = await this.FetchXdtsToken(aadToken, string.Empty, null);
 
-            this.Account = new DevAccount(token, this.AuthContext.AccountSource);
+            this.Account = new DevAccount(token, this.AuthContext.AccountSource, tenant);
 
             return this.Account;
         }

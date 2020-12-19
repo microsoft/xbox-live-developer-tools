@@ -42,7 +42,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
                 if (result!= null)
                 {
-                    ToolAuthentication.SetAuthInfo(result.AccountSource, result.Name);
+                    ToolAuthentication.SetAuthInfo(result.AccountSource, result.Name, result.Tenant);
                 }
             }
             catch (Exception e)
@@ -87,11 +87,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         /// <param name="accountSource">The account source where the developer account was registered.</param>
         /// <param name="userName">The user name of the account, optional.</param>
         /// <returns>DevAccount object contains developer account info.</returns>
-        public static async Task<DevAccount> SignInAsync(DevAccountSource accountSource, string userName)
+        public static async Task<DevAccount> SignInAsync(DevAccountSource accountSource, string userName, string tenant = "common")
         {
-            SetAuthInfo(accountSource, userName);
+            SetAuthInfo(accountSource, userName, tenant);
 
-            DevAccount devAccount = await Client.SignInAsync();
+            DevAccount devAccount = await Client.SignInAsync(tenant);
             SaveLastSignedInUser(devAccount);
 
             return devAccount;
@@ -102,7 +102,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             Client.AuthContext = authContext;
 
-            DevAccount devAccount = await Client.SignInAsync();
+            DevAccount devAccount = await Client.SignInAsync("common");
             SaveLastSignedInUser(devAccount);
 
             return devAccount;
@@ -126,11 +126,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
         }
 
-        internal static void SetAuthInfo(DevAccountSource accountSource, string userName)
+        internal static void SetAuthInfo(DevAccountSource accountSource, string userName, string tenant)
         {
             lock (initLock)
             {
-                Client.AuthContext = CreateAuthContext(accountSource, userName);
+                Client.AuthContext = CreateAuthContext(accountSource, userName, tenant);
             }
         }
 
@@ -147,12 +147,12 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
         }
 
-        private static IAuthContext CreateAuthContext(DevAccountSource accountSource, string userName)
+        private static IAuthContext CreateAuthContext(DevAccountSource accountSource, string userName, string tenant)
         {
             switch (accountSource)
             {
                 case DevAccountSource.WindowsDevCenter:
-                    return new AdalAuthContext(userName);
+                    return new AdalAuthContext(userName, tenant);
                 case DevAccountSource.XboxDeveloperPortal:
                     throw new ArgumentException("XDP is no longer a supported developer type. Sign in with a Windows Developer Center account.");
                 default:
