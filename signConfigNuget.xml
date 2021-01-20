@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<SignConfigXML>
+  <job platform="AnyCPU" configuration="Release" dest="" jobname="XSAPI Sign" approvers="vigarg;gstolt">
+    <file src="__RELBINPATH__\..\Microsoft.Xbox.Services.DevTools.*.nupkg" signType="Nuget" dest="__RELBINPATH__\..\Microsoft.Xbox.Services.DevTools.*.nupkg" />
+  </job>
+</SignConfigXML>
