@@ -6,7 +6,7 @@
     <title>$title$</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
-    <license type="expression">https://aka.ms/xblsdklicense</license>
+    <licenseUrl>https://aka.ms/xblsdklicense</licenseUrl>
     <projectUrl>https://github.com/Microsoft/xbox-live-developer-tools</projectUrl>
     <icon>http://www.xbox.com/shell/images/shell/XboxLogo.png</icon>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
