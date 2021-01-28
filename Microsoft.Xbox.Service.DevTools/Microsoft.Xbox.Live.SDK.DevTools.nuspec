@@ -8,7 +8,7 @@
     <owners>Microsoft</owners>
     <licenseUrl>https://aka.ms/xblsdklicense</licenseUrl>
     <projectUrl>https://github.com/Microsoft/xbox-live-developer-tools</projectUrl>
-    <icon>http://www.xbox.com/shell/images/shell/XboxLogo.png</icon>
+    <iconUrl>http://www.xbox.com/shell/images/shell/XboxLogo.png</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>Microsoft Xbox Live Developer Tooling API</description>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
