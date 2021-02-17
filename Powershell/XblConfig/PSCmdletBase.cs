@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation
+﻿// Copyright © Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XblConfig

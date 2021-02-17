@@ -12,6 +12,11 @@ namespace Microsoft.Xbox.Services.DevTools.Common
     public class RequestParameters
     {
         /// <summary>
+        /// Gets or sets the title ID.
+        /// </summary>
+        public string TitleId { get; set; }
+
+        /// <summary>
         /// Gets or sets the service configuration ID.
         /// </summary>
         public Guid Scid { get; set; }

@@ -11,36 +11,16 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         private static object singletonLock = new object();
         private static ClientSettings singleton;
 
-        private ClientSettings(string environment)
+        private ClientSettings()
         {
-            if (string.IsNullOrEmpty(environment))
-            {
-                environment = "PROD";
-            }
-
-            Log.WriteLog($"client setting environment: {environment}");
-
             // Default values are for production
             this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/common";
             this.OmegaResetToolEndpoint = "https://eraser.xboxlive.com";
-
-            // Override values for other environments
-            if (environment.ToUpper() == "DNET")
-            {
-                this.OmegaResetToolEndpoint = "https://eraser.dnet.xboxlive.com";
-                this.UDCAuthEndpoint = "https://devx.microsoft-tst.com/xdts/authorize";
-                this.TitleStorageEndpoint = "https://titlestorage.dnet.xboxlive.com";
-                this.XConEndpoint = "https://config2.mgt.dnet.xboxlive.com/";
-                this.XOrcEndpoint = "https://xorc.dnet.xboxlive.com/";
-                this.XCertEndpoint = "https://cert.mgt.dnet.xboxlive.com/";
-                this.XAchEndpoint = "https://xach.mgt.dnet.xboxlive.com/";
-                this.XFusEndpoint = "https://upload.dnet.xboxlive.com/";
-            }
-            
+                        
             // Cache folder
             this.CacheFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Microsoft/XboxLiveTool/" + environment);
+                "Microsoft/XboxLiveTool/PROD");
         }
 
         public static ClientSettings Singleton
@@ -51,7 +31,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
                 {
                     if (singleton == null)
                     {
-                        singleton = new ClientSettings(string.Empty);
+                        singleton = new ClientSettings();
                     }
                 }
 
