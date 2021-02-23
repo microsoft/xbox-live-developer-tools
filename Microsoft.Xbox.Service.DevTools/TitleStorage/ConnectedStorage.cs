@@ -45,7 +45,10 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
             {
                 ListTitleDataResponse response = await ListSavedGamesAsync(xuid, serviceConfigurationId, sandbox, path, maxItems, skipItems, continuationToken);
                 continuationToken = response.PagingInfo.ContinuationToken;
-                savedGames.AddRange(response.Blobs);
+                if (response.Blobs != null)
+                {
+                    savedGames.AddRange(response.Blobs);
+                }
             } while (!string.IsNullOrEmpty(continuationToken));
 
             return savedGames;

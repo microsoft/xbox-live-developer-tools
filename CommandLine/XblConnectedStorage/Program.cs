@@ -84,6 +84,12 @@ namespace XblConnectedStorage
 
             List<TitleBlobInfo> savedGameInfos = await ConnectedStorage.ListSavedGamesAsync(xuid, scid.ToString(), sandbox, string.Empty, 0, 0);
 
+            if (savedGameInfos.Count == 0)
+            {
+                Console.WriteLine("No saves found.");
+                return 0;
+            }
+
             Directory.CreateDirectory(Path.GetDirectoryName(options.OutputFile));
             XmlWriterSettings xmlWriterSettings = new XmlWriterSettings()
             {
@@ -132,6 +138,8 @@ namespace XblConnectedStorage
                 xbStorageXmlWriter.WriteEndElement(); // Data
                 xbStorageXmlWriter.WriteEndElement(); // XbConnectedStorageSpace
             }
+
+            Console.WriteLine($"Operation complete. Downloaded {savedGameInfos.Count} save containers to {options.OutputFile}.");
 
             return 0;
         }
