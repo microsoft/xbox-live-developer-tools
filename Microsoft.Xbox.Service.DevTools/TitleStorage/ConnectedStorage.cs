@@ -49,7 +49,8 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
                 {
                     savedGames.AddRange(response.Blobs);
                 }
-            } while (!string.IsNullOrEmpty(continuationToken));
+            }
+            while (!string.IsNullOrEmpty(continuationToken));
 
             return savedGames;
         }
