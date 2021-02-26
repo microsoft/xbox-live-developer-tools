@@ -1,6 +1,6 @@
 ## Welcome!
 
-Please refer to the official [Xbox Live Tools documentation](https://docs.microsoft.com/en-us/gaming/xbox-live/test-release/tools/live-tools) site for further information.
+Please  refer to the official [Xbox Live Tools documentation](https://docs.microsoft.com/en-us/gaming/xbox-live/test-release/tools/live-tools) site for further information.
 
 The Microsoft Xbox Live Tooling API provides a way to:
 
