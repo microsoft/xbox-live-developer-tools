@@ -575,6 +575,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
                     {
                         product = products.First();
                     }
+
                     return new ConfigResponse<Product>()
                     {
                         CorrelationId = response.CorrelationId,
