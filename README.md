@@ -2,7 +2,7 @@
 
 Please refer to the official [Xbox Live Tools documentation](https://docs.microsoft.com/en-us/gaming/xbox-live/test-release/tools/live-tools) site for further information.
 
-The Microsoft Xbox Live Tooling API provides a way to:
+The Microsoft Xbox Live Tooling API provides a way to: 
 
 * Reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history.
 * Manage a title's global storage in test sandboxes.
