@@ -50,9 +50,9 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return false;
         }
 
-        public static string GetCacheKey(string userName, DevAccountSource accountSource, string scid, IEnumerable<string> sandboxes)
+        public static string GetCacheKey(string userName, DevAccountSource accountSource, string tenant, string scid, IEnumerable<string> sandboxes)
         {
-            string keyFullstring = userName + accountSource.ToString() + scid + (sandboxes == null? string.Empty : string.Join(" ", sandboxes));
+            string keyFullstring = userName + accountSource.ToString() + tenant + scid + (sandboxes == null? string.Empty : string.Join(" ", sandboxes));
 
             return keyFullstring.GetHashCode().ToString();
         }

@@ -81,6 +81,7 @@ namespace XblDevAccount
         private static void DisplayDevAccount(DevAccount devAccount, string indent)
         {
             Console.WriteLine($"{indent}ID : {devAccount.Id}");
+            Console.WriteLine($"{indent}Tenant : {devAccount.Tenant}");
             Console.WriteLine($"{indent}Publisher ID : {devAccount.AccountId}");
             Console.WriteLine($"{indent}AccountType : {devAccount.AccountType}");
             Console.WriteLine($"{indent}AccountMoniker : {devAccount.AccountMoniker}");

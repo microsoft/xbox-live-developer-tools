@@ -46,7 +46,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             {
                 // return cachaed token if we have one and didn't expire
                 string cacheKey =
-                    XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, scid, sandboxes);
+                    XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.TryGetCachedToken(cacheKey, out eToken);
             }
 
@@ -92,12 +92,13 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
                     return requestMsg;
                 })).Response;
+
                 response.EnsureSuccessStatusCode();
                 Log.WriteLog("Fetch xdts Token succeeded.");
 
                 var token = await response.Content.DeserializeJsonAsync<XdtsTokenResponse>();
 
-                string key = XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, scid, sandboxes);
+                string key = XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.UpdateToken(key, token);
 
                 return token;

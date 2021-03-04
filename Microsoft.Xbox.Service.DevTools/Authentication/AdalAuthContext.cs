@@ -21,8 +21,10 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 tenant = "common";
             }
 
+
+            this.Tenant = tenant;
             this.authContext = new AuthenticationContext(
-                string.Format(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, tenant), 
+                string.Format(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, this.Tenant), 
                 this.tokenCache);
             this.UserName = userName;
             this.userIdentifier = string.IsNullOrEmpty(userName) ?
@@ -40,6 +42,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         }
 
         public string UserName { get; private set; }
+
+        public string Tenant { get; private set; }
 
         public virtual async Task<string> AcquireTokenSilentAsync()
         {

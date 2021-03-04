@@ -86,6 +86,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         /// </summary>
         /// <param name="accountSource">The account source where the developer account was registered.</param>
         /// <param name="userName">The user name of the account, optional.</param>
+        /// <param name="tenant">The tenant of the account, optional.</param>
         /// <returns>DevAccount object contains developer account info.</returns>
         public static async Task<DevAccount> SignInAsync(DevAccountSource accountSource, string userName, string tenant = "common")
         {

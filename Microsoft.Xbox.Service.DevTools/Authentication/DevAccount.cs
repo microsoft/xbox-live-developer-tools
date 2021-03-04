@@ -36,6 +36,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
 
             this.AccountSource = accountSource;
+            this.Tenant = tenant;
         }
 
         internal DevAccount()
