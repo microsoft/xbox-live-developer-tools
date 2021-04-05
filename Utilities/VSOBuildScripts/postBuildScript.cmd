@@ -1,22 +1,30 @@
 if "%1" == "local" goto testlocal
 goto start
 
-:start
+
 :testlocal
 set TOOLS_SOURCEDIRECTORY=%CD%\..\..
+goto serializeForPostbuild
 
-:serializeForPostbuild
 
+:start
 echo Running postBuildScript.cmd
 echo on
 
+set
+
+set TOOLS_SOURCEDIRECTORY=%BUILD_SOURCESDIRECTORY%
+
+
+:serializeForPostbuild
 set TOOLS_DROP_LOCATION=%TOOLS_SOURCEDIRECTORY%\XboxLiveDeveloperTools
 rmdir /s /q %TOOLS_DROP_LOCATION%
 mkdir %TOOLS_DROP_LOCATION%
 mkdir %TOOLS_DROP_LOCATION%\ToolZip
 
 setlocal
-call %CD%\setBuildVersion.cmd
+call %TOOLS_SOURCEDIRECTORY%\Utilities\VSOBuildScripts\setBuildVersion.cmd
+
 
 REM ------------------- VERSION SETUP BEGIN -------------------
 for /f "tokens=2 delims==" %%G in ('wmic os get localdatetime /value') do set datetime=%%G
@@ -40,7 +48,8 @@ copy %TOOLS_SOURCEDIRECTORY%\CommandLine\XblConnectedStorage\bin\Release\XblConn
 
 copy %TOOLS_SOURCEDIRECTORY%\Tools\MultiplayerSessionHistoryViewer\bin\Release\MultiplayerSessionHistoryViewer.exe %TOOLS_DROP_LOCATION%\ToolZip
 
-%CD%\vZip.exe /FOLDER:%TOOLS_DROP_LOCATION%\ToolZip /OUTPUTNAME:%TOOLS_DROP_LOCATION%\XboxLiveTools-%LONG_SDK_RELEASE_NAME%.zip
+
+%TOOLS_SOURCEDIRECTORY%\Utilities\VSOBuildScripts\vZip.exe /FOLDER:%TOOLS_DROP_LOCATION%\ToolZip /OUTPUTNAME:%TOOLS_DROP_LOCATION%\XboxLiveDeveloperTools-%LONG_SDK_RELEASE_NAME%.zip
 rmdir /s /q %TOOLS_DROP_LOCATION%\ToolZip
 
 echo.
