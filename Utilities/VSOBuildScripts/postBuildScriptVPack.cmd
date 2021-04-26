@@ -3,6 +3,7 @@ echo on
 
 set
 
+set TOOLS_BINARIESDIRECTORY=%BUILD_BINARIESDIRECTORY%
 set TOOLS_DROP_LOCATION=%TOOLS_BINARIESDIRECTORY%\XboxLiveDeveloperTools
 
 REM ------------------- TOOLS BEGIN -------------------
