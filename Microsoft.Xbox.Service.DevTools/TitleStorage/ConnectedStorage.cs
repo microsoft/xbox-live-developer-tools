@@ -30,20 +30,20 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <summary>
         /// Gets a list of savedgames under a given path.
         /// </summary>
-        /// <param name="xuid">The xuid of the user</param>
+        /// <param name="gamertag">The legacy gamertag of the user</param>
         /// <param name="serviceConfigurationId">The service configuration ID (SCID) of the title</param>
         /// <param name="sandbox">The target sandbox id for title storage</param>
         /// <param name="path">The root path to enumerate.  Results will be for blobs contained in this path and all subpaths.(Optional)</param>
         /// <param name="maxItems">The maximum number of items to return.</param>
         /// <param name="skipItems">The number of items to skip before returning results.</param>
         /// <returns>TitleStorageBlobMetadataResult object contains result collection.</returns>
-        public static async Task<List<TitleBlobInfo>> ListSavedGamesAsync(ulong xuid, string serviceConfigurationId, string sandbox, string path, uint maxItems, uint skipItems)
+        public static async Task<List<TitleBlobInfo>> ListSavedGamesAsync(string gamertag, string serviceConfigurationId, string sandbox, string path, uint maxItems, uint skipItems)
         {
             List<TitleBlobInfo> savedGames = new List<TitleBlobInfo>();
             string continuationToken = null;
             do
             {
-                ListTitleDataResponse response = await ListSavedGamesAsync(xuid, serviceConfigurationId, sandbox, path, maxItems, skipItems, continuationToken);
+                ListTitleDataResponse response = await ListSavedGamesAsync(gamertag, serviceConfigurationId, sandbox, path, maxItems, skipItems, continuationToken);
                 continuationToken = response.PagingInfo.ContinuationToken;
                 if (response.Blobs != null)
                 {
@@ -58,25 +58,25 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <summary>
         /// Downloads a savedgame from Connected Storage.
         /// </summary>
-        /// <param name="xuid">The xuid of the user</param>
+        /// <param name="gamertag">The legacy gamertag of the user</param>
         /// <param name="serviceConfigurationId">The service configuration ID (SCID) of the title</param>
         /// <param name="sandbox">The target sandbox id for title storage</param>
         /// <param name="pathAndFileName">Blob path and file name on XboxLive service.</param>
         /// <returns>The byte array contains downloaded blob data</returns>
-        public static async Task<SavedGameV2Response> DownloadSavedGameAsync(ulong xuid, Guid serviceConfigurationId, string sandbox, string pathAndFileName)
+        public static async Task<SavedGameV2Response> DownloadSavedGameAsync(string gamertag, Guid serviceConfigurationId, string sandbox, string pathAndFileName)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
                 HttpResponseMessage response = (await request.SendAsync(() =>
                 {
-                    var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, $"/connectedstorage/users/xuid({xuid})/scids/{serviceConfigurationId}/savedgames/{pathAndFileName}"));
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, $"/connectedstorage/users/gt({gamertag})/scids/{serviceConfigurationId}/savedgames/{pathAndFileName}"));
                     requestMsg.Headers.Add("x-xbl-contract-version", "1");
 
                     return requestMsg;
                 })).Response;
                 response.EnsureSuccessStatusCode();
 
-                Log.WriteLog($"DownloadSavedGameAsync for xuid: {xuid}, scid: {serviceConfigurationId}, sandbox: {sandbox}");
+                Log.WriteLog($"DownloadSavedGameAsync for gamertag: {gamertag}, scid: {serviceConfigurationId}, sandbox: {sandbox}");
 
                 JsonSerializer jsonSerializer = JsonSerializer.CreateDefault();
                 using (StreamReader streamReader = new StreamReader(await response.Content.ReadAsStreamAsync()))
@@ -92,18 +92,18 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
         /// <summary>
         /// Downloads atom from Connected Storage.
         /// </summary>
-        /// <param name="xuid">The xuid of the user</param>
+        /// <param name="gamertag">The legacy gamertag of the user</param>
         /// <param name="serviceConfigurationId">The service configuration ID (SCID) of the title</param>
         /// <param name="sandbox">The target sandbox id for title storage</param>
         /// <param name="pathAndFileName">Blob path and file name to store on XboxLive service.(example: "foo\bar\blob.txt")</param>
         /// <returns>The byte array contains downloaded blob data</returns>
-        public static async Task<byte[]> DownloadAtomAsync(ulong xuid, Guid serviceConfigurationId, string sandbox, string pathAndFileName)
+        public static async Task<byte[]> DownloadAtomAsync(string gamertag, Guid serviceConfigurationId, string sandbox, string pathAndFileName)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
                 HttpResponseMessage response = (await request.SendAsync(()=> 
                 {
-                    var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, $"/connectedstorage/users/xuid({xuid})/scids/{serviceConfigurationId}/{pathAndFileName},binary"));
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, $"/connectedstorage/users/gt({gamertag})/scids/{serviceConfigurationId}/{pathAndFileName},binary"));
                     requestMsg.Headers.Add("x-xbl-contract-version", "1");
                     requestMsg.Headers.AcceptEncoding.Add(StringWithQualityHeaderValue.Parse("gzip"));
 
@@ -111,7 +111,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
                 })).Response;
                 response.EnsureSuccessStatusCode();
 
-                Log.WriteLog($"DownloadAtomAsync for xuid: {xuid}, scid: {serviceConfigurationId}, sandbox: {sandbox}");
+                Log.WriteLog($"DownloadAtomAsync for gamertag: {gamertag}, scid: {serviceConfigurationId}, sandbox: {sandbox}");
 
                 // if the response came gzip encoded, we need to decompress it
                 if (response.Content.Headers.ContentEncoding.FirstOrDefault() == "gzip")
@@ -132,14 +132,14 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
             }
         }
 
-        internal static async Task<ListTitleDataResponse> ListSavedGamesAsync(ulong xuid, string serviceConfigurationId, string sandbox, string path, uint maxItems,
+        internal static async Task<ListTitleDataResponse> ListSavedGamesAsync(string gamertag, string serviceConfigurationId, string sandbox, string path, uint maxItems,
             uint skipItems, string continuationToken)
         {
             using (var request = new XboxLiveHttpRequest(true, serviceConfigurationId, sandbox))
             {
                 var uriBuilder = new UriBuilder(baseUri)
                 { 
-                    Path = $"/connectedstorage/users/xuid({xuid})/scids/{serviceConfigurationId}/{path}"
+                    Path = $"/connectedstorage/users/gt({gamertag})/scids/{serviceConfigurationId}/{path}"
                 };
 
                 AppendPagingInfo(ref uriBuilder, maxItems, skipItems, continuationToken);
@@ -160,7 +160,7 @@ namespace Microsoft.Xbox.Services.DevTools.TitleStorage
 
                 response.EnsureSuccessStatusCode();
 
-                Log.WriteLog($"ListSavedGamesAsync for xuid: {xuid}, scid: {serviceConfigurationId}, sandbox: {sandbox}");
+                Log.WriteLog($"ListSavedGamesAsync for gamertag: {gamertag}, scid: {serviceConfigurationId}, sandbox: {sandbox}");
 
                 JsonSerializer jsonSerializer = JsonSerializer.CreateDefault();
                 using (StreamReader streamReader = new StreamReader(await response.Content.ReadAsStreamAsync()))
