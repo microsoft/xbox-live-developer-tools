@@ -36,6 +36,12 @@ namespace XblConnectedStorage
                     return -1;
                 }
 
+                if (options.GamerTag.Contains("#"))
+                {
+                    Console.Error.WriteLine("Modern gamertags are not supported. Please use a legacy gamertag.");
+                    return -1;
+                }
+
                 DevAccount account = ToolAuthentication.LoadLastSignedInUser();
                 if (account == null)
                 {
@@ -78,11 +84,11 @@ namespace XblConnectedStorage
 
         private static async Task<int> OnDownload(Options options)
         {
-            ulong xuid = options.XboxUserId;
+            string gamertag = options.GamerTag;
             Guid scid = options.ServiceConfigurationId;
             string sandbox = options.Sandbox;
 
-            List<TitleBlobInfo> savedGameInfos = await ConnectedStorage.ListSavedGamesAsync(xuid, scid.ToString(), sandbox, string.Empty, 0, 0);
+            List<TitleBlobInfo> savedGameInfos = await ConnectedStorage.ListSavedGamesAsync(gamertag, scid.ToString(), sandbox, string.Empty, 0, 0);
 
             if (savedGameInfos.Count == 0)
             {
@@ -118,14 +124,14 @@ namespace XblConnectedStorage
                     xbStorageXmlWriter.WriteAttributeString("name", savedGameName);
                     xbStorageXmlWriter.WriteStartElement("Blobs");
 
-                    SavedGameV2Response savedGame = await ConnectedStorage.DownloadSavedGameAsync(xuid, scid, sandbox, savedGameName);
+                    SavedGameV2Response savedGame = await ConnectedStorage.DownloadSavedGameAsync(gamertag, scid, sandbox, savedGameName);
 
                     foreach (ExtendedAtomInfo atomInfo in savedGame.Atoms)
                     {
                         xbStorageXmlWriter.WriteStartElement("Blob");
                         xbStorageXmlWriter.WriteAttributeString("name", atomInfo.Name);
 
-                        byte[] atomContent = await ConnectedStorage.DownloadAtomAsync(xuid, scid, sandbox, atomInfo.Atom);
+                        byte[] atomContent = await ConnectedStorage.DownloadAtomAsync(gamertag, scid, sandbox, atomInfo.Atom);
 
                         xbStorageXmlWriter.WriteCData(Convert.ToBase64String(atomContent));
                         xbStorageXmlWriter.WriteEndElement(); // Blob
@@ -154,9 +160,9 @@ namespace XblConnectedStorage
                 HelpText = "The target sandbox for title storage")]
             public string Sandbox { get; set; }
 
-            [Option('x', "xuid", Required = true,
-                HelpText = "The Xbox Live user ID of the player to retrieve storage for")]
-            public ulong XboxUserId { get; set; }
+            [Option('g', "gamertag", Required = true,
+                HelpText = "The legacy gamertag of the player to retrieve storage for")]
+            public string GamerTag { get; set; }
 
             [Option('o', "output", HelpText = "The output file to write the xbstorage xml file to.", Default = "./output/xbstorage.xml")]
             public string OutputFile { get; set; }
@@ -168,7 +174,7 @@ namespace XblConnectedStorage
                 {
                     yield return new Example(
                         @"Downloads the Connected Storage data for this user to ./output/xbstorage.xml",
-                        new Options { ServiceConfigurationId = Guid.Parse("00000000-0000-0000-0000-0000628cd0f2"), Sandbox = "TEST.0", XboxUserId = 2814647753275637, OutputFile = @"./output/xbstorage.xml" });
+                        new Options { ServiceConfigurationId = Guid.Parse("00000000-0000-0000-0000-0000628cd0f2"), Sandbox = "TEST.0", GamerTag = "CrazyGiraffe", OutputFile = @"./output/xbstorage.xml" });
                 }
             }
         }
