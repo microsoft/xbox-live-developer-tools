@@ -73,6 +73,9 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         /// </summary>
         public DevAccountSource AccountSource { get; set; }
 
+        /// <summary>
+        /// The AAD tenant to sign in to. The default is "common".
+        /// </summary>
         public string Tenant { get; set; }
     }
 }
