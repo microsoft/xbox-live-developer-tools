@@ -14,7 +14,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         private ClientSettings()
         {
             // Default values are for production
-            this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/common";
+            this.ActiveDirectoryAuthenticationEndpoint = "https://login.microsoftonline.com/{0}"; // default should be common
             this.OmegaResetToolEndpoint = "https://eraser.xboxlive.com";
                         
             // Cache folder

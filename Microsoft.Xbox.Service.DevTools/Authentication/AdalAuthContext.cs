@@ -14,9 +14,18 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         private AuthenticationContext authContext;
         private UserIdentifier userIdentifier;
 
-        public AdalAuthContext(string userName)
+        public AdalAuthContext(string userName, string tenant)
         {
-            this.authContext = new AuthenticationContext(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, this.tokenCache);
+            if (string.IsNullOrEmpty(tenant))
+            {
+                tenant = "common";
+            }
+
+
+            this.Tenant = tenant;
+            this.authContext = new AuthenticationContext(
+                string.Format(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, this.Tenant), 
+                this.tokenCache);
             this.UserName = userName;
             this.userIdentifier = string.IsNullOrEmpty(userName) ?
                 UserIdentifier.AnyUser :
@@ -33,6 +42,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         }
 
         public string UserName { get; private set; }
+
+        public string Tenant { get; private set; }
 
         public virtual async Task<string> AcquireTokenSilentAsync()
         {

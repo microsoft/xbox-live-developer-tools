@@ -15,6 +15,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         string UserName { get; }
 
+        string Tenant { get; }
+
         Task<string> AcquireTokenSilentAsync();
 
         Task<string> AcquireTokenAsync();
