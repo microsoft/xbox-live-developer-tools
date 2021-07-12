@@ -42,9 +42,10 @@ copy %TOOLS_RELEASEDIRECTORY%\XblConnectedStorage\XblConnectedStorage.exe       
 copy %TOOLS_RELEASEDIRECTORY%\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe %TOOLS_DROP_LOCATION%\ToolZip
 
 REM ------------------- OS VPACK BEGIN -------------------
-copy %TOOLS_RELEASEDIRECTORY%\XblConfig\XblConfig.exe                   %TOOLS_DROP_LOCATION_VPACK%
-copy %TOOLS_RELEASEDIRECTORY%\XblDevAccount\XblDevAccount.exe           %TOOLS_DROP_LOCATION_VPACK%
-copy %TOOLS_RELEASEDIRECTORY%\XblPlayerDataReset\XblPlayerDataReset.exe %TOOLS_DROP_LOCATION_VPACK%
+copy %TOOLS_RELEASEDIRECTORY%\XblConfig\XblConfig.exe                                  %TOOLS_DROP_LOCATION_VPACK%
+copy %TOOLS_RELEASEDIRECTORY%\XblConnectedStorage\XblConnectedStorage.exe              %TOOLS_DROP_LOCATION_VPACK%
+copy %TOOLS_RELEASEDIRECTORY%\XblDevAccount\XblDevAccount.exe                          %TOOLS_DROP_LOCATION_VPACK%
+copy %TOOLS_RELEASEDIRECTORY%\XblPlayerDataReset\XblPlayerDataReset.exe                %TOOLS_DROP_LOCATION_VPACK%
 
 
 %TOOLS_SOURCEDIRECTORY%\Utilities\VSOBuildScripts\vZip.exe /FOLDER:%TOOLS_DROP_LOCATION%\ToolZip /OUTPUTNAME:%TOOLS_DROP_LOCATION%\XboxLiveDeveloperTools-%LONG_SDK_RELEASE_NAME%.zip
