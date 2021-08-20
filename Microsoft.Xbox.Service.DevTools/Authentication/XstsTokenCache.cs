@@ -3,9 +3,9 @@
 
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
-    internal class XdtsTokenCache : AuthTokenCache
+    internal class XstsTokenCache : AuthTokenCache
     {
-        public XdtsTokenCache() : base("xdts.cache")
+        public XstsTokenCache() : base("xsts.cache")
         {
         }
     }

@@ -77,9 +77,14 @@
     <Compile Include="Authentication\IAuthContext.cs" />
     <Compile Include="Authentication\DevAccount.cs" />
     <Compile Include="Authentication\DevAccountSource.cs" />
+    <Compile Include="Authentication\IToolAccount.cs" />
+    <Compile Include="Authentication\MsalAuthContext.cs" />
+    <Compile Include="Authentication\TestAccount.cs" />
     <Compile Include="Authentication\ToolAuthentication.cs" />
+    <Compile Include="Authentication\AuthTokenCache.cs" />
     <Compile Include="Authentication\XdtsTokenCache.cs" />
     <Compile Include="Authentication\XdtsTokenRequest.cs" />
+    <Compile Include="Authentication\XstsTokenCache.cs" />
     <Compile Include="Common\Log.cs" />
     <Compile Include="Common\RequestParameters.cs" />
     <Compile Include="Common\HelperExtensions.cs" />

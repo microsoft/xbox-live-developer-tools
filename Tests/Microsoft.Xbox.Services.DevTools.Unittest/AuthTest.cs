@@ -17,7 +17,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
     [TestClass]
     public class AuthTest
     {
-        private const string DefaultEToken = "defaultEToken";
+        private const string DefaultEToken = "etoken";
         private const string DefaultScid = "00000000-0000-0000-0000-012345678901";
         private const string DefaultSandbox = "sandbox";
         private const string DefaultXtdsEndpoint = "http://XtdsEndpoint.com";

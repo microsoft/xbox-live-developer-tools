@@ -51,27 +51,48 @@ namespace XblPlayerDataReset
 
         private static async Task<int> OnReset(ResetOptions options)
         {
+            string xuid = string.Empty;
+
             if (options == null)
             {
                 Console.WriteLine("Unknown parameter error");
                 return -1;
             }
 
-            DevAccount account = ToolAuthentication.LoadLastSignedInUser();
-            if (account == null)
+            if (!string.IsNullOrEmpty(options.TestAccount))
             {
-                Console.Error.WriteLine("Didn't found dev sign in info, please use \"XblDevAccount.exe signin\" to initiate.");
-                return -1;
+                TestAccount testAccount = await ToolAuthentication.SignInTestAccountAsync(options.TestAccount);
+                if (testAccount == null)
+                {
+                    Console.Error.WriteLine($"Failed to log in to test account {options.TestAccount}.");
+                    return -1;
+                }
+
+                xuid = testAccount.Xuid;
+
+                Console.WriteLine($"Using Test account {options.TestAccount} ({testAccount.Gamertag}) with xuid {xuid}");
+            }
+            else if (!string.IsNullOrEmpty(options.XboxUserId))
+            {
+                DevAccount account = ToolAuthentication.LoadLastSignedInUser();
+                if (account == null)
+                {
+                    Console.Error.WriteLine("Didn't find dev sign in info, please use \"XblDevAccount.exe signin\" to initiate.");
+                    return -1;
+                }
+
+                xuid = options.XboxUserId;
+
+                Console.WriteLine($"Using Dev account {account.Name} from {account.AccountSource}");
             }
 
-            Console.WriteLine($"Using Dev account {account.Name} from {account.AccountSource}");
-            Console.WriteLine($"Resetting player {options.XboxUserId} data for scid {options.ServiceConfigurationId}, sandbox {options.Sandbox}");
+            Console.WriteLine($"Resetting player {xuid} data for scid {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
 
             try
             {
                 UserResetResult result = await PlayerReset.ResetPlayerDataAsync(
                     options.ServiceConfigurationId,
-                    options.Sandbox, options.XboxUserId);
+                    options.Sandbox, xuid);
 
                 switch (result.OverallResult)
                 {
@@ -92,7 +113,7 @@ namespace XblPlayerDataReset
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
                     default:
-                        Console.WriteLine("has completed with unknown error");
+                        Console.WriteLine("Resetting has completed with an unknown error");
                         return -1;
                 }
             }
@@ -129,16 +150,20 @@ namespace XblPlayerDataReset
                 HelpText = "The target sandbox for player resetting")]
             public string Sandbox { get; set; }
 
-            [Option('x', "xuid", Required = true,
-                HelpText = "The Xbox Live user ID of the player to be reset")]
+            [Option('x', "xuid", Required = false, SetName = "xuid",
+                HelpText = "The Xbox Live User ID (XUID) of the player to be reset")]
             public string XboxUserId { get; set; }
+
+            [Option('u', "user", Required = false, SetName = "testacct",
+                HelpText = "The email address of the test account to be reset")]
+            public string TestAccount { get; set; }
 
             [Usage(ApplicationAlias = "XblPlayerDataReset")]
             public static IEnumerable<Example> Examples
             {
                 get
                 {
-                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx" });
+                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx", TestAccount = "xxx@xboxtest.com" });
                 }
             }
         }

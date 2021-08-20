@@ -3,10 +3,10 @@
 
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
-    internal class XdtsTokenCache : AuthTokenCache
+    /// <summary>
+    /// Interface for different account types
+    /// </summary>
+    public interface IToolAccount
     {
-        public XdtsTokenCache() : base("xdts.cache")
-        {
-        }
     }
 }

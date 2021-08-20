@@ -21,7 +21,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 tenant = "common";
             }
 
-
             this.Tenant = tenant;
             this.authContext = new AuthenticationContext(
                 string.Format(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, this.Tenant), 

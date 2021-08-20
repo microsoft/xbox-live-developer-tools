@@ -35,7 +35,14 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         {
             // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
             // populate the auth error up-front.
-            await ToolAuthentication.GetDevTokenSilentlyAsync(serviceConfigurationId, sandbox);
+            if (ToolAuthentication.Client.AuthContext.AccountSource == DevAccountSource.TestAccount)
+            {
+                await ToolAuthentication.GetTestTokenSilentlyAsync(serviceConfigurationId, sandbox);
+            }
+            else
+            {
+                await ToolAuthentication.GetDevTokenSilentlyAsync(serviceConfigurationId, sandbox);
+            }
 
             return await SubmitJobAndPollStatus(sandbox, serviceConfigurationId, xboxUserId);
         }
