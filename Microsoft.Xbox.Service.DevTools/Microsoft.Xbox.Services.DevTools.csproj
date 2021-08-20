@@ -77,7 +77,6 @@
     <Compile Include="Authentication\IAuthContext.cs" />
     <Compile Include="Authentication\DevAccount.cs" />
     <Compile Include="Authentication\DevAccountSource.cs" />
-    <Compile Include="Authentication\IToolAccount.cs" />
     <Compile Include="Authentication\MsalAuthContext.cs" />
     <Compile Include="Authentication\TestAccount.cs" />
     <Compile Include="Authentication\ToolAuthentication.cs" />

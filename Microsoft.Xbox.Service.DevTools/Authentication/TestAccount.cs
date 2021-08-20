@@ -8,7 +8,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     /// <summary>
     ///  Class represents a developer account.
     /// </summary>
-    public class TestAccount : IToolAccount
+    public class TestAccount
     {
         internal TestAccount(XdtsTokenResponse xtoken)
         {
