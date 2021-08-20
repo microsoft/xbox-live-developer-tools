@@ -51,7 +51,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public async Task<string> AcquireTokenAsync()
         {
-            AuthenticationResult result = await this.publicClientApplication.AcquireTokenAsync(this.scopes, this.UserName, UIBehavior.Never, string.Empty);
+            AuthenticationResult result = await this.publicClientApplication.AcquireTokenAsync(this.scopes, this.UserName, UIBehavior.Consent, string.Empty);
             this.cachedAccount = result.User;
             return result.AccessToken;
         }
