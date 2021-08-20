@@ -180,7 +180,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 
                 var jobstatus = await xblResponse.Response.Content.DeserializeJsonAsync<JobStatusResponse>();
 
-                Log.WriteLog($"Checking {userResetJob.JobId} job stauts: {jobstatus.Status}");
+                Log.WriteLog($"Checking {userResetJob.JobId} job status: {jobstatus.Status}");
 
                 return jobstatus;
             }

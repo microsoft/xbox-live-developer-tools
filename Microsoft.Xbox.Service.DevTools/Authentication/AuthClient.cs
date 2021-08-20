@@ -21,9 +21,9 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public DevAccount Account { get; private set; }
 
-        public Lazy<XdtsTokenCache> ETokenCache { get; } = new Lazy<XdtsTokenCache>();
+        public Lazy<AuthTokenCache> ETokenCache { get; } = new Lazy<AuthTokenCache>(() => new AuthTokenCache("xdts.cache"));
 
-        public Lazy<XstsTokenCache> XTokenCache { get; } = new Lazy<XstsTokenCache>();
+        public Lazy<AuthTokenCache> XTokenCache { get; } = new Lazy<AuthTokenCache>(() => new AuthTokenCache("xsts.cache"));
 
         public bool HasCredential
         {
@@ -48,7 +48,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             {
                 // return cachaed token if we have one and didn't expire
                 string cacheKey =
-                    XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
+                    AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.TryGetCachedToken(cacheKey, out eToken);
             }
 
@@ -75,7 +75,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             {
                 // return cachaed token if we have one and didn't expire
                 string cacheKey =
-                    XstsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandbox);
+                    AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandbox);
                 this.XTokenCache.Value.TryGetCachedToken(cacheKey, out xToken);
             }
 
@@ -160,7 +160,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
                 var token = await response.Content.DeserializeJsonAsync<XdtsTokenResponse>();
 
-                string key = XdtsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
+                string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.UpdateToken(key, token);
 
                 return token;
@@ -215,7 +215,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
             token = await response.Content.DeserializeJsonAsync<XdtsTokenResponse>();
 
-            string key = XstsTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandbox);
+            string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandbox);
             this.XTokenCache.Value.UpdateToken(key, token);
 
             return token;
