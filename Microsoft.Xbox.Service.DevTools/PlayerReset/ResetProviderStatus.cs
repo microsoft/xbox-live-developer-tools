@@ -41,6 +41,11 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         /// <summary>
         /// The job was abandoned.
         /// </summary>
-        Abandoned
+        Abandoned,
+
+        /// <summary>
+        /// The job is being retried.
+        /// </summary>
+        Retrying
     }
 }
