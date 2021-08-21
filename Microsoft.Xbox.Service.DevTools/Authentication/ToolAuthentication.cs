@@ -84,17 +84,16 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         /// <summary>
         /// Attempt to fetch a test xToken without triggering any UI.
         /// </summary>
-        /// <param name="serviceConfigurationId">The target service configuration ID (SCID) for the eToken, when empty, the token won't have access to a particular service configure</param>
-        /// <param name="sandbox">The target sandbox for the eToken, when empty, the token won't have any access to a particular sandbox</param>
+        /// <param name="sandbox">The target sandbox for the XToken</param>
         /// <returns>Developer eToken for specific serviceConfigurationId and sandbox</returns>
-        public static async Task<string> GetTestTokenSilentlyAsync(string serviceConfigurationId, string sandbox)
+        public static async Task<string> GetTestTokenSilentlyAsync(string sandbox)
         {
             if (Client.AuthContext == null)
             {
                 throw new InvalidOperationException("User Info is not found, call Auth.SignInTestAccountAsync first.");
             }
 
-            var xtoken = await Client.GetXTokenAsync(serviceConfigurationId, sandbox, false);
+            var xtoken = await Client.GetXTokenAsync(sandbox, false);
             return PrepareForAuthHeader(xtoken);
         }
 

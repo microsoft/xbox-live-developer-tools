@@ -37,7 +37,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
             // populate the auth error up-front.
             if (ToolAuthentication.Client.AuthContext.AccountSource == DevAccountSource.TestAccount)
             {
-                await ToolAuthentication.GetTestTokenSilentlyAsync(serviceConfigurationId, sandbox);
+                await ToolAuthentication.GetTestTokenSilentlyAsync(sandbox);
             }
             else
             {

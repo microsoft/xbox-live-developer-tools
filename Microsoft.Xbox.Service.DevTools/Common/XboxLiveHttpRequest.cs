@@ -115,7 +115,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
 
                 if (ToolAuthentication.Client.AuthContext.AccountSource == DevAccountSource.TestAccount)
                 {
-                    var xToken = await ToolAuthentication.Client.GetXTokenAsync(scid, this.requestParameters.Sandboxes.First(), refreshToken);
+                    var xToken = await ToolAuthentication.Client.GetXTokenAsync(this.requestParameters.Sandboxes.First(), refreshToken);
                     TestAccount ta = new TestAccount(xToken);
                     userHash = ta.UserHash;
                     token = xToken.Token;

@@ -61,7 +61,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return eToken;
         }
 
-        public virtual async Task<XasTokenResponse> GetXTokenAsync(string scid, string sandbox, bool forceRefresh)
+        public virtual async Task<XasTokenResponse> GetXTokenAsync(string sandbox, bool forceRefresh)
         {
             if (this.AuthContext == null)
             {
@@ -73,7 +73,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             if (!forceRefresh)
             {
                 // return cachaed token if we have one and didn't expire
-                string cacheKey = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandbox);
+                string cacheKey = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, string.Empty, sandbox);
                 this.XTokenCache.Value.TryGetCachedToken(cacheKey, out xToken);
             }
 
@@ -169,56 +169,62 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             // if no sandbox provided, use XDKS.1 for login
             if (string.IsNullOrEmpty(sandbox))
+            {
                 sandbox = "XDKS.1";
+            }
 
-            // Get XASU token with MSA token
-            HttpClient hc = new HttpClient();
-            var hrm = new HttpRequestMessage
+            // Get XASU token
+            XasTokenResponse token = null;
+            using (var tokenRequest = new XboxLiveHttpRequest())
             {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(ClientSettings.Singleton.XASUEndpoint)
-            };
+                HttpResponseMessage response = (await tokenRequest.SendAsync(() =>
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Post, ClientSettings.Singleton.XASUEndpoint);
 
-            hrm.Headers.TryAddWithoutValidation("x-xbl-contract-version", "0");
+                    XasuTokenRequest xasuTokenRequest = new XasuTokenRequest();
+                    xasuTokenRequest.Properties["SiteName"]  = "user.auth.xboxlive.com";
+                    xasuTokenRequest.Properties["RpsTicket"] = $"d={msaToken}";
 
-            XasuTokenRequest xasuTokenRequest = new XasuTokenRequest();
-            xasuTokenRequest.Properties["SiteName"]  = "user.auth.xboxlive.com";
-            xasuTokenRequest.Properties["RpsTicket"] = $"d={msaToken}";
+                    var requestContent = JsonConvert.SerializeObject(xasuTokenRequest);
+                    requestMsg.Content = new StringContent(requestContent);
+                    requestMsg.Content.Headers.ContentType.MediaType = "application/json";
 
-            string requestBody = JsonConvert.SerializeObject(xasuTokenRequest);
-            hrm.Content = new StringContent(requestBody);
-            hrm.Content.Headers.ContentType.MediaType = "application/json";
+                    return requestMsg;
+                })).Response;
 
-            var response = await hc.SendAsync(hrm);
-            response.EnsureSuccessStatusCode();
-            Log.WriteLog("Fetch XASU token succeeded.");
+                // Get XASU token with MSA token
+                response.EnsureSuccessStatusCode();
+                Log.WriteLog("Fetch XASU token succeeded.");
 
-            var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
+                token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
+            }
 
-            // Get XSTS Token
-            hrm = new HttpRequestMessage
+            // Get XSTS token
+            using (var tokenRequest = new XboxLiveHttpRequest(true, Guid.Empty, sandbox))
             {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(ClientSettings.Singleton.XSTSEndpoint)
-            };
+                HttpResponseMessage response = (await tokenRequest.SendAsync(() =>
+                {
+                    var requestMsg = new HttpRequestMessage(HttpMethod.Post, ClientSettings.Singleton.XSTSEndpoint);
 
-            hrm.Headers.TryAddWithoutValidation("x-xbl-contract-version", "0");
+                    XstsTokenRequest xstsTokenRequest = new XstsTokenRequest(sandbox)
+                    {
+                        RelyingParty = "http://xboxlive.com"
+                    };
+                    xstsTokenRequest.Properties["UserTokens"] = new[] { token.Token };
 
-            XstsTokenRequest xstsTokenRequest = new XstsTokenRequest(sandbox)
-            {
-                RelyingParty = "http://xboxlive.com"
-            };
-            xstsTokenRequest.Properties["UserTokens"] = new[] { token.Token };
+                    var requestContent = JsonConvert.SerializeObject(xstsTokenRequest);
+                    requestMsg.Content = new StringContent(requestContent);
+                    requestMsg.Content.Headers.ContentType.MediaType = "application/json";
 
-            requestBody = JsonConvert.SerializeObject(xstsTokenRequest);
-            hrm.Content = new StringContent(requestBody);
-            hrm.Content.Headers.ContentType.MediaType = "application/json";
+                    return requestMsg;
+                })).Response;
 
-            response = await hc.SendAsync(hrm);
-            response.EnsureSuccessStatusCode();
-            Log.WriteLog("Fetch XSTS token succeeded.");
+                // Get XASU token with MSA token
+                response.EnsureSuccessStatusCode();
+                Log.WriteLog("Fetch XSTS token succeeded.");
 
-            token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
+                token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
+            }
 
             string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, string.Empty, sandbox);
             this.XTokenCache.Value.UpdateToken(key, token);
