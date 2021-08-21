@@ -10,7 +10,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     /// </summary>
     public class TestAccount
     {
-        internal TestAccount(XdtsTokenResponse xtoken)
+        internal TestAccount(XasTokenResponse xtoken)
         {
             object xui = null;
 

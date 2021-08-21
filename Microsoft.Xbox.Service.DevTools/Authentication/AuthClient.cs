@@ -61,14 +61,14 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return eToken;
         }
 
-        public virtual async Task<XdtsTokenResponse> GetXTokenAsync(string scid, string sandbox, bool forceRefresh)
+        public virtual async Task<XasTokenResponse> GetXTokenAsync(string scid, string sandbox, bool forceRefresh)
         {
             if (this.AuthContext == null)
             {
                 throw new InvalidOperationException("User Info is not found.");
             }
 
-            XdtsTokenResponse xToken = null;
+            XasTokenResponse xToken = null;
 
             if (!forceRefresh)
             {
@@ -80,7 +80,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             if (xToken == null)
             {
                 var msaToken = await this.AuthContext.AcquireTokenSilentAsync();
-                var xstsToken = await this.FetchXstsToken(msaToken, scid, sandbox);
+                var xstsToken = await this.FetchXstsToken(msaToken, sandbox);
                 xToken = xstsToken;
             }
 
@@ -105,7 +105,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
 
             string aadToken = await this.AuthContext.AcquireTokenAsync();
-            XdtsTokenResponse token = await this.FetchXdtsToken(aadToken, string.Empty, null);
+            XasTokenResponse token = await this.FetchXdtsToken(aadToken, string.Empty, null);
 
             var account = new DevAccount(token, this.AuthContext.AccountSource, tenant);
             return account;
@@ -129,13 +129,13 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
 
             string msaToken = await this.AuthContext.AcquireTokenAsync();
-            XdtsTokenResponse token = await this.FetchXstsToken(msaToken, string.Empty, null);
+            XasTokenResponse token = await this.FetchXstsToken(msaToken, null);
 
             var account = new TestAccount(token);
             return account;
         }
 
-        protected async Task<XdtsTokenResponse> FetchXdtsToken(string aadToken, string scid, IEnumerable<string> sandboxes)
+        protected async Task<XasTokenResponse> FetchXdtsToken(string aadToken, string scid, IEnumerable<string> sandboxes)
         {
             using (var tokenRequest = new XboxLiveHttpRequest())
             {
@@ -156,7 +156,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 response.EnsureSuccessStatusCode();
                 Log.WriteLog("Fetch xdts Token succeeded.");
 
-                var token = await response.Content.DeserializeJsonAsync<XdtsTokenResponse>();
+                var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
 
                 string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.UpdateToken(key, token);
@@ -165,7 +165,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
         }
 
-        protected async Task<XdtsTokenResponse> FetchXstsToken(string msaToken, string scid, string sandbox)
+        protected async Task<XasTokenResponse> FetchXstsToken(string msaToken, string sandbox)
         {
             // if no sandbox provided, use XDKS.1 for login
             if (string.IsNullOrEmpty(sandbox))
@@ -181,9 +181,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
             hrm.Headers.TryAddWithoutValidation("x-xbl-contract-version", "0");
 
-            string requestBody = "{\"RelyingParty\":\"http://auth.xboxlive.com\",\"TokenType\" : \"JWT\",\"Properties\":" +
-                                 "{\"AuthMethod\":\"RPS\",\"SiteName\" : \"user.auth.xboxlive.com\",\"RpsTicket\":" +
-                                 "\"d=" + msaToken + "\"}}";
+            XasuTokenRequest xasuTokenRequest = new XasuTokenRequest();
+            xasuTokenRequest.Properties["SiteName"]  = "user.auth.xboxlive.com";
+            xasuTokenRequest.Properties["RpsTicket"] = $"d={msaToken}";
+
+            string requestBody = JsonConvert.SerializeObject(xasuTokenRequest);
             hrm.Content = new StringContent(requestBody);
             hrm.Content.Headers.ContentType.MediaType = "application/json";
 
@@ -191,7 +193,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             response.EnsureSuccessStatusCode();
             Log.WriteLog("Fetch XASU token succeeded.");
 
-            var token = await response.Content.DeserializeJsonAsync<XdtsTokenResponse>();
+            var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
 
             // Get XSTS Token
             hrm = new HttpRequestMessage
@@ -202,8 +204,13 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
             hrm.Headers.TryAddWithoutValidation("x-xbl-contract-version", "0");
 
-            requestBody = "{\"RelyingParty\":\"http://xboxlive.com\",\"TokenType\":\"JWT\",\"Properties\":{\"UserTokens\":[\"" + token.Token + "\"],\"SandboxId\":\"" + sandbox + "\",}}";
+            XstsTokenRequest xstsTokenRequest = new XstsTokenRequest(sandbox)
+            {
+                RelyingParty = "http://xboxlive.com"
+            };
+            xstsTokenRequest.Properties["UserTokens"] = new[] { token.Token };
 
+            requestBody = JsonConvert.SerializeObject(xstsTokenRequest);
             hrm.Content = new StringContent(requestBody);
             hrm.Content.Headers.ContentType.MediaType = "application/json";
 
@@ -211,9 +218,9 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             response.EnsureSuccessStatusCode();
             Log.WriteLog("Fetch XSTS token succeeded.");
 
-            token = await response.Content.DeserializeJsonAsync<XdtsTokenResponse>();
+            token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
 
-            string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandbox);
+            string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, string.Empty, sandbox);
             this.XTokenCache.Value.UpdateToken(key, token);
 
             return token;

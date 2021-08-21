@@ -81,7 +81,11 @@
     <Compile Include="Authentication\TestAccount.cs" />
     <Compile Include="Authentication\ToolAuthentication.cs" />
     <Compile Include="Authentication\AuthTokenCache.cs" />
+    <Compile Include="Authentication\XasTokenRequest.cs" />
+    <Compile Include="Authentication\XasTokenResponse.cs" />
+    <Compile Include="Authentication\XasuTokenRequest.cs" />
     <Compile Include="Authentication\XdtsTokenRequest.cs" />
+    <Compile Include="Authentication\XstsTokenRequest.cs" />
     <Compile Include="Common\Log.cs" />
     <Compile Include="Common\RequestParameters.cs" />
     <Compile Include="Common\HelperExtensions.cs" />
@@ -99,7 +103,6 @@
     <Compile Include="PlayerReset\UserResetResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Common\ClientSettings.cs" />
-    <Compile Include="Authentication\XdtsTokenResponse.cs" />
     <Compile Include="TitleStorage\ConnectedStorage.cs" />
     <Compile Include="TitleStorage\ExtendedAtomInfo.cs" />
     <Compile Include="TitleStorage\GlobalStorageQuotaInfo.cs" />

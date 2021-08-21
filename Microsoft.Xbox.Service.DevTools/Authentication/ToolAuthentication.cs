@@ -198,7 +198,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return "XBL3.0 x=-;" + etoken;
         }
 
-        internal static string PrepareForAuthHeader(XdtsTokenResponse token)
+        internal static string PrepareForAuthHeader(XasTokenResponse token)
         {
             TestAccount ta = new TestAccount(token);
             return $"XBL3.0 x={ta.UserHash};{token.Token}";

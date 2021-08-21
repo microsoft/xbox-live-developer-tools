@@ -8,7 +8,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     /// </summary>
     public class DevAccount
     {
-        internal DevAccount(XdtsTokenResponse etoken, DevAccountSource accountSource, string tenant)
+        internal DevAccount(XasTokenResponse etoken, DevAccountSource accountSource, string tenant)
         {
             if (etoken.DisplayClaims.TryGetValue("eid", out object value))
             {

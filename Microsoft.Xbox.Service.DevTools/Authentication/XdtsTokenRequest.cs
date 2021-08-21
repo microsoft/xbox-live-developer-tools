@@ -6,7 +6,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System.Collections.Generic;
     using DevTools.Common;
 
-    internal class XdtsTokenRequest
+    internal class XdtsTokenRequest : XasTokenRequest
     {
         public XdtsTokenRequest(string scid, IEnumerable<string> sandboxes)
         {
@@ -20,11 +20,5 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 this.Properties["Sandboxes"] = string.Join(" ", sandboxes);
             }
         }
-
-        public string TokenType { get; set; } = ClientSettings.Singleton.XDTSToolTokenType;
-
-        public string RelyingParty { get; set; } = ClientSettings.Singleton.XDTSToolRelyingParty;
-
-        public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
     }
 }
