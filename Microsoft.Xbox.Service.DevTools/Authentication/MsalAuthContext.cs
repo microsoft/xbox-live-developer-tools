@@ -17,7 +17,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public MsalAuthContext(string userName)
         {
-            this.publicClientApplication = new PublicClientApplication(ClientSettings.Singleton.MsalXboxLiveClientId, "https://login.microsoftonline.com/consumers/");
+            this.publicClientApplication = new PublicClientApplication(ClientSettings.Singleton.MsalXboxLiveClientId, ClientSettings.Singleton.MsalLiveAuthority);
 
             this.UserName = userName;
             this.cachedAccount = this.publicClientApplication.Users.SingleOrDefault(

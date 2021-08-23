@@ -73,5 +73,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         public string XSTSEndpoint { get; private set; } = "https://xsts.auth.xboxlive.com/xsts/authorize";
 
         public string MsalXboxLiveClientId { get; private set; } = "b1eab458-325b-45a5-9692-ad6079c1eca8";
+
+        public string MsalLiveAuthority { get; private set; } = "https://login.microsoftonline.com/consumers/";
     }
 }
