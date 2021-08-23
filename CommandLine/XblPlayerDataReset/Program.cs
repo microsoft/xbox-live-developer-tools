@@ -31,7 +31,7 @@ namespace XblPlayerDataReset
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: player data reset failed");
+                Console.WriteLine("Error: player data reset failed:");
                 Console.WriteLine(ex.Message);
                 return -1;
             }
