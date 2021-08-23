@@ -44,7 +44,7 @@ namespace XblPlayerDataReset
                 if (provider.Status == ResetProviderStatus.CompletedSuccess)
                 {
                     Console.WriteLine($"\t{provider.Provider}, Status: {provider.Status} " +
-                                      (provider.Status == ResetProviderStatus.CompletedSuccess? $"ErrorMsg: {provider.ErrorMessage}" : string.Empty));
+                                      (provider.Status == ResetProviderStatus.CompletedSuccess? $"Error: {provider.ErrorMessage}" : string.Empty));
                 }
             }
         }
@@ -61,7 +61,7 @@ namespace XblPlayerDataReset
 
             if (!string.IsNullOrEmpty(options.TestAccount))
             {
-                TestAccount testAccount = await ToolAuthentication.SignInTestAccountAsync(options.TestAccount);
+                TestAccount testAccount = await ToolAuthentication.SignInTestAccountAsync(options.TestAccount, options.Sandbox);
                 if (testAccount == null)
                 {
                     Console.Error.WriteLine($"Failed to log in to test account {options.TestAccount}.");
@@ -77,7 +77,7 @@ namespace XblPlayerDataReset
                 DevAccount account = ToolAuthentication.LoadLastSignedInUser();
                 if (account == null)
                 {
-                    Console.Error.WriteLine("Didn't find dev sign in info, please use \"XblDevAccount.exe signin\" to initiate.");
+                    Console.Error.WriteLine("Resetting by XUID requires a signed in Partner Center account. Please use \"XblDevAccount.exe signin\" to log in.");
                     return -1;
                 }
 
@@ -86,7 +86,7 @@ namespace XblPlayerDataReset
                 Console.WriteLine($"Using Dev account {account.Name} from {account.AccountSource}");
             }
 
-            Console.WriteLine($"Resetting player {xuid} data for scid {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
+            Console.WriteLine($"Resetting data for player with XUID {xuid} for SCID {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
 
             try
             {
@@ -97,10 +97,10 @@ namespace XblPlayerDataReset
                 switch (result.OverallResult)
                 {
                     case ResetOverallResult.Succeeded:
-                        Console.WriteLine("Resetting has completed successfully.");
+                        Console.WriteLine("Player data has been reset successfully.");
                         return 0;
                     case ResetOverallResult.CompletedError:
-                        Console.WriteLine("Resetting has completed with some error:");
+                        Console.WriteLine("An error occurred while resetting player data:");
                         if (!string.IsNullOrEmpty(result.HttpErrorMessage))
                         {
                             Console.WriteLine($"\t{result.HttpErrorMessage}");
@@ -109,11 +109,11 @@ namespace XblPlayerDataReset
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
                     case ResetOverallResult.Timeout:
-                        Console.WriteLine("Resetting has timed out:");
+                        Console.WriteLine("Player data reset has timed out:");
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
                     default:
-                        Console.WriteLine("Resetting has completed with an unknown error");
+                        Console.WriteLine("An unknown error occurred while resetting player data.");
                         return -1;
                 }
             }
@@ -124,7 +124,7 @@ namespace XblPlayerDataReset
                 if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
                 {
                     Console.WriteLine(
-                        $"Unable to authorize the account with XboxLive service with scid : {options.ServiceConfigurationId} and sandbox : {options.Sandbox}, please contact your administrator.");
+                        $"Unable to authorize the account with Xbox Live and scid : {options.ServiceConfigurationId} and sandbox : {options.Sandbox}, please contact your administrator.");
                 }
                 else if (ex.Message.Contains(Convert.ToString((int) HttpStatusCode.Forbidden)))
                 {

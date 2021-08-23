@@ -111,7 +111,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return account;
         }
 
-        public async Task<TestAccount> SignInTestAccountAsync()
+        public async Task<TestAccount> SignInTestAccountAsync(string sandbox)
         {
             if (this.AuthContext == null)
             {
@@ -129,7 +129,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
 
             string msaToken = await this.AuthContext.AcquireTokenAsync();
-            XasTokenResponse token = await this.FetchXstsToken(msaToken, null);
+            XasTokenResponse token = await this.FetchXstsToken(msaToken, sandbox);
 
             var account = new TestAccount(token);
             return account;
@@ -167,12 +167,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         protected async Task<XasTokenResponse> FetchXstsToken(string msaToken, string sandbox)
         {
-            // if no sandbox provided, use XDKS.1 for login
-            if (string.IsNullOrEmpty(sandbox))
-            {
-                sandbox = "XDKS.1";
-            }
-
             // Get XASU token
             XasTokenResponse token = null;
             using (var tokenRequest = new XboxLiveHttpRequest())
@@ -200,7 +194,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
 
             // Get XSTS token
-            using (var tokenRequest = new XboxLiveHttpRequest(true, Guid.Empty, sandbox))
+            using (var tokenRequest = new XboxLiveHttpRequest())
             {
                 HttpResponseMessage response = (await tokenRequest.SendAsync(() =>
                 {

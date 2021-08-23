@@ -130,11 +130,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         /// </summary>
         /// <param name="userName">The user name of the account, optional.</param>
         /// <returns>TestAccount object contains test account info.</returns>
-        public static async Task<TestAccount> SignInTestAccountAsync(string userName)
+        public static async Task<TestAccount> SignInTestAccountAsync(string userName, string sandbox)
         {
             SetAuthInfo(DevAccountSource.TestAccount, userName, "consumers");
 
-            TestAccount testAccount = await Client.SignInTestAccountAsync();
+            TestAccount testAccount = await Client.SignInTestAccountAsync(sandbox);
             return testAccount;
         }
 
