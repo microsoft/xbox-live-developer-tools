@@ -35,7 +35,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             get { return this.publicClientApplication.Users.FirstOrDefault() != null; }
         }
 
-        public string Tenant => "common";
+        public string Tenant => "consumers";
 
         public async Task<string> AcquireTokenSilentAsync()
         {
