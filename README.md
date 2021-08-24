@@ -62,7 +62,7 @@ email address, or to reset an account by XUID, first run XblDevAccount.exe to lo
 #### Usage:
 
 ```
-XblPlayerDataReset.exe –scid xxx --sandbox xxx [--xuid xxxx] [--user XXX@xboxtest.com]
+XblPlayerDataReset.exe --scid xxx --sandbox xxx [--xuid xxxx] [--user XXX@xboxtest.com]
 ```
 
 ***Success output example:***
