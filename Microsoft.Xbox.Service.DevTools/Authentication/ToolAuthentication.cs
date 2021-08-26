@@ -82,6 +82,22 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         }
 
         /// <summary>
+        /// Attempt to fetch a test xToken without triggering any UI.
+        /// </summary>
+        /// <param name="sandbox">The target sandbox for the XToken</param>
+        /// <returns>Developer eToken for specific serviceConfigurationId and sandbox</returns>
+        public static async Task<string> GetTestTokenSilentlyAsync(string sandbox)
+        {
+            if (Client.AuthContext == null)
+            {
+                throw new InvalidOperationException("User Info is not found, call Auth.SignInTestAccountAsync first.");
+            }
+
+            var xtoken = await Client.GetXTokenAsync(sandbox, false);
+            return PrepareForAuthHeader(xtoken);
+        }
+
+        /// <summary>
         /// Attempt to sign in developer account, UI will be triggered if necessary 
         /// </summary>
         /// <param name="accountSource">The account source where the developer account was registered.</param>
@@ -107,6 +123,19 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             SaveLastSignedInUser(devAccount);
 
             return devAccount;
+        }
+
+        /// <summary>
+        /// Attempt to sign in a test account, UI will be triggered if necessary 
+        /// </summary>
+        /// <param name="userName">The user name of the account, optional.</param>
+        /// <returns>TestAccount object contains test account info.</returns>
+        public static async Task<TestAccount> SignInTestAccountAsync(string userName, string sandbox)
+        {
+            SetAuthInfo(DevAccountSource.TestAccount, userName, "consumers");
+
+            TestAccount testAccount = await Client.SignInTestAccountAsync(sandbox);
+            return testAccount;
         }
 
         /// <summary>
@@ -156,6 +185,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                     return new AdalAuthContext(userName, tenant);
                 case DevAccountSource.XboxDeveloperPortal:
                     throw new ArgumentException("XDP is no longer a supported developer type. Sign in with a Windows Developer Center account.");
+                case DevAccountSource.TestAccount:
+                    return new MsalAuthContext(userName);
                 default:
                     throw new ArgumentException("Unsupported developer type");
             }
@@ -164,6 +195,12 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         internal static string PrepareForAuthHeader(string etoken)
         {
             return "XBL3.0 x=-;" + etoken;
+        }
+
+        internal static string PrepareForAuthHeader(XasTokenResponse token)
+        {
+            TestAccount ta = new TestAccount(token);
+            return $"XBL3.0 x={ta.UserHash};{token.Token}";
         }
     }
 }

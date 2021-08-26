@@ -35,7 +35,14 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         {
             // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
             // populate the auth error up-front.
-            await ToolAuthentication.GetDevTokenSilentlyAsync(serviceConfigurationId, sandbox);
+            if (ToolAuthentication.Client.AuthContext.AccountSource == DevAccountSource.TestAccount)
+            {
+                await ToolAuthentication.GetTestTokenSilentlyAsync(sandbox);
+            }
+            else
+            {
+                await ToolAuthentication.GetDevTokenSilentlyAsync(serviceConfigurationId, sandbox);
+            }
 
             return await SubmitJobAndPollStatus(sandbox, serviceConfigurationId, xboxUserId);
         }
@@ -173,7 +180,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 
                 var jobstatus = await xblResponse.Response.Content.DeserializeJsonAsync<JobStatusResponse>();
 
-                Log.WriteLog($"Checking {userResetJob.JobId} job stauts: {jobstatus.Status}");
+                Log.WriteLog($"Checking {userResetJob.JobId} job status: {jobstatus.Status}");
 
                 return jobstatus;
             }

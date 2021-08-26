@@ -6,7 +6,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System;
     using System.Collections.Generic;
 
-    internal class XdtsTokenResponse
+    internal class XasTokenResponse
     {
         /// <summary>
         /// Gets or sets the issue instant for the token.

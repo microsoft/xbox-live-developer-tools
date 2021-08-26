@@ -67,5 +67,13 @@ namespace Microsoft.Xbox.Services.DevTools.Common
         public string XAchEndpoint { get; private set; } = "https://xach.mgt.xboxlive.com/";
 
         public string XFusEndpoint { get; private set; } = "https://upload.xboxlive.com/";
+
+        public string XASUEndpoint { get; private set; } = "https://user.auth.xboxlive.com/user/authenticate";
+
+        public string XSTSEndpoint { get; private set; } = "https://xsts.auth.xboxlive.com/xsts/authorize";
+
+        public string MsalXboxLiveClientId { get; private set; } = "b1eab458-325b-45a5-9692-ad6079c1eca8";
+
+        public string MsalLiveAuthority { get; private set; } = "https://login.microsoftonline.com/consumers/";
     }
 }

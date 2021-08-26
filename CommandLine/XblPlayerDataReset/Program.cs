@@ -31,7 +31,7 @@ namespace XblPlayerDataReset
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: player data reset failed");
+                Console.WriteLine("Error: player data reset failed:");
                 Console.WriteLine(ex.Message);
                 return -1;
             }
@@ -44,42 +44,63 @@ namespace XblPlayerDataReset
                 if (provider.Status == ResetProviderStatus.CompletedSuccess)
                 {
                     Console.WriteLine($"\t{provider.Provider}, Status: {provider.Status} " +
-                                      (provider.Status == ResetProviderStatus.CompletedSuccess? $"ErrorMsg: {provider.ErrorMessage}" : string.Empty));
+                                      (provider.Status == ResetProviderStatus.CompletedSuccess? $"Error: {provider.ErrorMessage}" : string.Empty));
                 }
             }
         }
 
         private static async Task<int> OnReset(ResetOptions options)
         {
+            string xuid = string.Empty;
+
             if (options == null)
             {
                 Console.WriteLine("Unknown parameter error");
                 return -1;
             }
 
-            DevAccount account = ToolAuthentication.LoadLastSignedInUser();
-            if (account == null)
+            if (!string.IsNullOrEmpty(options.TestAccount))
             {
-                Console.Error.WriteLine("Didn't found dev sign in info, please use \"XblDevAccount.exe signin\" to initiate.");
-                return -1;
+                TestAccount testAccount = await ToolAuthentication.SignInTestAccountAsync(options.TestAccount, options.Sandbox);
+                if (testAccount == null)
+                {
+                    Console.Error.WriteLine($"Failed to log in to test account {options.TestAccount}.");
+                    return -1;
+                }
+
+                xuid = testAccount.Xuid;
+
+                Console.WriteLine($"Using Test account {options.TestAccount} ({testAccount.Gamertag}) with xuid {xuid}");
+            }
+            else if (!string.IsNullOrEmpty(options.XboxUserId))
+            {
+                DevAccount account = ToolAuthentication.LoadLastSignedInUser();
+                if (account == null)
+                {
+                    Console.Error.WriteLine("Resetting by XUID requires a signed in Partner Center account. Please use \"XblDevAccount.exe signin\" to log in.");
+                    return -1;
+                }
+
+                xuid = options.XboxUserId;
+
+                Console.WriteLine($"Using Dev account {account.Name} from {account.AccountSource}");
             }
 
-            Console.WriteLine($"Using Dev account {account.Name} from {account.AccountSource}");
-            Console.WriteLine($"Resetting player {options.XboxUserId} data for scid {options.ServiceConfigurationId}, sandbox {options.Sandbox}");
+            Console.WriteLine($"Resetting data for player with XUID {xuid} for SCID {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
 
             try
             {
                 UserResetResult result = await PlayerReset.ResetPlayerDataAsync(
                     options.ServiceConfigurationId,
-                    options.Sandbox, options.XboxUserId);
+                    options.Sandbox, xuid);
 
                 switch (result.OverallResult)
                 {
                     case ResetOverallResult.Succeeded:
-                        Console.WriteLine("Resetting has completed successfully.");
+                        Console.WriteLine("Player data has been reset successfully.");
                         return 0;
                     case ResetOverallResult.CompletedError:
-                        Console.WriteLine("Resetting has completed with some error:");
+                        Console.WriteLine("An error occurred while resetting player data:");
                         if (!string.IsNullOrEmpty(result.HttpErrorMessage))
                         {
                             Console.WriteLine($"\t{result.HttpErrorMessage}");
@@ -88,11 +109,11 @@ namespace XblPlayerDataReset
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
                     case ResetOverallResult.Timeout:
-                        Console.WriteLine("Resetting has timed out:");
+                        Console.WriteLine("Player data reset has timed out:");
                         PrintProviderDetails(result.ProviderStatus);
                         return -1;
                     default:
-                        Console.WriteLine("has completed with unknown error");
+                        Console.WriteLine("An unknown error occurred while resetting player data.");
                         return -1;
                 }
             }
@@ -103,7 +124,7 @@ namespace XblPlayerDataReset
                 if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
                 {
                     Console.WriteLine(
-                        $"Unable to authorize the account with XboxLive service with scid : {options.ServiceConfigurationId} and sandbox : {options.Sandbox}, please contact your administrator.");
+                        $"Unable to authorize the account with Xbox Live and scid : {options.ServiceConfigurationId} and sandbox : {options.Sandbox}, please contact your administrator.");
                 }
                 else if (ex.Message.Contains(Convert.ToString((int) HttpStatusCode.Forbidden)))
                 {
@@ -129,16 +150,20 @@ namespace XblPlayerDataReset
                 HelpText = "The target sandbox for player resetting")]
             public string Sandbox { get; set; }
 
-            [Option('x', "xuid", Required = true,
-                HelpText = "The Xbox Live user ID of the player to be reset")]
+            [Option('x', "xuid", Required = false, SetName = "xuid",
+                HelpText = "The Xbox Live User ID (XUID) of the player to be reset")]
             public string XboxUserId { get; set; }
+
+            [Option('u', "user", Required = false, SetName = "testacct",
+                HelpText = "The email address of the test account to be reset")]
+            public string TestAccount { get; set; }
 
             [Usage(ApplicationAlias = "XblPlayerDataReset")]
             public static IEnumerable<Example> Examples
             {
                 get
                 {
-                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx" });
+                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx", TestAccount = "xxx@xboxtest.com" });
                 }
             }
         }

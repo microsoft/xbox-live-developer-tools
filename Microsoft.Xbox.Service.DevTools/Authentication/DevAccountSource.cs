@@ -16,6 +16,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         /// <summary>
         /// Account is from Windows Dev Center: developer.microsoft.com/windows
         /// </summary>
-        WindowsDevCenter = 1
+        WindowsDevCenter = 1,
+
+        /// <summary>
+        /// Account is a test account generated from Windows Dev Center: developer.microsoft.com/windows
+        /// </summary>
+        TestAccount = 2
     }
 }

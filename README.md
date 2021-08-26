@@ -1,6 +1,6 @@
-## Welcome!
+## Welcome
 
-Please refer to the official [Xbox Live Tools documentation](https://docs.microsoft.com/en-us/gaming/xbox-live/test-release/tools/live-tools) site for further information.
+Please refer to the official [Xbox Live Tools documentation](https://docs.microsoft.com/gaming/xbox-live/test-release/tools/live-tools) site for further information.
 
 The Microsoft Xbox Live Tooling API provides a way to:
 
@@ -10,24 +10,28 @@ The Microsoft Xbox Live Tooling API provides a way to:
 
 To get access to Xbox Live services you must be a managed developer, enrolled in the [ID@Xbox](http://www.xbox.com/Developers/id) program or participating in the [Xbox Live Creators Program](https://aka.ms/xblcp). To learn more about these programs, please refer to the [developer program overview](https://docs.microsoft.com/windows/uwp/xbox-live/developer-program-overview).
 
-
-
 ## Repo Structure
+
 * [/Microsoft.Xbox.Service.DevTools/](Microsoft.Xbox.Service.DevTools): Xbox Live tooling dll, contains code for talking to Xbox Live service tooling endpoints.
 * [/CommandLine/](CommandLine): Command line executables for Xbox Live tooling.
 * [/Tests/](Tests): Test code.
 
 ## Command Line Executable Usage:
+
 ### XblDevAccount.exe
+
 This executable is used to signin/out dev accounts and to save the credentials to be used across other Xbox Live executables that require dev credentials. 
 
-#### Usage:
+#### Usage
+
 ***signin:*** This command will pop up UI if needed. The last used account information will be saved for further use across all other executables.
-``` 
+
+```DOS
 XblDevAccount.exe signin --name xxx 
 ```
 
 ***Success output example:***
+
 ```
 Developer account {Name} has successfully signed in. 
     ID: {id}
@@ -50,48 +54,53 @@ Developer account {Name} has successfully signed out.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-### PlayerReset.exe 
-PlayerReset is used to reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history. XblDevAccount.exe signin is required to be called at least once before first use. 
+### XblPlayerDataReset.exe 
+
+XblPlayerDataReset is used to reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history. An individual account can be reset by its
+email address, or to reset an account by XUID, first run XblDevAccount.exe to log in with a Partner Center account.
 
 #### Usage:
+
 ```
-PlayerReset.exe –scid xxx --sandbox xxx --xuid xxxx
+XblPlayerDataReset.exe --scid xxx --sandbox xxx [--xuid xxxx] [--user XXX@xboxtest.com]
 ```
 
-***Success output example:*** 
+***Success output example:***
 ```
-Player {email} data reset has completed successfully.
+Player data has been reset successfully.
 ```
 
 ***Error output example:***
 ```
-Player {email} data reset has completed with errors:
+An error occurred while resetting player data:
     Leaderboard reset contains error: {errorMessage}
 ```
-
-
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### GlobalStorage.exe 
 GlobalStorage.exe is used to manage title global storage in test sandboxes, before publish to RETAIL. XblDevAccount.exe signin is required to be called at least once before first use.
 
 #### Usage:
+
 ***quota:*** Get title global storage quota information.
+
 ```
 GlobalStorage.exe quota –scid xxx --sandbox xxx
 ```
 
+***Success output example:***
 
-Success output:
 ```
 Your global storage quota: used bytes {usedBytes}, total bytes {totalBytes}
 ```
 
 ***list:*** Gets a list of blob meta-data under a given path for the title global storage.
+
 ```
 GlobalStorage list --scid xxx --max-items 10 --path path --sandbox xxx
 ```
-Success output:
+
+***Success output example:***
+
 ```
 Total 12 items found, Displaying item 0 to 12
         test.txt,       Config,         2
@@ -100,30 +109,28 @@ Total 12 items found, Displaying item 0 to 12
 ```
 
 ***delete:*** Deletes a blob from title storage.
+
 ```
 GlobalStorage delete --scid xxx --blob-path foo\bar\blob.txt --sandbox xxx --type Json
 ```
 
 ***download:*** Downloads blob data from title storage.
+
 ```
 GlobalStorage download --scid xxx --output c:\test.txt --blob-path \text.txt --sandbox xxx --type Json
 ```
 
 ***upload:*** Uploads blob data to title storage.
+
 ```
 GlobalStorage upload --scid xxx --file c:\test.txt --blob-path \text.txt --sandbox xxx --type Json
 ```
 
+### XblConfig.exe
 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-### XblConfig.exe 
 XblConfig.exe is used to manage Xbox Live configuration data for games developed in Windows Dev Center, also known as Config as Source. See the [documentation](CONFIGASSOURCE.md) for usage guidelines.
 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-## Contribute Back!
+## Contribute Back
 
 Is there a feature missing that you'd like to see, or found a bug that you have a fix for? Or do you have an idea or just interest in helping out in building the library? Let us know and we'd love to work with you. For a good starting point on where we are headed and feature ideas, take a look at our [requested features and bugs](../../issues).  
 
@@ -136,10 +143,11 @@ Big or small we'd like to take your contributions back to help improve the Xbox 
 We'd love to get your review score, whether good or bad, but even more than that, we want to fix your problem. If you submit your issue as a Review, we won't be able to respond to your problem and ask any follow-up questions that may be necessary. The most efficient way to do that is to open a an issue in our [issue tracker](../../issues).  
 
 ### Xbox Live GitHub projects
-*   [Xbox Live Service API for C++](https://github.com/Microsoft/xbox-live-api)
-*   [Xbox Live Samples](https://github.com/Microsoft/xbox-live-samples)
-*   [Xbox Live Resiliency Fiddler Plugin](https://github.com/Microsoft/xbox-live-resiliency-fiddler-plugin)
-*   [Xbox Live Trace Analyzer](https://github.com/Microsoft/xbox-live-trace-analyzer)
-*   [Xbox Live Developer Tools](https://github.com/Microsoft/xbox-live-developer-tools)
+
+* [Xbox Live Service API for C++](https://github.com/Microsoft/xbox-live-api)
+* [Xbox Live Samples](https://github.com/Microsoft/xbox-live-samples)
+* [Xbox Live Resiliency Fiddler Plugin](https://github.com/Microsoft/xbox-live-resiliency-fiddler-plugin)
+* [Xbox Live Trace Analyzer](https://github.com/Microsoft/xbox-live-trace-analyzer)
+* [Xbox Live Developer Tools](https://github.com/Microsoft/xbox-live-developer-tools)
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.

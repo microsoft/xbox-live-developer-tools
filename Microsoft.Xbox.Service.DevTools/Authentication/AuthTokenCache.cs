@@ -10,26 +10,28 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using Microsoft.Xbox.Services.DevTools.Common;
     using Newtonsoft.Json;
 
-    internal class XdtsTokenCache
+    internal class AuthTokenCache
     {
-        private const string CacheFile = "xdts.cache";
+        private string cacheFile;
 
         private static readonly object TokenLock = new object();
 
-        public XdtsTokenCache()
+        public AuthTokenCache(string cacheFile)
         {
+            this.cacheFile = cacheFile;
+
             Directory.CreateDirectory(ClientSettings.Singleton.CacheFolder);
 
             this.LoadTokenCache();
         }
 
-        public Dictionary<string, XdtsTokenResponse> CachedTokens { get; set; } = new Dictionary<string, XdtsTokenResponse>();
+        public Dictionary<string, XasTokenResponse> CachedTokens { get; set; } = new Dictionary<string, XasTokenResponse>();
 
-        public void UpdateToken(string key, XdtsTokenResponse token)
+        public void UpdateToken(string key, XasTokenResponse token)
         {
             lock (TokenLock)
             {
-                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, CacheFile);
+                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
                 this.CachedTokens[key] = token;
                 File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(this.CachedTokens));
             }
@@ -38,7 +40,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         public bool TryGetCachedToken(string key, out string token)
         {
             token = string.Empty;
-            if (this.CachedTokens.TryGetValue(key, out XdtsTokenResponse cachedToken)
+            if (this.CachedTokens.TryGetValue(key, out XasTokenResponse cachedToken)
                 && cachedToken != null && !string.IsNullOrEmpty(cachedToken.Token) && cachedToken.NotAfter >= DateTime.UtcNow)
             {
                 Log.WriteLog($"Using token from cache for {key}.");
@@ -50,10 +52,29 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return false;
         }
 
+        public bool TryGetCachedToken(string key, out XasTokenResponse token)
+        {
+            token = null;
+            if (this.CachedTokens.TryGetValue(key, out XasTokenResponse cachedToken)
+                && cachedToken != null && !string.IsNullOrEmpty(cachedToken.Token) && cachedToken.NotAfter >= DateTime.UtcNow)
+            {
+                Log.WriteLog($"Using token from cache for {key}.");
+
+                token = cachedToken;
+                return true;
+            }
+
+            return false;
+        }
+
         public static string GetCacheKey(string userName, DevAccountSource accountSource, string tenant, string scid, IEnumerable<string> sandboxes)
         {
-            string keyFullstring = userName + accountSource.ToString() + tenant + scid + (sandboxes == null? string.Empty : string.Join(" ", sandboxes));
+            return GetCacheKey(userName, accountSource, tenant, scid, sandboxes == null? string.Empty : string.Join(" ", sandboxes));
+        }
 
+        public static string GetCacheKey(string userName, DevAccountSource accountSource, string tenant, string scid, string sandbox)
+        {
+            string keyFullstring = userName + accountSource.ToString() + tenant + scid + sandbox;
             return keyFullstring.GetHashCode().ToString();
         }
 
@@ -71,9 +92,9 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             lock (TokenLock)
             {
-                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, CacheFile);
+                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
 
-                Dictionary<string, XdtsTokenResponse> cache = JsonConvert.DeserializeObject<Dictionary<string, XdtsTokenResponse>>(File.Exists(cacheFilePath) 
+                Dictionary<string, XasTokenResponse> cache = JsonConvert.DeserializeObject<Dictionary<string, XasTokenResponse>>(File.Exists(cacheFilePath) 
                     ? File.ReadAllText(cacheFilePath) : string.Empty);
 
                 if (cache != null)
@@ -85,7 +106,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 }
                 else
                 {
-                    this.CachedTokens = new Dictionary<string, XdtsTokenResponse>();
+                    this.CachedTokens = new Dictionary<string, XasTokenResponse>();
                 }
             }
         }

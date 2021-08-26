@@ -110,9 +110,23 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             if (this.requestParameters.AutoAttachAuthHeader)
             {
                 string scid = (this.requestParameters.Scid == Guid.Empty) ? null : this.requestParameters.Scid.ToString();
-                string eToken = await ToolAuthentication.Client.GetETokenAsync(scid, this.requestParameters.Sandboxes, refreshToken);
+                string token = string.Empty;
+                string userHash = "-";
+
+                if (ToolAuthentication.Client.AuthContext.AccountSource == DevAccountSource.TestAccount)
+                {
+                    var xToken = await ToolAuthentication.Client.GetXTokenAsync(this.requestParameters.Sandboxes.First(), refreshToken);
+                    TestAccount ta = new TestAccount(xToken);
+                    userHash = ta.UserHash;
+                    token = xToken.Token;
+                }
+                else
+                {
+                    token = await ToolAuthentication.Client.GetETokenAsync(scid, this.requestParameters.Sandboxes, refreshToken);
+                }
+
                 request.Headers.Remove("Authorization");
-                request.Headers.Add("Authorization", "XBL3.0 x=-;" + eToken);
+                request.Headers.Add("Authorization", $"XBL3.0 x={userHash};{token}");
             }
 
             request.Headers.UserAgent.ParseAdd(UserAgent);
