@@ -46,7 +46,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
             if (!forceRefresh)
             {
-                // return cachaed token if we have one and didn't expire
+                // return cached token if we have one and didn't expire
                 string cacheKey = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.TryGetCachedToken(cacheKey, out eToken);
             }
@@ -72,7 +72,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
             if (!forceRefresh)
             {
-                // return cachaed token if we have one and didn't expire
+                // return cached token if we have one and didn't expire
                 string cacheKey = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, string.Empty, sandbox);
                 this.XTokenCache.Value.TryGetCachedToken(cacheKey, out xToken);
             }
