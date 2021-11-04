@@ -136,6 +136,12 @@ steps:
       pushPkgName: 'XboxLiveDeveloperTools.$(CONFIGURATION)'
       vpackToken: '$(VPackToken)'
 
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Pipeline Artifact'
+    inputs:
+      targetPath: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools'
+      artifact: 'XboxLive_Developer_Tools_Packaging_PipelineArtifacts_$(BUILDCONFIGURATION)'
+
   - task: CmdLine@1
     displayName: postBuildScriptVPack.cmd
     inputs:
