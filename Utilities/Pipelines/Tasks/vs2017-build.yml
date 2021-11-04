@@ -1,0 +1,148 @@
+parameters:
+  - name: platform
+    type: string
+  - name: configuration
+    type: string
+  - name: prefast
+    type: string
+
+steps:
+  - template: checkout.yml
+
+  - task: PkgESSetupBuild@12
+    displayName: PkgES build setup
+    inputs:
+      useDfs: false
+      productName: XboxLiveSDK
+      branchVersion: true
+      extSync: true
+
+  - task: PoliCheck@1
+    displayName: Run PoliCheck
+
+  - task: NuGetToolInstaller@1
+    displayName: 'Use NuGet 5.8'
+    inputs:
+      versionSpec: 5.8
+
+  - task: NuGetAuthenticate@0
+
+  # Install NuGet dependencies. The GUID below is the NuGetCommand
+  # Refs:
+  # - https://developercommunity.visualstudio.com/t/vsts-yaml-build-failure-the-task-name-nugetcommand/288534
+  # - https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/package/nuget
+  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+    displayName: NuGet restore
+    inputs:
+      command: 'restore'
+      restoreSolution: '**/*.sln'
+
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      version: 3.1.411
+      installationPath: $(Agent.ToolsDirectory)/dotnet
+
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      version: 2.1.816
+      installationPath: $(Agent.ToolsDirectory)/dotnet
+
+  # Build the Visual Studio 17 solution.
+  # Ref: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/visual-studio-build
+  - task: VSBuild@1
+    displayName: Build ${{ parameters.platform }}+${{ parameters.configuration }} Solution
+    inputs:
+      solution: XboxLiveTools.sln
+      vsVersion: 15.0
+      msbuildArchitecture: x64
+      platform: ${{ parameters.platform }}
+      configuration: ${{ parameters.configuration }}
+      createLogFile: true
+      logProjectEvents: true
+      logFileVerbosity: 'diagnostic'
+      
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: Component Detection
+    
+  # Security and compliance, failure here should fail the build
+  - task: PkgESSecComp@10
+    displayName: 'Security and Compliance tasks'
+    inputs:
+      fileNewBugs: false
+      taskLogVerbosity: Diagnostic
+      scanAll: true
+      failOnStdErr: true
+      dropOverride: $(Build.ArtifactStagingDirectory)
+      secCompConfigFromTask: |
+        tools:
+          - toolName: CheckCFlags
+            enable: true
+          - toolName: CFGCheck
+            enable: false
+          - toolName: Policheck
+            enable: true
+          - toolName: XFGCheck
+            enable: true
+          - toolName: CredScan
+            enable: true
+      binVersion: 'PreProduction'
+
+  - task: NuGetCommand@2
+    displayName: 'NuGet pack'
+    inputs:
+      command: pack
+      packagesToPack: Microsoft.Xbox.Service.DevTools/Microsoft.Xbox.Services.DevTools.csproj
+      packDestination: '$(Build.BINARIESDIRECTORY)\$(CONFIGURATION)'
+
+  - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
+    displayName: 'ESRP Nuget CodeSigning'
+    inputs:
+      ConnectedServiceName: 'XboxLive.ClientSDK Connection'
+      FolderPath: '$(BUILD.BINARIESDIRECTORY)/'
+      Pattern: '*Microsoft.Xbox.Services.DevTools.*.nupkg'
+      signConfigType: inlineSignParams
+      inlineOperation: |
+          [
+            {
+                "KeyCode" : "CP-401405",
+                "OperationCode" : "NuGetSign",
+                "Parameters" : {},
+                "ToolName" : "sign",
+                "ToolVersion" : "1.0"
+            },
+            {
+                "KeyCode" : "CP-401405",
+                "OperationCode" : "NuGetVerify",
+                "Parameters" : {},
+                "ToolName" : "sign",
+                "ToolVersion" : "1.0"
+            }
+          ]
+
+  - task: BatchScript@1
+    displayName: postBuildScript.cmd
+    inputs:
+      filename: 'Utilities\Pipelines\Scripts\postBuildScript.cmd'
+
+  - task: PkgESVPack@12
+    displayName: 'Package ES - VPack'
+    inputs:
+      sourceDirectory: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools\Tools-VPack'
+      description: 'XboxLiveDeveloperTools.$(CONFIGURATION)'
+      pushPkgName: 'XboxLiveDeveloperTools.$(CONFIGURATION)'
+      vpackToken: '$(VPackToken)'
+
+  - task: CmdLine@1
+    displayName: postBuildScriptVPack.cmd
+    inputs:
+      filename: 'Utilities\Pipelines\Scripts\postBuildScriptVPack.cmd'
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Pipeline Artifact VPack'
+    inputs:
+      targetPath: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools\Tools-VPack'
+      artifact: 'XboxLive_Developer_Tools_Packaging_PipelineArtifacts_VPack_$(CONFIGURATION)'

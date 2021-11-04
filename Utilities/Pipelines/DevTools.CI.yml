@@ -1,0 +1,39 @@
+# CI trigger. Fires on merges to specific branches.
+# Ref: https://docs.microsoft.com/en-us/azure/devops/pipelines/repos/azure-repos-git#ci-triggers
+# A pipeline with no CI trigger
+trigger: none
+
+# Name builds with the definition name, date, and build-count-for-that-day. For
+# example, "BuildDefName_20210214.1".
+# Refs:
+# - https://docs.microsoft.com/en-us/azure/devops/pipelines/process/run-number
+# - https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables
+name: $(Build.DefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
+
+jobs:
+
+  ####################
+  # Visual Studio 2017
+  ####################
+
+  - job: Win32Vs17Build
+    displayName: DevTools Win32 VS2017 Build
+    pool:
+      name: xbl-1es-vs2017-pool
+    timeoutInMinutes: 180
+    strategy:
+      matrix:
+        AnyCPU_Debug:
+          Platform: Any CPU
+          Configuration: Debug
+          Prefast: Disable
+        AnyCPU_Release:
+          Platform: Any CPU
+          Configuration: Release
+          Prefast: Disable
+    steps:
+      - template: Tasks/vs2017-build.yml
+        parameters:
+          platform: $(Platform)
+          configuration: $(Configuration)
+          prefast: $(Prefast)
