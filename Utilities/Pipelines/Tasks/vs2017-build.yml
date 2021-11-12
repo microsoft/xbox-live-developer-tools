@@ -170,7 +170,7 @@ steps:
   - task: PublishPipelineArtifact@1
     displayName: 'Publish Pipeline Artifact'
     inputs:
-      targetPath: '$(Pipeline.Workspace)\b'
+      targetPath: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools'
       artifact: 'XboxLive_Developer_Tools_Packaging_PipelineArtifacts_$(CONFIGURATION)'
 
   - task: CmdLine@1
