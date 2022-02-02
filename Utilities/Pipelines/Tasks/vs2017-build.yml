@@ -69,27 +69,27 @@ steps:
     displayName: Component Detection
     
   # Security and compliance, failure here should fail the build
-  - task: PkgESSecComp@10
-    displayName: 'Security and Compliance tasks'
-    inputs:
-      fileNewBugs: false
-      taskLogVerbosity: Diagnostic
-      scanAll: true
-      failOnStdErr: true
-      dropOverride: $(Build.ArtifactStagingDirectory)
-      secCompConfigFromTask: |
-        tools:
-          - toolName: CheckCFlags
-            enable: true
-          - toolName: CFGCheck
-            enable: false
-          - toolName: Policheck
-            enable: true
-          - toolName: XFGCheck
-            enable: true
-          - toolName: CredScan
-            enable: true
-      binVersion: 'PreProduction'
+  #- task: PkgESSecComp@10
+  #  displayName: 'Security and Compliance tasks'
+  #  inputs:
+  #    fileNewBugs: false
+  #    taskLogVerbosity: Diagnostic
+  #    scanAll: true
+  #    failOnStdErr: true
+  #    dropOverride: $(Build.ArtifactStagingDirectory)
+  #    secCompConfigFromTask: |
+  #      tools:
+  #        - toolName: CheckCFlags
+  #          enable: true
+  #        - toolName: CFGCheck
+  #          enable: false
+  #        - toolName: Policheck
+  #          enable: true
+  #        - toolName: XFGCheck
+  #          enable: true
+  #        - toolName: CredScan
+  #          enable: true
+  #    binVersion: 'PreProduction'
 
   - task: NuGetCommand@2
     displayName: 'NuGet pack'
