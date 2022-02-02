@@ -128,7 +128,7 @@ steps:
     inputs:
       ConnectedServiceName: 'XboxLive.ClientSDK Connection'
       FolderPath: '$(BUILD.BINARIESDIRECTORY)'
-      Pattern: '*GlobalStorage.exe, *MultiplayerSessionHistoryViewer.exe, *XblConfig.exe, *XblConnectedStorage.exe, *XblDevAccount.exe, *XblPlayerDataReset.exe'
+      Pattern: '*GlobalStorage.exe, *MultiplayerSessionHistoryViewer.exe, *XblConfig.exe, *XblConnectedStorage.exe, *XblDevAccount.exe, *XblPlayerDataReset.exe, *Microsoft.Xbox.Services.DevTools.dll'
       signConfigType: inlineSignParams
       inlineOperation: |
           [
