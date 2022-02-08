@@ -104,7 +104,7 @@ steps:
     inputs:
       ConnectedServiceName: 'XboxLive.ClientSDK Connection'
       FolderPath: '$(BUILD.BINARIESDIRECTORY)/'
-      Pattern: '*Microsoft.Xbox.Services.DevTools.dll'
+      Pattern: '*Microsoft.Xbox.Services.DevTools.dll, *Microsoft.Xbox.Services.DevTools.Unittest.dll'
       signConfigType: inlineSignParams
       inlineOperation: |
           [
