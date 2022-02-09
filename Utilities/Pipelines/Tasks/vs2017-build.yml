@@ -91,12 +91,39 @@ steps:
   #          enable: true
   #    binVersion: 'PreProduction'
 
+  #NuGet Package
   - task: NuGetCommand@2
     displayName: 'NuGet pack'
     inputs:
       command: pack
       packagesToPack: Microsoft.Xbox.Service.DevTools/Microsoft.Xbox.Services.DevTools.csproj
       packDestination: '$(Build.BINARIESDIRECTORY)\$(CONFIGURATION)'
+
+  #ESRP NuGet CodeSigning
+  - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
+    displayName: 'ESRP Nuget CodeSigning'
+    inputs:
+      ConnectedServiceName: 'XboxLive.ClientSDK Connection'
+      FolderPath: '$(BUILD.BINARIESDIRECTORY)/'
+      Pattern: '*Microsoft.Xbox.Services.DevTools.*.nupkg'
+      signConfigType: inlineSignParams
+      inlineOperation: |
+          [
+            {
+                "KeyCode" : "CP-401405",
+                "OperationCode" : "NuGetSign",
+                "Parameters" : {},
+                "ToolName" : "sign",
+                "ToolVersion" : "1.0"
+            },
+            {
+                "KeyCode" : "CP-401405",
+                "OperationCode" : "NuGetVerify",
+                "Parameters" : {},
+                "ToolName" : "sign",
+                "ToolVersion" : "1.0"
+            }
+          ]
 
   #ESRP Strong Name Sign. Must come before ESRP Authenticode Sign
   - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
@@ -124,31 +151,7 @@ steps:
             }
           ]
 
-  - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
-    displayName: 'ESRP Nuget CodeSigning'
-    inputs:
-      ConnectedServiceName: 'XboxLive.ClientSDK Connection'
-      FolderPath: '$(BUILD.BINARIESDIRECTORY)/'
-      Pattern: '*Microsoft.Xbox.Services.DevTools.*.nupkg'
-      signConfigType: inlineSignParams
-      inlineOperation: |
-          [
-            {
-                "KeyCode" : "CP-401405",
-                "OperationCode" : "NuGetSign",
-                "Parameters" : {},
-                "ToolName" : "sign",
-                "ToolVersion" : "1.0"
-            },
-            {
-                "KeyCode" : "CP-401405",
-                "OperationCode" : "NuGetVerify",
-                "Parameters" : {},
-                "ToolName" : "sign",
-                "ToolVersion" : "1.0"
-            }
-          ]
-
+  #ESRP AuthentiCode Signing
   - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
     displayName: 'ESRP CodeSigning'
     inputs:
