@@ -37,6 +37,15 @@
     <DocumentationFile>bin\Release\Microsoft.Xbox.Services.DevTools.xml</DocumentationFile>
     <LangVersion>7.2</LangVersion>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>35MSSharedLib1024.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Identity.Client, Version=1.1.2.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
@@ -150,6 +159,7 @@
     <Compile Include="XblConfig\XboxLiveTier.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="35MSSharedLib1024.snk" />
     <None Include="App.config" />
     <None Include="Microsoft.Xbox.Live.SDK.DevTools.nuspec" />
     <None Include="packages.config" />
