@@ -6,9 +6,9 @@
     <title>$title$</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
-    <licenseUrl>https://aka.ms/xblsdklicense</licenseUrl>
+    <license>https://aka.ms/xblsdklicense</license>
     <projectUrl>https://github.com/Microsoft/xbox-live-developer-tools</projectUrl>
-    <iconUrl>http://www.xbox.com/shell/images/shell/XboxLogo.png</iconUrl>
+    <icon>http://www.xbox.com/shell/images/shell/XboxLogo.png</icon>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>Microsoft Xbox Live Developer Tooling API</description>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
