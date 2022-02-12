@@ -6,7 +6,7 @@
     <title>$title$</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
-    <license type'"file">license.txt</license>
+    <license type="file">license.txt</license>
     <projectUrl>https://github.com/Microsoft/xbox-live-developer-tools</projectUrl>
     <icon>icon.png</icon>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
