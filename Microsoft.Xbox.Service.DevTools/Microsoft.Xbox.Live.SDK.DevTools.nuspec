@@ -6,12 +6,16 @@
     <title>$title$</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
-    <licenseUrl>https://aka.ms/xblsdklicense</licenseUrl>
+    <license type="file">license.txt</license>
     <projectUrl>https://github.com/Microsoft/xbox-live-developer-tools</projectUrl>
-    <iconUrl>http://www.xbox.com/shell/images/shell/XboxLogo.png</iconUrl>
+    <icon>icon.png</icon>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>Microsoft Xbox Live Developer Tooling API</description>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>Microsoft Xbox Live Service XSAPI Tool</tags>
   </metadata>
+  <files>
+    <file src="icon.png" target="" />
+    <file src="license.txt" target="" />
+  </files>
 </package>
