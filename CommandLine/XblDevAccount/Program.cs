@@ -58,7 +58,7 @@ namespace XblDevAccount
             try
             {
                 var devAccount = await ToolAuthentication.SignInAsync((DevAccountSource)signInOptions.AccountSource, signInOptions.UserName, signInOptions.Tenant);
-                Console.WriteLine($"Microsoft Partner Center account {devAccount.Name} has successfully signed in.");
+                Console.WriteLine($"Microsoft Partner Center account {devAccount.Name} from {devAccount.AccountSource} has successfully signed in.");
                 DisplayDevAccount(devAccount, "\t");
                 return 0;
             }
