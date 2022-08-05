@@ -58,7 +58,7 @@ namespace XblDevAccount
             try
             {
                 var devAccount = await ToolAuthentication.SignInAsync((DevAccountSource)signInOptions.AccountSource, signInOptions.UserName, signInOptions.Tenant);
-                Console.WriteLine($"Developer account {devAccount.Name} has successfully signed in.");
+                Console.WriteLine($"Microsoft Partner Center account {devAccount.Name} has successfully signed in.");
                 DisplayDevAccount(devAccount, "\t");
                 return 0;
             }
@@ -94,7 +94,7 @@ namespace XblDevAccount
             if (account != null)
             {
                 ToolAuthentication.SignOut();
-                Console.WriteLine($"Developer account {account.Name} from {account.AccountSource} has successfully signed out.");
+                Console.WriteLine($"Microsoft Partner Center account {account.Name} from {account.AccountSource} has successfully signed out.");
                 return 0;
             }
             else
@@ -109,7 +109,7 @@ namespace XblDevAccount
             DevAccount account = ToolAuthentication.LoadLastSignedInUser();
             if (account != null)
             {
-                Console.WriteLine($"Developer account {account.Name} from {account.AccountSource} is currently signed in.");
+                Console.WriteLine($"Microsoft Partner Center account {account.Name} from {account.AccountSource} is currently signed in.");
                 DisplayDevAccount(account, "\t");
                 return 0;
             }
@@ -120,7 +120,7 @@ namespace XblDevAccount
             }
         }
 
-        [Verb("signin", HelpText = "Sign in an Xbox Live developer account.")]
+        [Verb("signin", HelpText = "Sign in a Microsoft Partner Center account. Xbox Live Tools Access permission is required.")]
         private class SignInOptions
         {
             public SignInOptions()
@@ -144,7 +144,7 @@ namespace XblDevAccount
                 get
                 {
                     yield return new Example(
-                        "Sign in an Xbox Live developer account.",
+                        "Sign in a Microsoft Partner Center account. Xbox Live Tools Access permission is required.",
                         new SignInOptions
                         {
                             AccountSource = AccountSourceOption.WindowsDevCenter,
@@ -154,7 +154,7 @@ namespace XblDevAccount
             }
         }
 
-        [Verb("signout", HelpText = "Sign out the signed in developer account.")]
+        [Verb("signout", HelpText = "Sign out the signed in Microsoft Partner Center account.")]
         private class SignOutOptions
         {
             [Usage]
@@ -162,7 +162,7 @@ namespace XblDevAccount
             {
                 get
                 {
-                    yield return new Example("Sign out the Xbox Live developer account.", new SignOutOptions());
+                    yield return new Example("Sign out the signed in Microsoft Partner Center account.", new SignOutOptions());
                 }
             }
         }
