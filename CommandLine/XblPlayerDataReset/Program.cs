@@ -5,6 +5,7 @@ namespace XblPlayerDataReset
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
@@ -51,7 +52,8 @@ namespace XblPlayerDataReset
 
         private static async Task<int> OnReset(ResetOptions options)
         {
-            string xuid = string.Empty;
+            // TODO: Add a maximum?
+            List<string> xuids = new List<string>();
 
             if (options == null)
             {
@@ -67,10 +69,10 @@ namespace XblPlayerDataReset
                     Console.Error.WriteLine($"Failed to log in to test account {options.TestAccount}.");
                     return -1;
                 }
+                // TODO: Extract email list
+                xuids = new List<string>() { testAccount.Xuid };
 
-                xuid = testAccount.Xuid;
-
-                Console.WriteLine($"Using Test account {options.TestAccount} ({testAccount.Gamertag}) with xuid {xuid}");
+                Console.WriteLine($"Using Test account(s) {options.TestAccount} ({testAccount.Gamertag}) with xuid {options.XboxUserId}");
             }
             else if (!string.IsNullOrEmpty(options.XboxUserId))
             {
@@ -81,18 +83,18 @@ namespace XblPlayerDataReset
                     return -1;
                 }
 
-                xuid = options.XboxUserId;
+                xuids = options.XboxUserId.Split(',').ToList();
 
-                Console.WriteLine($"Using Dev account {account.Name} from {account.AccountSource}");
+                Console.WriteLine($"Using Dev account(s) {account.Name} from {account.AccountSource}");
             }
 
-            Console.WriteLine($"Resetting data for player with XUID {xuid} for SCID {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
+            Console.WriteLine($"Resetting data for player with XUID(s) {options.XboxUserId} for SCID {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
 
             try
             {
                 UserResetResult result = await PlayerReset.ResetPlayerDataAsync(
                     options.ServiceConfigurationId,
-                    options.Sandbox, xuid);
+                    options.Sandbox, xuids);
 
                 switch (result.OverallResult)
                 {
@@ -151,11 +153,12 @@ namespace XblPlayerDataReset
             public string Sandbox { get; set; }
 
             [Option('x', "xuid", Required = false, SetName = "xuid",
-                HelpText = "The Xbox Live User ID (XUID) of the player to be reset")]
+                // TODO: Owner? Admin? Who is allowed to run this?
+                HelpText = "A list of Xbox Live User IDs (XUID) of the players to be reset. Requires login of xuid owner.")]
             public string XboxUserId { get; set; }
 
             [Option('u', "user", Required = false, SetName = "testacct",
-                HelpText = "The email address of the test account to be reset")]
+                HelpText = "A list of email addresses of the test accounts to be reset. Requires password input per account.")]
             public string TestAccount { get; set; }
 
             [Usage(ApplicationAlias = "XblPlayerDataReset")]
@@ -163,6 +166,7 @@ namespace XblPlayerDataReset
             {
                 get
                 {
+                    // TODO: Update usage example
                     yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx", TestAccount = "xxx@xboxtest.com" });
                 }
             }

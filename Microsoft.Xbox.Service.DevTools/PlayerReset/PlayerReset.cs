@@ -4,7 +4,9 @@
 namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 {
     using System;
+    using System.Collections.Generic;
     using System.Net.Http;
+    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Xbox.Services.DevTools.Authentication;
     using Microsoft.Xbox.Services.DevTools.Common;
@@ -29,9 +31,9 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         /// </summary>
         /// <param name="serviceConfigurationId">The service configuration ID (SCID) of the title for player data resetting</param>
         /// <param name="sandbox">The target sandbox id for player resetting</param>
-        /// <param name="xboxUserId">The Xbox user id of the player to be reset</param>
+        /// <param name="xboxUserIds">The Xbox user ids of the player to be reset</param>
         /// <returns>The UserResetResult object for the reset result</returns>
-        public static async Task<UserResetResult> ResetPlayerDataAsync(string serviceConfigurationId, string sandbox, string xboxUserId)
+        public static async Task<UserResetResult> ResetPlayerDataAsync(string serviceConfigurationId, string sandbox, List<string> xboxUserIds)
         {
             // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
             // populate the auth error up-front.
@@ -44,7 +46,20 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 await ToolAuthentication.GetDevTokenSilentlyAsync(serviceConfigurationId, sandbox);
             }
 
-            return await SubmitJobAndPollStatus(sandbox, serviceConfigurationId, xboxUserId);
+            var resetTasks = new List<Task<UserResetResult>>();
+            foreach (string userId in xboxUserIds)
+            {
+                resetTasks.Add(SubmitJobAndPollStatus(sandbox, serviceConfigurationId, userId));
+            }
+
+            UserResetResult result = new UserResetResult();
+
+            var t = Task.WhenAll(resetTasks);
+
+            // TODO: Update all relevant fields
+            var firstResult = resetTasks.FirstOrDefault(r => r.Result.OverallResult != ResetOverallResult.Succeeded);
+            result.OverallResult = firstResult is null ? ResetOverallResult.Succeeded : firstResult.Result.OverallResult;
+            return result;
         }
 
         private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid)

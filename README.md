@@ -60,7 +60,7 @@ XblPlayerDataReset is used to reset a player's data in test sandboxes. Data incl
 email address, or to reset an account by XUID, first run XblDevAccount.exe to log in with a Partner Center account.
 
 #### Usage:
-
+TODO: Update usage
 ```
 XblPlayerDataReset.exe --scid xxx --sandbox xxx [--xuid xxxx] [--user XXX@xboxtest.com]
 ```
