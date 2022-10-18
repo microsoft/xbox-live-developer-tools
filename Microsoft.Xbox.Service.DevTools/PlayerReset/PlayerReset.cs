@@ -5,8 +5,8 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 {
     using System;
     using System.Collections.Generic;
-    using System.Net.Http;
     using System.Linq;
+    using System.Net.Http;
     using System.Threading.Tasks;
     using Microsoft.Xbox.Services.DevTools.Authentication;
     using Microsoft.Xbox.Services.DevTools.Common;
@@ -113,9 +113,11 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
             }
 
             // Log detail status
+            // TODO: Do I also want to output this to Log.WriteLog?
+            // Log.WriteLog($"Resetting player {xuid} result {result.OverallResult}: ");
+            Console.WriteLine($"Resetting player {xuid} result: {result.OverallResult}");
             if (result.OverallResult != ResetOverallResult.Succeeded)
             {
-                Log.WriteLog($"Resetting player {xuid} result {result.OverallResult}: ");
                 if (jobStatus != null && jobStatus.ProviderStatus != null)
                 {
                     foreach (var providerStatus in jobStatus.ProviderStatus)

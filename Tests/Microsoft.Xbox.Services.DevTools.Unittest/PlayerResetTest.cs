@@ -5,6 +5,8 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
     using DevTools.Authentication;
@@ -17,12 +19,12 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
     [TestClass]
     public class PlayerResetTest
     {
-        // TODO: Write tests
         private const string DefaultUserName = "username";
         private const string DefaultScid = "00000000-0000-0000-0000-012345678901";
         private const string DefaultSandbox = "sandbox";
         private const string DefaultEtoken = "etoken";
-        private const string DefaultXuid = "xuid";
+        // TODO: Should I even both making this read-only? Only the size and order is guaranteed to be the same. The values inside can still be mutated
+        private ReadOnlyCollection<string> DefaultXuid = new List<string> { "xuid1", "xuid2" }.AsReadOnly();
 
         private void SetUpMockAuth()
         {
@@ -76,7 +78,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid);
+            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid.ToList());
             Assert.AreEqual(ResetOverallResult.Succeeded, resetResult.OverallResult);
             Assert.AreEqual(5, resetResult.ProviderStatus.Count);
 
@@ -112,7 +114,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Guid jobId = Guid.NewGuid();
             var submitJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/submitJob");
             string submitJobResponse = $"\"{jobId}\"";
-            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\"}}";
+            string submitJobContent = $"{{\"userId\":\"{DefaultXuid.ToList()}\",\"Scid\":\"{DefaultScid}\"}}";
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
@@ -148,7 +150,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid);
+            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid.ToList());
             Assert.AreEqual(ResetOverallResult.Succeeded, resetResult.OverallResult);
             Assert.AreEqual(5, resetResult.ProviderStatus.Count);
 
@@ -164,7 +166,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Guid jobId = Guid.NewGuid();
             var submitJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/submitJob");
             string submitJobResponse = $"\"{jobId}\"";
-            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\"}}";
+            string submitJobContent = $"{{\"userId\":\"{DefaultXuid.ToList()}\",\"Scid\":\"{DefaultScid}\"}}";
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
@@ -189,7 +191,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid);
+            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid.ToList());
             Assert.AreEqual(ResetOverallResult.CompletedError, resetResult.OverallResult);
             Assert.AreEqual(7, resetResult.ProviderStatus.Count);
 
@@ -249,7 +251,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid);
+            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid.ToList());
             Assert.AreEqual(ResetOverallResult.Timeout, resetResult.OverallResult);
             Assert.AreEqual(0, resetResult.ProviderStatus.Count);
 
@@ -274,7 +276,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 
             TestHook.MockHttpHandler = mockHttp;
 
-            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid);
+            var resetResult = await PlayerReset.ResetPlayerDataAsync(DefaultScid, DefaultSandbox, DefaultXuid.ToList());
             Assert.AreEqual(ResetOverallResult.CompletedError, resetResult.OverallResult);
             Assert.AreEqual(0, resetResult.ProviderStatus.Count);
 
