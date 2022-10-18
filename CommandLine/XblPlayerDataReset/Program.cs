@@ -52,8 +52,7 @@ namespace XblPlayerDataReset
 
         private static async Task<int> OnReset(ResetOptions options)
         {
-            // TODO: Add a maximum?
-            List<string> xuids = new List<string>();
+            int result = 0;
 
             if (options == null)
             {
@@ -61,18 +60,31 @@ namespace XblPlayerDataReset
                 return -1;
             }
 
+            Console.WriteLine($"Resetting player data for SCID {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
+
             if (!string.IsNullOrEmpty(options.TestAccount))
             {
-                TestAccount testAccount = await ToolAuthentication.SignInTestAccountAsync(options.TestAccount, options.Sandbox);
-                if (testAccount == null)
-                {
-                    Console.Error.WriteLine($"Failed to log in to test account {options.TestAccount}.");
-                    return -1;
-                }
-                // TODO: Extract email list
-                xuids = new List<string>() { testAccount.Xuid };
+                // Extract the account names from the input
+                List<string> testAccoutNames = options.TestAccount.Split(',').ToList();
 
-                Console.WriteLine($"Using Test account(s) {options.TestAccount} ({testAccount.Gamertag}) with xuid {options.XboxUserId}");
+                // Sign into each account individually
+                foreach (string testAccountName in testAccoutNames)
+                {
+                    TestAccount ta = await ToolAuthentication.SignInTestAccountAsync(testAccountName, options.Sandbox);
+
+                    // If we have a failure, output the account and stop the process
+                    if (ta == null)
+                    {
+                        Console.Error.WriteLine($"Failed to log in to test account {testAccountName}.");
+                        return -1;
+                    }
+
+                    Console.WriteLine($"Using Test account {testAccountName} ({ta.Gamertag}) with xuid {ta.Xuid}");
+
+                    // Accounts to need be processed sequentially when not using a dev account; send one at a time
+                    int batchResult = await RunResetBatch(options, new List<string> { ta.Xuid });
+                    result = batchResult != 0 ? batchResult : result;
+                }
             }
             else if (!string.IsNullOrEmpty(options.XboxUserId))
             {
@@ -83,18 +95,26 @@ namespace XblPlayerDataReset
                     return -1;
                 }
 
-                xuids = options.XboxUserId.Split(',').ToList();
+                List<string> xuids = options.XboxUserId.Split(',').ToList();
 
+                // TODO: Should we display the gamertags here too?
                 Console.WriteLine($"Using Dev account(s) {account.Name} from {account.AccountSource}");
+
+                // Accounts can be processed in parallel when using a dev account; send them all at once
+                int batchResult = await RunResetBatch(options, xuids);
+                result = batchResult != 0 ? batchResult : result;
             }
 
-            Console.WriteLine($"Resetting data for player with XUID(s) {options.XboxUserId} for SCID {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
+            return result;
+        }
 
+        private static async Task<int> RunResetBatch(ResetOptions options, List<string> xuidBatch)
+        {
             try
             {
                 UserResetResult result = await PlayerReset.ResetPlayerDataAsync(
                     options.ServiceConfigurationId,
-                    options.Sandbox, xuids);
+                    options.Sandbox, xuidBatch);
 
                 switch (result.OverallResult)
                 {
@@ -128,7 +148,7 @@ namespace XblPlayerDataReset
                     Console.WriteLine(
                         $"Unable to authorize the account with Xbox Live and scid : {options.ServiceConfigurationId} and sandbox : {options.Sandbox}, please contact your administrator.");
                 }
-                else if (ex.Message.Contains(Convert.ToString((int) HttpStatusCode.Forbidden)))
+                else if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Forbidden)))
                 {
                     Console.WriteLine(
                         "Your account doesn't have access to perform the operation, please contact your administrator.");
