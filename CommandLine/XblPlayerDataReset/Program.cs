@@ -16,6 +16,7 @@ namespace XblPlayerDataReset
 
     internal class Program
     {
+        internal static int MaxBatchSize = 10;
         private static async Task<int> Main(string[] args)
         {
             try
@@ -97,12 +98,17 @@ namespace XblPlayerDataReset
 
                 List<string> xuids = options.XboxUserId.Split(',').ToList();
 
-                // TODO: Should we display the gamertags here too?
-                Console.WriteLine($"Using Dev account(s) {account.Name} from {account.AccountSource}");
+                for (int i = 0; i < xuids.Count; i += MaxBatchSize) {
+                    List<string> xuidBatch = xuids.Where((x, index) =>
+                        index >= i && index < i + MaxBatchSize).ToList();
 
-                // Accounts can be processed in parallel when using a dev account; send them all at once
-                int batchResult = await RunResetBatch(options, xuids);
-                result = batchResult != 0 ? batchResult : result;
+                    // TODO: Should we display the gamertags here too?
+                    Console.WriteLine($"Using Dev account(s) {account.Name} from {account.AccountSource}");
+
+                    // Accounts can be processed in parallel when using a dev account; send them all at once
+                    int batchResult = await RunResetBatch(options, xuidBatch);
+                    result = batchResult != 0 ? batchResult : result;
+                }
             }
 
             return result;
