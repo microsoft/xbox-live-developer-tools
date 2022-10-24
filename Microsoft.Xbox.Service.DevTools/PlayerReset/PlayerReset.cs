@@ -18,6 +18,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
     public class PlayerReset
     {
         internal const int MaxPollingAttempts = 4;
+        internal const int MaxRetryAttempts = 4;
         private static Uri baseUri = new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint);
 
         private PlayerReset()
@@ -46,26 +47,57 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 await ToolAuthentication.GetDevTokenSilentlyAsync(serviceConfigurationId, sandbox);
             }
 
-            var resetTasks = new List<Task<UserResetResult>>();
-            int triesLeft = 5;
-            while (triesLeft > 0 || resetTasks.Count == 0)
+            // Initialize xuid-task mapping
+            Dictionary<string, Task<UserResetResult>> userTaskMap = new Dictionary<string, Task<UserResetResult>>();
+            foreach (string xuid in xboxUserIds)
             {
-                foreach (string userId in xboxUserIds)
-                {
-                    resetTasks.Add(SubmitJobAndPollStatus(sandbox, serviceConfigurationId, userId, triesLeft > 1));
-                }
-
-                var t = Task.WhenAll(resetTasks);
-                resetTasks.RemoveAll(task => task.Result.OverallResult == ResetOverallResult.Succeeded);
-                triesLeft -= 1;
+                userTaskMap.Add(xuid, null);
             }
 
-            // TODO: Update all relevant fields
+            for (int i = 0; i <= MaxRetryAttempts; i++)
+            {
+                // Run a task per id
+                List<string> ids = userTaskMap.Keys.ToList();
+                foreach (string userId in ids)
+                {
+                    userTaskMap[userId] = SubmitJobAndPollStatus(sandbox, serviceConfigurationId, userId, MaxRetryAttempts - i > 1);
+                }
+
+                var t = Task.WhenAll(userTaskMap.Values);
+
+                // Remove xuids that succeeded
+                foreach (string key in userTaskMap.Keys.ToArray()
+                    .Where(xuid => userTaskMap[xuid].Result.OverallResult == ResetOverallResult.Succeeded))
+                    userTaskMap.Remove(key);
+
+                // If everything succeeded, end the loop
+                if (userTaskMap.Count == 0)
+                {
+                    break;
+                }
+                else if (i < MaxRetryAttempts)
+                {
+                    Console.WriteLine($"Retrying {userTaskMap.Count} accounts. {MaxRetryAttempts - i} more attempt(s).");
+                }
+            }
+
             UserResetResult result = new UserResetResult();
 
-            var firstFailedResult = resetTasks.FirstOrDefault(r => r.Result.OverallResult != ResetOverallResult.Succeeded);
-            result.OverallResult = firstFailedResult is null ? ResetOverallResult.Succeeded : firstFailedResult.Result.OverallResult;
-            result.ProviderStatus = firstFailedResult is null ? result.ProviderStatus : firstFailedResult.Result.ProviderStatus;
+            var failedTaskMap = userTaskMap.Where(kvp => kvp.Value.Result.OverallResult != ResetOverallResult.Succeeded).ToDictionary(t => t.Key, t=>t.Value);
+            if (failedTaskMap.Count > 0)
+            {
+                var firstFailedTask = failedTaskMap.First().Value;
+                result.OverallResult = firstFailedTask.Result.OverallResult;
+                result.ProviderStatus = firstFailedTask.Result.ProviderStatus;
+                result.HttpErrorMessage = firstFailedTask.Result.HttpErrorMessage;
+
+                string failedXuids = string.Join(",", failedTaskMap.Keys.ToList());
+                Console.WriteLine($"Failed to reset {failedTaskMap.Count} account(s): {failedXuids}");
+            }
+            else
+            {
+                result.OverallResult = ResetOverallResult.Succeeded;
+            }
             return result;
         }
 
