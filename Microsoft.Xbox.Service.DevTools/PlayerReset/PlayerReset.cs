@@ -47,22 +47,29 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
             }
 
             var resetTasks = new List<Task<UserResetResult>>();
-            foreach (string userId in xboxUserIds)
+            int triesLeft = 5;
+            while (triesLeft > 0 || resetTasks.Count == 0)
             {
-                resetTasks.Add(SubmitJobAndPollStatus(sandbox, serviceConfigurationId, userId));
+                foreach (string userId in xboxUserIds)
+                {
+                    resetTasks.Add(SubmitJobAndPollStatus(sandbox, serviceConfigurationId, userId, triesLeft > 1));
+                }
+
+                var t = Task.WhenAll(resetTasks);
+                resetTasks.RemoveAll(task => task.Result.OverallResult == ResetOverallResult.Succeeded);
+                triesLeft -= 1;
             }
 
+            // TODO: Update all relevant fields
             UserResetResult result = new UserResetResult();
 
-            var t = Task.WhenAll(resetTasks);
-
-            // TODO: Update all relevant fields
-            var firstResult = resetTasks.FirstOrDefault(r => r.Result.OverallResult != ResetOverallResult.Succeeded);
-            result.OverallResult = firstResult is null ? ResetOverallResult.Succeeded : firstResult.Result.OverallResult;
+            var firstFailedResult = resetTasks.FirstOrDefault(r => r.Result.OverallResult != ResetOverallResult.Succeeded);
+            result.OverallResult = firstFailedResult is null ? ResetOverallResult.Succeeded : firstFailedResult.Result.OverallResult;
+            result.ProviderStatus = firstFailedResult is null ? result.ProviderStatus : firstFailedResult.Result.ProviderStatus;
             return result;
         }
 
-        private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid)
+        private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid, bool canRetry)
         {
             UserResetResult result = new UserResetResult();
             JobStatusResponse jobStatus = null;
@@ -115,7 +122,8 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
             // Log detail status
             // TODO: Do I also want to output this to Log.WriteLog?
             // Log.WriteLog($"Resetting player {xuid} result {result.OverallResult}: ");
-            Console.WriteLine($"Resetting player {xuid} result: {result.OverallResult}");
+            string retryClause = result.OverallResult == ResetOverallResult.Succeeded || !canRetry ? string.Empty : ". Will retry.";
+            Console.WriteLine($"Resetting player {xuid} result: {result.OverallResult}{retryClause}");
             if (result.OverallResult != ResetOverallResult.Succeeded)
             {
                 if (jobStatus != null && jobStatus.ProviderStatus != null)
