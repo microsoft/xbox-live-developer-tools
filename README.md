@@ -56,13 +56,12 @@ Developer account {Name} has successfully signed out.
 
 ### XblPlayerDataReset.exe 
 
-XblPlayerDataReset is used to reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history. An individual account can be reset by its
+XblPlayerDataReset is used to reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history. An individual or group of accounts can be reset by its
 email address, or to reset an account by XUID, first run XblDevAccount.exe to log in with a Partner Center account.
 
 #### Usage:
-TODO: Update usage
 ```
-XblPlayerDataReset.exe --scid xxx --sandbox xxx [--xuid xxxx] [--user XXX@xboxtest.com]
+XblPlayerDataReset.exe --scid xxx --sandbox xxx [--xuid xxxx] [--user XXX@xboxtest.com] [--delimiter ,]
 ```
 
 ***Success output example:***

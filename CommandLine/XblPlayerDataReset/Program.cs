@@ -18,8 +18,8 @@ namespace XblPlayerDataReset
     internal class Program
     {
         internal const int MaxBatchSize = 10;
-        internal const string DefaultDelimitter = ",";
-        internal const string PartnerCenterDelim = "PC";
+        internal const string DefaultDelimiter = ",";
+        internal const string PartnerCenterDelim = "PartnerCenter";
         internal const string PartnerEmaillDelim = "PCE";
         internal const string PartnerXuidDelim = "PCX";
 
@@ -71,8 +71,9 @@ namespace XblPlayerDataReset
 
             if (!string.IsNullOrEmpty(options.TestAccount))
             {
-                string delimitter = options.Delimitter == PartnerCenterDelim ? PartnerEmaillDelim : options.Delimitter;
-                List<string> testAccountNames = ExtractIds(options.TestAccount, delimitter);
+                // If using the Partner Center delimiter option, mark it for email processing
+                string delimiter = options.Delimiter == PartnerCenterDelim ? PartnerEmaillDelim : options.Delimiter;
+                List<string> testAccountNames = ExtractIds(options.TestAccount, delimiter);
 
                 // Sign into each account individually
                 foreach (string testAccountName in testAccountNames)
@@ -95,9 +96,11 @@ namespace XblPlayerDataReset
             }
             else if (!string.IsNullOrEmpty(options.XboxUserId))
             {
-                string delimitter = options.Delimitter == PartnerCenterDelim ? PartnerXuidDelim : options.Delimitter;
-                List<string> xuids = ExtractIds(options.XboxUserId, delimitter);
+                // If using the Partner Center delimiter option, mark it for xuid processing
+                string delimiter = options.Delimiter == PartnerCenterDelim ? PartnerXuidDelim : options.Delimiter;
+                List<string> xuids = ExtractIds(options.XboxUserId, delimiter);
 
+                // Sign into dev account
                 DevAccount account = ToolAuthentication.LoadLastSignedInUser();
                 if (account == null)
                 {
@@ -120,80 +123,50 @@ namespace XblPlayerDataReset
                     result = batchResult != 0 ? batchResult : result;
                 }
             }
-            else if (!string.IsNullOrEmpty(options.FileName))
-            {
-                List<string> xuids = new List<string>();
-                try
-                {
-                    // Create an instance of StreamReader to read from a file.
-                    // The using statement also closes the StreamReader.
-                    using (StreamReader sr = new StreamReader(File.OpenRead(@options.FileName)))
-                    {
-                        // TODO: Add format option
-                        string line;
-                        // Read and display lines from the file until the end of
-                        // the file is reached.
-                        line = sr.ReadLine(); // Skip the first line of headers
-                        while ((line = sr.ReadLine()) != null)
-                        {
-                            xuids.Add(line.Split(',')[0]);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    // Let the user know what went wrong.
-                    Console.WriteLine("The file could not be read:");
-                    Console.WriteLine(e.Message);
-                }
-            }
 
             return result;
         }
 
-        private static List<string> ExtractIds(string input, string delimitter)
+        private static List<string> ExtractIds(string input, string delimiter)
         {
             List<string> ids = new List<string>();
 
             // Check if the input is a file
             bool isFile = input.Contains('.') && !input.Contains('@');
-
             if (isFile)
             {
                 // If so, extract the contents into a string
                 try
                 {
-                    // Create an instance of StreamReader to read from a file.
-                    // The using statement also closes the StreamReader.
                     using (StreamReader sr = new StreamReader(File.OpenRead(@input)))
                     {
-                        // TODO: Add format option
+                        // Reset the input and prepare to read values from the file
                         input = string.Empty;
+
                         string line;
-                        // Read and display lines from the file until the end of
-                        // the file is reached.
-                        if (delimitter == PartnerEmaillDelim || delimitter == PartnerXuidDelim)
-                            sr.ReadLine(); // Skip the first line of headers
+                        // Skip the first line of headers for Partner Center options
+                        if (delimiter == PartnerEmaillDelim || delimiter == PartnerXuidDelim)
+                            sr.ReadLine();
                         while ((line = sr.ReadLine()) != null)
                         {
-                            if (delimitter == PartnerEmaillDelim)
-                                input += line.Split(',')[1] + ",";
-                            else if (delimitter == PartnerXuidDelim)
-                                input += line.Split(',')[0] + ",";
+                            if (delimiter == PartnerEmaillDelim)
+                                input += line.Split(',')[1] + ","; // Second value in line
+                            else if (delimiter == PartnerXuidDelim)
+                                input += line.Split(',')[0] + ","; // First value in line
+                            else
+                                input += line + delimiter; // Read the whole line
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    // Let the user know what went wrong.
                     Console.WriteLine("The file could not be read:");
                     Console.WriteLine(e.Message);
                 }
             }
 
-            // Then process
-
-            char[] delim = delimitter == PartnerEmaillDelim || delimitter == PartnerXuidDelim ? new char[] { ',' } : new char[] { delimitter[0] };
+            // Set up the delimiter as char array
+            char[] delim = delimiter == PartnerEmaillDelim || delimiter == PartnerXuidDelim ? new char[] { ',' } : new char[] { delimiter[0] };
             // Extract the account names from the input
             ids = input.Split(delim, StringSplitOptions.RemoveEmptyEntries).ToList();
 
@@ -266,22 +239,17 @@ namespace XblPlayerDataReset
 
             [Option('x', "xuid", Required = false, SetName = "xuid",
                 // TODO: Owner? Admin? Who is allowed to run this?
-                HelpText = "A list of Xbox Live User IDs (XUID) of the players to be reset. Requires login of xuid owner.")]
+                HelpText = "A list of Xbox Live User IDs (XUID) of the players to be reset. Requires login of xuid owner. Can be a delimitted string or a file location.")]
             public string XboxUserId { get; set; }
 
             [Option('u', "user", Required = false, SetName = "testacct",
-                HelpText = "A list of email addresses of the test accounts to be reset. Requires password input per account.")]
+                HelpText = "A list of email addresses of the test accounts to be reset. Requires password input per account. Can be a delimitted string or a file location.")]
             public string TestAccount { get; set; }
 
-            // TODO: Write better help text
-            [Option('f', "file", Required = false,
-                HelpText = "A file with account information.")]
-            public string FileName { get; set; }
-
             // TODO: Use better help text
-            [Option('d', "delimitter", Required = false, Default = ",",
-                HelpText = "Delimitter, can be a character or 'PartnerCenter'")]
-            public string Delimitter { get; set; } //TODO: Set default
+            [Option('d', "delimiter", Required = false, Default = ",",
+                HelpText = "Delimiter that separates accounts to reset. Defaults to \",\". Pass 'PartnerCenter' to read exports from Partner Center.")]
+            public string Delimiter { get; set; }
 
             [Usage(ApplicationAlias = "XblPlayerDataReset")]
             public static IEnumerable<Example> Examples
@@ -289,7 +257,7 @@ namespace XblPlayerDataReset
                 get
                 {
                     // TODO: Update usage example
-                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx", TestAccount = "xxx@xboxtest.com" });
+                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx", TestAccount = "xxx@xboxtest.com", Delimiter = "," });
                 }
             }
         }
