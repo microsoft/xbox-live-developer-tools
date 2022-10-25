@@ -114,6 +114,10 @@ namespace XblPlayerDataReset
                     result = batchResult != 0 ? batchResult : result;
                 }
             }
+            else if (string.IsNullOrEmpty(options.FileName))
+            {
+
+            }
 
             return result;
         }
@@ -190,6 +194,16 @@ namespace XblPlayerDataReset
             [Option('u', "user", Required = false, SetName = "testacct",
                 HelpText = "A list of email addresses of the test accounts to be reset. Requires password input per account.")]
             public string TestAccount { get; set; }
+
+            // TODO: Write better help text
+            [Option('f', "file", Required = false,
+                HelpText = "A file with account information.")]
+            public string FileName { get; set; }
+
+            // TODO: Use better help text
+            [Option('d', "delimitter", Required = false,
+                HelpText = "Delimitter, can be a character or 'PartnerCenter'")]
+            public string Delimitter { get; set; } //TODO: Set default
 
             [Usage(ApplicationAlias = "XblPlayerDataReset")]
             public static IEnumerable<Example> Examples
