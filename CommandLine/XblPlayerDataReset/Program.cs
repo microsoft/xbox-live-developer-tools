@@ -69,11 +69,93 @@ namespace XblPlayerDataReset
 
             Console.WriteLine($"Resetting player data for SCID {options.ServiceConfigurationId} in sandbox {options.Sandbox}");
 
+            DevAccount devAccount = null;
+
+            if (!string.IsNullOrEmpty(options.File))
+            {
+                // Detect if file is of type partner center (check headers)
+                // If so, extract the contents into a string
+                try
+                {
+                    using (StreamReader sr = new StreamReader(File.OpenRead(@options.File)))
+                    {
+                        // Prepare to read values from the file
+                        string input = string.Empty;
+                        string delimiter = options.Delimiter;
+                        bool partnerCenterFormat = false;
+                        bool isEmail = false;
+
+                        string line;
+                        // Check the first line for Partner Center headers
+                        string firstLine = sr.ReadLine();
+                        if (firstLine.Contains("Xuid,Email,Gamertag,IsDeleted,AccountId,Etag,Subscriptions,Keywords"))
+                        {
+                            partnerCenterFormat = true;
+                            Console.WriteLine("File has Partner Center format.");
+                        }
+
+                        if (partnerCenterFormat)
+                        {
+                            // Set delimiter to comma
+                            options.Delimiter = ",";
+
+                            // Attempt to sign into dev account
+                            devAccount = ToolAuthentication.LoadLastSignedInUser();
+
+                            // Fail, read emails
+                            if (devAccount == null)
+                            {
+                                Console.WriteLine("Partner Center account not logged in. Using email sign in option.");
+                                delimiter = PartnerEmaillDelim;
+                                isEmail = true;
+                            }
+
+                            // Success, read xuids
+                            else
+                            {
+                                Console.WriteLine("Successfully signed into Partner Center account. Using xuid sign in option.");
+                                delimiter = PartnerXuidDelim;
+                            }
+                        }
+                        else
+                        {
+                            // Detect if using email or xuid
+                            if (firstLine.Contains("@"))
+                                isEmail = true;
+                            string type = isEmail ? "emails" : "xuids";
+                            Console.WriteLine($"Reading '{options.Delimiter}' delimitted file of {type}.");
+                            input += firstLine + delimiter;
+                        }
+
+                        // Read the file line by line using the appropriate delimiter
+                        while ((line = sr.ReadLine()) != null)
+                        {
+                            if (delimiter == PartnerEmaillDelim)
+                                input += line.Split(',')[1] + ","; // Second value in line
+                            else if (delimiter == PartnerXuidDelim)
+                                input += line.Split(',')[0] + ","; // First value in line
+                            else
+                                input += line + delimiter; // Read the whole line
+                        }
+
+                        // Set input to be either email or xuid and run the rest of the process below
+                        if (isEmail)
+                            options.TestAccount = input;
+                        else
+                            options.XboxUserId = input;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine("The file could not be read:");
+                    Console.Error.WriteLine(e.Message);
+                }
+            }
+
             if (!string.IsNullOrEmpty(options.TestAccount))
             {
-                // If using the Partner Center delimiter option, mark it for email processing
-                string delimiter = options.Delimiter == PartnerCenterDelim ? PartnerEmaillDelim : options.Delimiter;
-                List<string> testAccountNames = ExtractIds(options.TestAccount, delimiter);
+                // Extract account emails
+                List<string> testAccountNames = ExtractIds(options.TestAccount, options.Delimiter);
 
                 // Sign into each account individually
                 foreach (string testAccountName in testAccountNames)
@@ -96,13 +178,12 @@ namespace XblPlayerDataReset
             }
             else if (!string.IsNullOrEmpty(options.XboxUserId))
             {
-                // If using the Partner Center delimiter option, mark it for xuid processing
-                string delimiter = options.Delimiter == PartnerCenterDelim ? PartnerXuidDelim : options.Delimiter;
-                List<string> xuids = ExtractIds(options.XboxUserId, delimiter);
+                // Extract XUIDs
+                List<string> xuids = ExtractIds(options.XboxUserId, options.Delimiter);
 
-                // Sign into dev account
-                DevAccount account = ToolAuthentication.LoadLastSignedInUser();
-                if (account == null)
+                // If we haven't already, sign into dev account
+                devAccount = devAccount ?? ToolAuthentication.LoadLastSignedInUser();
+                if (devAccount == null)
                 {
                     Console.Error.WriteLine("Resetting by XUID requires a signed in Partner Center account. Please use \"XblDevAccount.exe signin\" to log in.");
                     return -1;
@@ -115,7 +196,7 @@ namespace XblPlayerDataReset
                         index >= i && index < i + MaxBatchSize).ToList();
 
                     // TODO: Should we display the gamertags here too?
-                    Console.WriteLine($"Using Dev account {account.Name} from {account.AccountSource}");
+                    Console.WriteLine($"Using Dev account {devAccount.Name} from {devAccount.AccountSource}");
                     Console.WriteLine($"Processing batch of {xuidBatch.Count} account(s).");
 
                     // Accounts can be processed in parallel when using a dev account; send several at once
@@ -131,42 +212,8 @@ namespace XblPlayerDataReset
         {
             List<string> ids = new List<string>();
 
-            // Check if the input is a file
-            bool isFile = input.Contains('.') && !input.Contains('@');
-            if (isFile)
-            {
-                // If so, extract the contents into a string
-                try
-                {
-                    using (StreamReader sr = new StreamReader(File.OpenRead(@input)))
-                    {
-                        // Reset the input and prepare to read values from the file
-                        input = string.Empty;
-
-                        string line;
-                        // Skip the first line of headers for Partner Center options
-                        if (delimiter == PartnerEmaillDelim || delimiter == PartnerXuidDelim)
-                            sr.ReadLine();
-                        while ((line = sr.ReadLine()) != null)
-                        {
-                            if (delimiter == PartnerEmaillDelim)
-                                input += line.Split(',')[1] + ","; // Second value in line
-                            else if (delimiter == PartnerXuidDelim)
-                                input += line.Split(',')[0] + ","; // First value in line
-                            else
-                                input += line + delimiter; // Read the whole line
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("The file could not be read:");
-                    Console.WriteLine(e.Message);
-                }
-            }
-
             // Set up the delimiter as char array
-            char[] delim = delimiter == PartnerEmaillDelim || delimiter == PartnerXuidDelim ? new char[] { ',' } : new char[] { delimiter[0] };
+            char[] delim = new char[] { delimiter[0] };
             // Extract the account names from the input
             ids = input.Split(delim, StringSplitOptions.RemoveEmptyEntries).ToList();
 
@@ -239,16 +286,19 @@ namespace XblPlayerDataReset
 
             [Option('x', "xuid", Required = false, SetName = "xuid",
                 // TODO: Owner? Admin? Who is allowed to run this?
-                HelpText = "A list of Xbox Live User IDs (XUID) of the players to be reset. Requires login of xuid owner. Can be a delimitted string or a file location.")]
+                HelpText = "A list of Xbox Live User IDs (XUID) of the players to be reset. Requires login of xuid owner.")]
             public string XboxUserId { get; set; }
 
             [Option('u', "user", Required = false, SetName = "testacct",
-                HelpText = "A list of email addresses of the test accounts to be reset. Requires password input per account. Can be a delimitted string or a file location.")]
+                HelpText = "A list of email addresses of the test accounts to be reset. Requires password input per account.")]
             public string TestAccount { get; set; }
 
-            // TODO: Use better help text
+            [Option('f', "file", Required = false, SetName = "file",
+                HelpText = "File location with account information. Can be a set of xuids, emails, or an exported Partner Center csv.")]
+            public string File { get; set; }
+
             [Option('d', "delimiter", Required = false, Default = ",",
-                HelpText = "Delimiter that separates accounts to reset. Defaults to \",\". Pass 'PartnerCenter' to read exports from Partner Center.")]
+                HelpText = "Delimiter that separates accounts to reset. Defaults to \",\".")]
             public string Delimiter { get; set; }
 
             [Usage(ApplicationAlias = "XblPlayerDataReset")]
