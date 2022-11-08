@@ -145,6 +145,11 @@ namespace XblPlayerDataReset
                             options.XboxUserId = input;
                     }
                 }
+                catch (NullReferenceException ne)
+                {
+                    Console.Error.WriteLine("The file could not be read:");
+                    Console.Error.WriteLine("The file appears to have no content.");
+                }
                 catch (Exception e)
                 {
                     Console.Error.WriteLine("The file could not be read:");
