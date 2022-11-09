@@ -291,11 +291,11 @@ namespace XblPlayerDataReset
 
             [Option('x', "xuid", Required = false, SetName = "xuid",
                 // TODO: Owner? Admin? Who is allowed to run this?
-                HelpText = "A list of Xbox Live User IDs (XUID) of the players to be reset. Requires login of xuid owner.")]
+                HelpText = "A list of Xbox Live User IDs (XUID) of the players to be reset. Requires login for xuid owner.")]
             public string XboxUserId { get; set; }
 
             [Option('u', "user", Required = false, SetName = "testacct",
-                HelpText = "A list of email addresses of the test accounts to be reset. Requires password input per account.")]
+                HelpText = "A list of email addresses of the test accounts to be reset. Requires login for each email.")]
             public string TestAccount { get; set; }
 
             [Option('f', "file", Required = false, SetName = "file",
@@ -311,8 +311,7 @@ namespace XblPlayerDataReset
             {
                 get
                 {
-                    // TODO: Update usage example
-                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx", TestAccount = "xxx@xboxtest.com", Delimiter = "," });
+                    yield return new Example("Reset a player for given scid and sandbox", new ResetOptions { ServiceConfigurationId = "xxx", Sandbox = "xxx", XboxUserId = "xxx", TestAccount = "xxx@xboxtest.com", File = "path/to/file", Delimiter = "," });
                 }
             }
         }
