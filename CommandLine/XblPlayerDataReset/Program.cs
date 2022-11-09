@@ -18,8 +18,6 @@ namespace XblPlayerDataReset
     internal class Program
     {
         internal const int MaxBatchSize = 10;
-        internal const string DefaultDelimiter = ",";
-        internal const string PartnerCenterDelim = "PartnerCenter";
         internal const string PartnerEmaillDelim = "PCE";
         internal const string PartnerXuidDelim = "PCX";
 
