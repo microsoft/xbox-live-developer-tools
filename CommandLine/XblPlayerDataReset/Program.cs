@@ -198,7 +198,6 @@ namespace XblPlayerDataReset
                     List<string> xuidBatch = xuids.Where((x, index) =>
                         index >= i && index < i + MaxBatchSize).ToList();
 
-                    // TODO: Should we display the gamertags here too?
                     Console.WriteLine($"Using Dev account {devAccount.Name} from {devAccount.AccountSource}");
                     Console.WriteLine($"Processing batch of {xuidBatch.Count} account(s).");
 
@@ -288,7 +287,6 @@ namespace XblPlayerDataReset
             public string Sandbox { get; set; }
 
             [Option('x', "xuid", Required = false, SetName = "xuid",
-                // TODO: Owner? Admin? Who is allowed to run this?
                 HelpText = "A list of Xbox Live User IDs (XUID) of the players to be reset. Requires login for xuid owner.")]
             public string XboxUserId { get; set; }
 

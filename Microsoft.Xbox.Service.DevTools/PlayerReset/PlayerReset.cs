@@ -152,7 +152,6 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
             }
 
             // Log detail status
-            // TODO: Do I also want to output this to Log.WriteLog?
             // Log.WriteLog($"Resetting player {xuid} result {result.OverallResult}: ");
             string retryClause = result.OverallResult == ResetOverallResult.Succeeded || !canRetry ? string.Empty : ". Will retry.";
             Console.WriteLine($"Resetting player {xuid} result: {result.OverallResult}{retryClause}");
