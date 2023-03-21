@@ -5,6 +5,8 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
     using DevTools.Authentication;
@@ -21,7 +23,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
         private const string DefaultScid = "00000000-0000-0000-0000-012345678901";
         private const string DefaultSandbox = "sandbox";
         private const string DefaultEtoken = "etoken";
-        private const string DefaultXuid = "xuid";
+        private List<string> DefaultXuid = new List<string> { "xuid1", "xuid2" };
 
         private void SetUpMockAuth()
         {

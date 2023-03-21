@@ -4,6 +4,8 @@
 namespace Microsoft.Xbox.Services.DevTools.PlayerReset
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
     using Microsoft.Xbox.Services.DevTools.Authentication;
@@ -16,6 +18,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
     public class PlayerReset
     {
         internal const int MaxPollingAttempts = 4;
+        internal const int MaxRetryAttempts = 4;
         private static Uri baseUri = new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint);
 
         private PlayerReset()
@@ -29,9 +32,9 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
         /// </summary>
         /// <param name="serviceConfigurationId">The service configuration ID (SCID) of the title for player data resetting</param>
         /// <param name="sandbox">The target sandbox id for player resetting</param>
-        /// <param name="xboxUserId">The Xbox user id of the player to be reset</param>
+        /// <param name="xboxUserIds">The Xbox user ids of the player to be reset</param>
         /// <returns>The UserResetResult object for the reset result</returns>
-        public static async Task<UserResetResult> ResetPlayerDataAsync(string serviceConfigurationId, string sandbox, string xboxUserId)
+        public static async Task<UserResetResult> ResetPlayerDataAsync(string serviceConfigurationId, string sandbox, List<string> xboxUserIds)
         {
             // Pre-fetch the product/sandbox etoken before getting into the loop, so that we can 
             // populate the auth error up-front.
@@ -44,10 +47,61 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 await ToolAuthentication.GetDevTokenSilentlyAsync(serviceConfigurationId, sandbox);
             }
 
-            return await SubmitJobAndPollStatus(sandbox, serviceConfigurationId, xboxUserId);
+            // Initialize xuid-task mapping
+            Dictionary<string, Task<UserResetResult>> userTaskMap = new Dictionary<string, Task<UserResetResult>>();
+            foreach (string xuid in xboxUserIds)
+            {
+                userTaskMap.Add(xuid, null);
+            }
+
+            for (int i = 0; i <= MaxRetryAttempts; i++)
+            {
+                // Run a task per id
+                List<string> ids = userTaskMap.Keys.ToList();
+                foreach (string userId in ids)
+                {
+                    userTaskMap[userId] = SubmitJobAndPollStatus(sandbox, serviceConfigurationId, userId, MaxRetryAttempts - i > 1);
+                }
+
+                var t = Task.WhenAll(userTaskMap.Values);
+
+                // Remove xuids that succeeded
+                foreach (string key in userTaskMap.Keys.ToArray()
+                    .Where(xuid => userTaskMap[xuid].Result.OverallResult == ResetOverallResult.Succeeded))
+                    userTaskMap.Remove(key);
+
+                // If everything succeeded, end the loop
+                if (userTaskMap.Count == 0)
+                {
+                    break;
+                }
+                else if (i < MaxRetryAttempts)
+                {
+                    Console.WriteLine($"Retrying {userTaskMap.Count} accounts. {MaxRetryAttempts - i} more attempt(s).");
+                }
+            }
+
+            UserResetResult result = new UserResetResult();
+
+            var failedTaskMap = userTaskMap.Where(kvp => kvp.Value.Result.OverallResult != ResetOverallResult.Succeeded).ToDictionary(t => t.Key, t=>t.Value);
+            if (failedTaskMap.Count > 0)
+            {
+                var firstFailedTask = failedTaskMap.First().Value;
+                result.OverallResult = firstFailedTask.Result.OverallResult;
+                result.ProviderStatus = firstFailedTask.Result.ProviderStatus;
+                result.HttpErrorMessage = firstFailedTask.Result.HttpErrorMessage;
+
+                string failedXuids = string.Join(",", failedTaskMap.Keys.ToList());
+                Console.WriteLine($"Failed to reset {failedTaskMap.Count} account(s): {failedXuids}");
+            }
+            else
+            {
+                result.OverallResult = ResetOverallResult.Succeeded;
+            }
+            return result;
         }
 
-        private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid)
+        private static async Task<UserResetResult> SubmitJobAndPollStatus(string sandbox, string scid, string xuid, bool canRetry)
         {
             UserResetResult result = new UserResetResult();
             JobStatusResponse jobStatus = null;
@@ -98,9 +152,11 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
             }
 
             // Log detail status
+            // Log.WriteLog($"Resetting player {xuid} result {result.OverallResult}: ");
+            string retryClause = result.OverallResult == ResetOverallResult.Succeeded || !canRetry ? string.Empty : ". Will retry.";
+            Console.WriteLine($"Resetting player {xuid} result: {result.OverallResult}{retryClause}");
             if (result.OverallResult != ResetOverallResult.Succeeded)
             {
-                Log.WriteLog($"Resetting player {xuid} result {result.OverallResult}: ");
                 if (jobStatus != null && jobStatus.ProviderStatus != null)
                 {
                     foreach (var providerStatus in jobStatus.ProviderStatus)
