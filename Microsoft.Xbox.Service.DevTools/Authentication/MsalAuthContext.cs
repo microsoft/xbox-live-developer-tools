@@ -11,20 +11,19 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
     internal class MsalAuthContext : IAuthContext
     {
-        private readonly string[] scopes = new[] { "Xboxlive.signin", "Xboxlive.offline_access" };
+        // Added fields
+        private readonly string[] scopes = new[] { "https://graph.microsoft.com/.default" }; // Change scope for token acquisition
         private readonly IPublicClientApplication publicClientApplication;
-        private IUser cachedAccount;
+        private AuthenticationResult authResult;
 
         public MsalAuthContext(string userName)
         {
-            this.publicClientApplication = new PublicClientApplication(ClientSettings.Singleton.MsalXboxLiveClientId, ClientSettings.Singleton.MsalLiveAuthority);
-
             this.UserName = userName;
-            this.cachedAccount = this.publicClientApplication.Users.SingleOrDefault(
-                user => string.Compare(user.Name, userName, StringComparison.OrdinalIgnoreCase) == 0);
+            this.publicClientApplication = new PublicClientApplication(ClientSettings.Singleton.MsalXboxLiveClientId, ClientSettings.Singleton.MsalLiveAuthority);
+            this.authResult = null;
         }
 
-        public DevAccountSource AccountSource { get; } = DevAccountSource.TestAccount;
+        public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; // Change DevAccountSource
 
         public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.XASUEndpoint;
 
@@ -39,20 +38,13 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public async Task<string> AcquireTokenSilentAsync()
         {
-            if (this.cachedAccount == null)
-            {
-                throw new InvalidOperationException("No cached user found, please call SignInAsync to sign in a user.");
-            }
-
-            AuthenticationResult result = await this.publicClientApplication.AcquireTokenSilentAsync(this.scopes, this.cachedAccount);
-
-            return result?.AccessToken;
+            return null;
         }
 
         public async Task<string> AcquireTokenAsync()
         {
             AuthenticationResult result = await this.publicClientApplication.AcquireTokenAsync(this.scopes, this.UserName, UIBehavior.Consent, string.Empty);
-            this.cachedAccount = result.User;
+            // this.cachedAccount = result.User; Cannot support this anymore
             return result.AccessToken;
         }
     }

@@ -21,6 +21,8 @@ namespace XblDevAccount
 
         private static async Task<int> Main(string[] args)
         {
+            // Args for testing (remove)
+            string[] testArgs = { "signin", "-u", "fcisneros@microsoft.com" };
             int exitCode = 0;
             try
             {
@@ -28,7 +30,7 @@ namespace XblDevAccount
                 SignInOptions signInOptions = null;
 
                 // Only assign the option and verb here, as the commandlineParser doesn't support async callback yet.
-                var result = Parser.Default.ParseArguments<SignInOptions, SignOutOptions, ShowOptions>(args)
+                var result = Parser.Default.ParseArguments<SignInOptions, SignOutOptions, ShowOptions>(testArgs) // Change: testArgs -> args
                     .WithParsed<SignInOptions>(options =>
                     {
                         invokedVerb = "signin";
@@ -57,6 +59,8 @@ namespace XblDevAccount
         {
             try
             {
+                // ToolAuthentication returns Task<DevAccount> -> OS returns Task<Tuple<DevAccount, string>> <DevAccount, AADToken>
+                // Not using AADToken at this level .. no need for token ?
                 var devAccount = await ToolAuthentication.SignInAsync((DevAccountSource)signInOptions.AccountSource, signInOptions.UserName, signInOptions.Tenant);
                 Console.WriteLine($"Microsoft Partner Center account {devAccount.Name} from {devAccount.AccountSource} has successfully signed in.");
                 DisplayDevAccount(devAccount, "\t");
