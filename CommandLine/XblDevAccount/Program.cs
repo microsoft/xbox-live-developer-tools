@@ -22,7 +22,7 @@ namespace XblDevAccount
         private static async Task<int> Main(string[] args)
         {
             // Args for testing (remove)
-            string[] testArgs = { "signin", "-u", "fcisneros@microsoft.com" };
+            string[] testArgs = { "signin", "-u", "NKDXTT-diceTest00000@xboxtest.com" };
             int exitCode = 0;
             try
             {

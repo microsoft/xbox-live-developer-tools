@@ -141,10 +141,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             {
                 HttpResponseMessage response = (await tokenRequest.SendAsync(() =>
                 {
+                    // New Http request
                     var requestMsg = new HttpRequestMessage(HttpMethod.Post, this.AuthContext.XtdsEndpoint);
 
-                    var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
-                    requestMsg.Content = new StringContent(requestContent);
+                    /*var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
+                    requestMsg.Content = new StringContent(requestContent);*/
 
                     // Add the aadToken header without validation as the framework
                     // does not like the values returned for aadTokens for MSA accounts.
@@ -156,6 +157,12 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                     {
                         requestMsg.Headers.Accept.ParseAdd("application/json");
                     }
+
+                    /*XdtsTokenRequest token = new XdtsTokenRequest(scid, sandboxes);
+                    requestMsg.Content = new StringContent(JsonConvertHelper.Serialize<XdtsTokenRequest>(token));*/
+
+                    var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
+                    requestMsg.Content = new StringContent(requestContent);
 
                     return requestMsg;
                 })).Response;

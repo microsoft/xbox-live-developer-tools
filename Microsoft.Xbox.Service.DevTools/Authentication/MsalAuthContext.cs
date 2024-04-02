@@ -18,34 +18,52 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public MsalAuthContext(string userName)
         {
+            const string ClientId = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1"; // XboxLive
+            const string Instance = "https://login.microsoftonline.com/";
+
+            this.publicClientApplication = PublicClientApplicationBuilder.Create(ClientId)
+                .WithAuthority($"{Instance}{Tenant}") 
+                .WithDefaultRedirectUri()
+                .Build();
+
             this.UserName = userName;
-            this.publicClientApplication = new PublicClientApplication(ClientSettings.Singleton.MsalXboxLiveClientId, ClientSettings.Singleton.MsalLiveAuthority);
-            this.authResult = null;
         }
 
         public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; // Change DevAccountSource
 
-        public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.XASUEndpoint;
+        public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.UDCAuthEndpoint;
 
         public string UserName { get; }
 
         public bool HasCredential
         {
-            get { return this.publicClientApplication.Users.FirstOrDefault() != null; }
+            get { return false; }
         }
 
-        public string Tenant => "consumers";
+        public string Tenant => "f8cdef31-a31e-4b4a-93e4-5f571e91255a";
 
         public async Task<string> AcquireTokenSilentAsync()
         {
-            return null;
+            // AuthenticationResult result = await this.publicClientApplication.AcquireTokenSilentAsync(this.scopes, this.cachedAccount);
+            // Warning 1998
+
+            var accounts = await publicClientApplication.GetAccountsAsync();
+            var firstAccount = accounts.FirstOrDefault();
+            this.authResult = await publicClientApplication.AcquireTokenSilent(scopes, firstAccount).ExecuteAsync();
+
+            return this.authResult?.AccessToken;
         }
 
         public async Task<string> AcquireTokenAsync()
         {
-            AuthenticationResult result = await this.publicClientApplication.AcquireTokenAsync(this.scopes, this.UserName, UIBehavior.Consent, string.Empty);
-            // this.cachedAccount = result.User; Cannot support this anymore
-            return result.AccessToken;
+            var accounts = await publicClientApplication.GetAccountsAsync();
+            var firstAccount = accounts.FirstOrDefault();
+            this.authResult = await publicClientApplication.AcquireTokenInteractive(scopes)
+                        .WithAccount(accounts.FirstOrDefault())
+                        .WithPrompt(Prompt.SelectAccount)
+                        .ExecuteAsync();
+
+            return this.authResult?.AccessToken;
         }
     }
 }
