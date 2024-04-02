@@ -155,7 +155,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                     
                     if (!requestMsg.Headers.Contains("Accept"))
                     {
-                        requestMsg.Headers.Accept.ParseAdd("application/json");
+                        
                     }*/
 
                     /*XdtsTokenRequest token = new XdtsTokenRequest(scid, sandboxes);
@@ -163,6 +163,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
                     var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
                     requestMsg.Content = new StringContent(requestContent);
+                    requestMsg.Content.Headers.ContentType.MediaType = "application/json";
+
 
                     /*reqToken = new XdtsTokenRequest(scid, sandboxes);
                     requestMsg.Content = new StringContent(JsonConvert.SerializeObject(reqToken));*/
@@ -171,6 +173,20 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 })).Response;
 
                 response.EnsureSuccessStatusCode();
+
+                string contentType = response.Content.Headers.ContentType?.MediaType;
+                if (contentType == "text/html")
+                {
+                    // The response content type is HTML, handle it accordingly
+                    // For example, you can read the HTML content directly or log a message
+                    Log.WriteLog("HTML!!!!");
+                    string htmlContent = await response.Content.ReadAsStringAsync();
+                    Log.WriteLog("Received HTML content: " + htmlContent);
+                }
+
+                response.Content.Headers.ContentType.MediaType = "application/json";
+                response.Content.Headers.ContentLength = 1658;
+
                 Log.WriteLog("Fetch xdts Token succeeded.");
 
                 var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>(); // HERE Error: unexpected error found. Unexpected character encountered while parsing value: <.Path '', line 0, position 0.
