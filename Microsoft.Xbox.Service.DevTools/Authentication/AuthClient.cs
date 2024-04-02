@@ -144,31 +144,14 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 {
                     // New Http request
                     var requestMsg = new HttpRequestMessage(HttpMethod.Post, this.AuthContext.XtdsEndpoint);
-
-
-
                     // Add the aadToken header without validation as the framework
                     // does not like the values returned for aadTokens for MSA accounts.
-                    /*requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken);
-                    requestMsg.Headers.UserAgent.ParseAdd("GameConfigCoreEditor/10.0.0.0 GameConfigEditor/10.0.0.0");
-                    requestMsg.Headers.Expect.ParseAdd("100-continue");
-                    
-                    if (!requestMsg.Headers.Contains("Accept"))
-                    {
-                        
-                    }*/
-
-                    /*XdtsTokenRequest token = new XdtsTokenRequest(scid, sandboxes);
-                    requestMsg.Content = new StringContent(JsonConvertHelper.Serialize<XdtsTokenRequest>(token));*/
+                    requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken); 
+                    // Including aadToken results in 403 response
 
                     var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
                     requestMsg.Content = new StringContent(requestContent);
-                    requestMsg.Content.Headers.ContentType.MediaType = "application/json";
-
-
-                    /*reqToken = new XdtsTokenRequest(scid, sandboxes);
-                    requestMsg.Content = new StringContent(JsonConvert.SerializeObject(reqToken));*/
-
+       
                     return requestMsg;
                 })).Response;
 
@@ -179,17 +162,14 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 {
                     // The response content type is HTML, handle it accordingly
                     // For example, you can read the HTML content directly or log a message
-                    Log.WriteLog("HTML!!!!");
+                    Log.WriteLog("HTML Received");
                     string htmlContent = await response.Content.ReadAsStringAsync();
                     Log.WriteLog("Received HTML content: " + htmlContent);
                 }
 
-                response.Content.Headers.ContentType.MediaType = "application/json";
-                response.Content.Headers.ContentLength = 1658;
-
                 Log.WriteLog("Fetch xdts Token succeeded.");
 
-                var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>(); // HERE Error: unexpected error found. Unexpected character encountered while parsing value: <.Path '', line 0, position 0.
+                var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>(); // Error: unexpected error found. Unexpected character encountered while parsing value: <.Path '', line 0, position 0.
 
                 string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.UpdateToken(key, token);
