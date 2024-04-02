@@ -139,24 +139,24 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             using (var tokenRequest = new XboxLiveHttpRequest())
             {
+                // XdtsTokenRequest reqToken; 
                 HttpResponseMessage response = (await tokenRequest.SendAsync(() =>
                 {
                     // New Http request
                     var requestMsg = new HttpRequestMessage(HttpMethod.Post, this.AuthContext.XtdsEndpoint);
 
-                    /*var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
-                    requestMsg.Content = new StringContent(requestContent);*/
+
 
                     // Add the aadToken header without validation as the framework
                     // does not like the values returned for aadTokens for MSA accounts.
-                    requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken);
+                    /*requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken);
                     requestMsg.Headers.UserAgent.ParseAdd("GameConfigCoreEditor/10.0.0.0 GameConfigEditor/10.0.0.0");
                     requestMsg.Headers.Expect.ParseAdd("100-continue");
-
+                    
                     if (!requestMsg.Headers.Contains("Accept"))
                     {
                         requestMsg.Headers.Accept.ParseAdd("application/json");
-                    }
+                    }*/
 
                     /*XdtsTokenRequest token = new XdtsTokenRequest(scid, sandboxes);
                     requestMsg.Content = new StringContent(JsonConvertHelper.Serialize<XdtsTokenRequest>(token));*/
@@ -164,13 +164,16 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                     var requestContent = JsonConvert.SerializeObject(new XdtsTokenRequest(scid, sandboxes));
                     requestMsg.Content = new StringContent(requestContent);
 
+                    /*reqToken = new XdtsTokenRequest(scid, sandboxes);
+                    requestMsg.Content = new StringContent(JsonConvert.SerializeObject(reqToken));*/
+
                     return requestMsg;
                 })).Response;
 
                 response.EnsureSuccessStatusCode();
                 Log.WriteLog("Fetch xdts Token succeeded.");
 
-                var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
+                var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>(); // HERE Error: unexpected error found. Unexpected character encountered while parsing value: <.Path '', line 0, position 0.
 
                 string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.UpdateToken(key, token);

@@ -12,7 +12,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     internal class MsalAuthContext : IAuthContext
     {
         // Added fields
-        private readonly string[] scopes = new[] { "https://graph.microsoft.com/.default" }; // Change scope for token acquisition
+        private readonly string[] scopes = new[] { "https://partner.microsoft.com//.default" }; // Change scope for token acquisition
         private readonly IPublicClientApplication publicClientApplication;
         private AuthenticationResult authResult;
 

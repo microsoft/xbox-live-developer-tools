@@ -126,7 +126,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
                 }
 
                 request.Headers.Remove("Authorization");
-                request.Headers.Add("Authorization", $"XBL3.0 x={userHash};{token}");
+                request.Headers.Add("Authorization", $"XBL3.0 x={userHash};{token}"); // Authorization Header may be messing us up
             }
 
             request.Headers.UserAgent.ParseAdd(UserAgent);
