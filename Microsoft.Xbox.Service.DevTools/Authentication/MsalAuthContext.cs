@@ -29,7 +29,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             this.UserName = userName;
         }
 
-        public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; // Change DevAccountSource
+        public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; // Changed to DevAccountSource
 
         public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.UDCAuthEndpoint;
 
@@ -40,13 +40,10 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             get { return false; }
         }
 
-        public string Tenant => "f8cdef31-a31e-4b4a-93e4-5f571e91255a"; // Change Tenant?
+        public string Tenant => "72f988bf-86f1-41af-91ab-2d7cd011db47"; // Changed Tenant
 
         public async Task<string> AcquireTokenSilentAsync()
         {
-            // AuthenticationResult result = await this.publicClientApplication.AcquireTokenSilentAsync(this.scopes, this.cachedAccount);
-            // Warning 1998
-
             var accounts = await publicClientApplication.GetAccountsAsync();
             var firstAccount = accounts.FirstOrDefault();
             this.authResult = await publicClientApplication.AcquireTokenSilent(scopes, firstAccount).ExecuteAsync();
@@ -62,7 +59,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                         .WithAccount(accounts.FirstOrDefault())
                         .WithPrompt(Prompt.SelectAccount)
                         .ExecuteAsync();
-
+            Log.WriteLog(this.authResult.AccessToken);
             return this.authResult?.AccessToken;
         }
     }
