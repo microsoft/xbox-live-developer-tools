@@ -104,13 +104,13 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Authentication\AdalAuthContext.cs" />
+    <Compile Include="Authentication\MsalDevAuthContext.cs" />
     <Compile Include="Authentication\AdalTokenCache.cs" />
     <Compile Include="Authentication\AuthClient.cs" />
     <Compile Include="Authentication\IAuthContext.cs" />
     <Compile Include="Authentication\DevAccount.cs" />
     <Compile Include="Authentication\DevAccountSource.cs" />
-    <Compile Include="Authentication\MsalAuthContext.cs" />
+    <Compile Include="Authentication\MsalTestAuthContext.cs" />
     <Compile Include="Authentication\TestAccount.cs" />
     <Compile Include="Authentication\ToolAuthentication.cs" />
     <Compile Include="Authentication\AuthTokenCache.cs" />

@@ -40,7 +40,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             get { return false; }
         }
 
-        public string Tenant => "9188040d-6c67-4c5b-b112-36a304b66dad"; 
+        public string Tenant => "consumers"; 
 
         public async Task<string> AcquireTokenSilentAsync()
         {
