@@ -11,7 +11,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
     internal class MsalTestAuthContext : IAuthContext
     {
-        // Added fields
         private readonly string[] scopes = new[] { "Xboxlive.signin", "Xboxlive.offline_access" };  
         private readonly IPublicClientApplication clientApp;
         private AuthenticationResult authResult;

@@ -11,7 +11,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
     internal class MsalDevAuthContext : IAuthContext
     {
-        // Added fields
         private readonly string[] scopes = new[] { "https://partner.microsoft.com//.default" }; 
         private readonly IPublicClientApplication clientApp;
         private AuthenticationResult authResult;
@@ -22,7 +21,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             const string Instance = "https://login.microsoftonline.com/";
 
             this.clientApp = PublicClientApplicationBuilder.Create(ClientId)
-                .WithAuthority($"{Instance}{Tenant}")
+                .WithAuthority($"{Instance}{this.Tenant}")
                 .WithDefaultRedirectUri()
                 .Build();
 
@@ -40,22 +39,22 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             get { return false; }
         }
 
-        public string Tenant => "common"; // old: 72f988bf-86f1-41af-91ab-2d7cd011db47
+        public string Tenant => "common"; 
 
         public async Task<string> AcquireTokenSilentAsync()
         {
-            var accounts = await clientApp.GetAccountsAsync();
+            var accounts = await this.clientApp.GetAccountsAsync();
             var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await clientApp.AcquireTokenSilent(scopes, firstAccount).ExecuteAsync();
+            this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, firstAccount).ExecuteAsync();
 
             return this.authResult?.AccessToken;
         }
 
         public async Task<string> AcquireTokenAsync()
         {
-            var accounts = await clientApp.GetAccountsAsync();
+            var accounts = await this.clientApp.GetAccountsAsync();
             var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await clientApp.AcquireTokenInteractive(scopes)
+            this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
                         .WithAccount(accounts.FirstOrDefault())
                         .WithPrompt(Prompt.SelectAccount)
                         .ExecuteAsync();
