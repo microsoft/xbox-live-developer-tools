@@ -9,19 +9,19 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using Microsoft.Identity.Client;
     using Microsoft.Xbox.Services.DevTools.Common;
 
-    internal class AdalAuthContext : IAuthContext
+    internal class MsalDevAuthContext : IAuthContext
     {
         // Added fields
-        private readonly string[] scopes = new[] { "https://partner.microsoft.com//.default" }; // Change scope for token acquisition
-        private readonly IPublicClientApplication publicClientApplication;
+        private readonly string[] scopes = new[] { "https://partner.microsoft.com//.default" }; 
+        private readonly IPublicClientApplication clientApp;
         private AuthenticationResult authResult;
 
-        public AdalAuthContext(string userName)
+        public MsalDevAuthContext(string userName)
         {
-            const string ClientId = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1"; // From JWT 872cd9fa-d31f-45e0-9eab-6e460a02d1f1
+            const string ClientId = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1"; 
             const string Instance = "https://login.microsoftonline.com/";
 
-            this.publicClientApplication = PublicClientApplicationBuilder.Create(ClientId)
+            this.clientApp = PublicClientApplicationBuilder.Create(ClientId)
                 .WithAuthority($"{Instance}{Tenant}")
                 .WithDefaultRedirectUri()
                 .Build();
@@ -29,7 +29,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             this.UserName = userName;
         }
 
-        public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; // Changed to DevAccountSource
+        public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; 
 
         public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.UDCAuthEndpoint;
 
@@ -40,22 +40,22 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             get { return false; }
         }
 
-        public string Tenant => "72f988bf-86f1-41af-91ab-2d7cd011db47"; // Changed Tenant
+        public string Tenant => "72f988bf-86f1-41af-91ab-2d7cd011db47"; 
 
         public async Task<string> AcquireTokenSilentAsync()
         {
-            var accounts = await publicClientApplication.GetAccountsAsync();
+            var accounts = await clientApp.GetAccountsAsync();
             var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await publicClientApplication.AcquireTokenSilent(scopes, firstAccount).ExecuteAsync();
+            this.authResult = await clientApp.AcquireTokenSilent(scopes, firstAccount).ExecuteAsync();
 
             return this.authResult?.AccessToken;
         }
 
         public async Task<string> AcquireTokenAsync()
         {
-            var accounts = await publicClientApplication.GetAccountsAsync();
+            var accounts = await clientApp.GetAccountsAsync();
             var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await publicClientApplication.AcquireTokenInteractive(scopes)
+            this.authResult = await clientApp.AcquireTokenInteractive(scopes)
                         .WithAccount(accounts.FirstOrDefault())
                         .WithPrompt(Prompt.SelectAccount)
                         .ExecuteAsync();

@@ -9,19 +9,19 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using Microsoft.Identity.Client;
     using Microsoft.Xbox.Services.DevTools.Common;
 
-    internal class MsalAuthContext : IAuthContext
+    internal class MsalTestAuthContext : IAuthContext
     {
         // Added fields
-        private readonly string[] scopes = new[] { "Xboxlive.signin", "Xboxlive.offline_access" }; // "Xboxlive.signin", "Xboxlive.offline_access" - Need to change to What? 
-        private readonly IPublicClientApplication publicClientApplication;
+        private readonly string[] scopes = new[] { "Xboxlive.signin", "Xboxlive.offline_access" };  
+        private readonly IPublicClientApplication clientApp;
         private AuthenticationResult authResult;
 
-        public MsalAuthContext(string userName)
+        public MsalTestAuthContext(string userName)
         {
-            const string ClientId = "b1eab458-325b-45a5-9692-ad6079c1eca8"; // Need to determine
-            const string Instance = "https://login.microsoftonline.com/consumers/"; // What is this???
+            const string ClientId = "b1eab458-325b-45a5-9692-ad6079c1eca8"; 
+            const string Instance = "https://login.microsoftonline.com/consumers/";
 
-            this.publicClientApplication = PublicClientApplicationBuilder.Create(ClientId)
+            this.clientApp = PublicClientApplicationBuilder.Create(ClientId)
                 .WithAuthority($"{Instance}{this.Tenant}") 
                 .WithDefaultRedirectUri()
                 .Build();
@@ -29,7 +29,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             this.UserName = userName;
         }
 
-        public DevAccountSource AccountSource { get; } = DevAccountSource.TestAccount; // Changed to TestAccount
+        public DevAccountSource AccountSource { get; } = DevAccountSource.TestAccount; 
 
         public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.UDCAuthEndpoint;
 
@@ -40,26 +40,25 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             get { return false; }
         }
 
-        public string Tenant => "9188040d-6c67-4c5b-b112-36a304b66dad"; // Changed Tenant based off JWT
+        public string Tenant => "9188040d-6c67-4c5b-b112-36a304b66dad"; 
 
         public async Task<string> AcquireTokenSilentAsync()
         {
-            var accounts = await this.publicClientApplication.GetAccountsAsync();
+            var accounts = await this.clientApp.GetAccountsAsync();
             var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await this.publicClientApplication.AcquireTokenSilent(this.scopes, firstAccount).ExecuteAsync();
+            this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, firstAccount).ExecuteAsync();
 
             return this.authResult?.AccessToken;
         }
 
         public async Task<string> AcquireTokenAsync()
         {
-            var accounts = await this.publicClientApplication.GetAccountsAsync();
+            var accounts = await this.clientApp.GetAccountsAsync();
             var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await this.publicClientApplication.AcquireTokenInteractive(this.scopes)
+            this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
                         .WithAccount(accounts.FirstOrDefault())
                         .WithPrompt(Prompt.SelectAccount)
                         .ExecuteAsync();
-            Log.WriteLog(this.authResult.AccessToken);
             return this.authResult?.AccessToken;
         }
     }
