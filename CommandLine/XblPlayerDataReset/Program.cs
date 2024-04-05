@@ -23,10 +23,11 @@ namespace XblPlayerDataReset
 
         private static async Task<int> Main(string[] args)
         {
+            string[] testArgs = { "-c", "00000000-0000-0000-0000-000064353034", "-s", "XDKS.1", "-u", "XDKS-fernandotest00003@xboxtest.com" };
             try
             {
                 ResetOptions options = null;
-                var parserResult = Parser.Default.ParseArguments<ResetOptions>(args)
+                var parserResult = Parser.Default.ParseArguments<ResetOptions>(testArgs)
                     .WithParsed<ResetOptions>(parsedOptions => options = parsedOptions);
                 if (parserResult.Tag == ParserResultType.NotParsed)
                 {

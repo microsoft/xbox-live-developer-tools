@@ -183,11 +183,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             {
                 case DevAccountSource.WindowsDevCenter:
                     // Replace with MsalAuthContext
-                    return new MsalAuthContext(userName);
+                    return new AdalAuthContext(userName); // Rewrote AdalAuthContext
                 case DevAccountSource.XboxDeveloperPortal:
                     throw new ArgumentException("XDP is no longer a supported developer type. Sign in with a Windows Developer Center account.");
                 case DevAccountSource.TestAccount:
-                    throw new ArgumentException("Unsupported developer type"); // Throw temporarily while changing msal context
+                    return new MsalAuthContext(userName); // Rewriting existing MSAL context
                 default:
                     throw new ArgumentException("Unsupported developer type");
             }

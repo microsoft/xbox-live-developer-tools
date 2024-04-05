@@ -4,65 +4,63 @@
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
-    using Microsoft.IdentityModel.Clients.ActiveDirectory;
+    using Microsoft.Identity.Client;
     using Microsoft.Xbox.Services.DevTools.Common;
 
     internal class AdalAuthContext : IAuthContext
     {
-        private AdalTokenCache tokenCache = new AdalTokenCache();
-        private AuthenticationContext authContext;
-        private UserIdentifier userIdentifier;
+        // Added fields
+        private readonly string[] scopes = new[] { "https://partner.microsoft.com//.default" }; // Change scope for token acquisition
+        private readonly IPublicClientApplication publicClientApplication;
+        private AuthenticationResult authResult;
 
-        public AdalAuthContext(string userName, string tenant)
+        public AdalAuthContext(string userName)
         {
-            if (string.IsNullOrEmpty(tenant))
-            {
-                tenant = "common";
-            }
+            const string ClientId = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1"; // From JWT 872cd9fa-d31f-45e0-9eab-6e460a02d1f1
+            const string Instance = "https://login.microsoftonline.com/";
 
-            this.Tenant = tenant;
-            this.authContext = new AuthenticationContext(
-                string.Format(ClientSettings.Singleton.ActiveDirectoryAuthenticationEndpoint, this.Tenant), 
-                this.tokenCache);
+            this.publicClientApplication = PublicClientApplicationBuilder.Create(ClientId)
+                .WithAuthority($"{Instance}{Tenant}")
+                .WithDefaultRedirectUri()
+                .Build();
+
             this.UserName = userName;
-            this.userIdentifier = string.IsNullOrEmpty(userName) ?
-                UserIdentifier.AnyUser :
-                new UserIdentifier(this.UserName, UserIdentifierType.RequiredDisplayableId);
         }
 
-        public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter;
+        public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; // Changed to DevAccountSource
 
         public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.UDCAuthEndpoint;
 
-        public virtual bool HasCredential
+        public string UserName { get; }
+
+        public bool HasCredential
         {
-            get { return this.authContext != null && this.authContext.TokenCache.Count > 0; }
+            get { return false; }
         }
 
-        public string UserName { get; private set; }
+        public string Tenant => "72f988bf-86f1-41af-91ab-2d7cd011db47"; // Changed Tenant
 
-        public string Tenant { get; private set; }
-
-        public virtual async Task<string> AcquireTokenSilentAsync()
+        public async Task<string> AcquireTokenSilentAsync()
         {
-            AuthenticationResult result = await this.authContext.AcquireTokenSilentAsync(
-                ClientSettings.Singleton.AADResource,
-                ClientSettings.Singleton.AADApplicationId,
-                this.userIdentifier);
+            var accounts = await publicClientApplication.GetAccountsAsync();
+            var firstAccount = accounts.FirstOrDefault();
+            this.authResult = await publicClientApplication.AcquireTokenSilent(scopes, firstAccount).ExecuteAsync();
 
-            return result.AccessToken;
+            return this.authResult?.AccessToken;
         }
 
-        public virtual async Task<string> AcquireTokenAsync()
+        public async Task<string> AcquireTokenAsync()
         {
-            AuthenticationResult result = await this.authContext.AcquireTokenAsync(
-                ClientSettings.Singleton.AADResource,
-                ClientSettings.Singleton.AADApplicationId, new Uri("urn:ietf:wg:oauth:2.0:oob"),
-                new PlatformParameters(string.IsNullOrEmpty(this.UserName)? PromptBehavior.SelectAccount : PromptBehavior.Auto),
-                this.userIdentifier);
-            this.UserName = result.UserInfo.DisplayableId;
-            return result?.AccessToken;
+            var accounts = await publicClientApplication.GetAccountsAsync();
+            var firstAccount = accounts.FirstOrDefault();
+            this.authResult = await publicClientApplication.AcquireTokenInteractive(scopes)
+                        .WithAccount(accounts.FirstOrDefault())
+                        .WithPrompt(Prompt.SelectAccount)
+                        .ExecuteAsync();
+            Log.WriteLog(this.authResult.AccessToken);
+            return this.authResult?.AccessToken;
         }
     }
 }
