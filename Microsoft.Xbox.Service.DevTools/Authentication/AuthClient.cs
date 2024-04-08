@@ -104,8 +104,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 throw new InvalidOperationException("To log in a test account, call the SignInTestAccountAsync method");
             }
 
-            string aadToken = await this.AuthContext.AcquireTokenAsync();
-            XasTokenResponse token = await this.FetchXdtsToken(aadToken, string.Empty, null);
+            string authToken = await this.AuthContext.AcquireTokenAsync();
+            XasTokenResponse token = await this.FetchXdtsToken(authToken, string.Empty, null);
 
             var account = new DevAccount(token, this.AuthContext.AccountSource, tenant);
             return account;
@@ -148,15 +148,16 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
                     // Add the aadToken header without validation as the framework
                     // does not like the values returned for aadTokens for MSA accounts.
-                    requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken);
+                    requestMsg.Headers.TryAddWithoutValidation("Authorization", aadToken); 
 
                     return requestMsg;
                 })).Response;
 
                 response.EnsureSuccessStatusCode();
+
                 Log.WriteLog("Fetch xdts Token succeeded.");
 
-                var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>();
+                var token = await response.Content.DeserializeJsonAsync<XasTokenResponse>(); 
 
                 string key = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, scid, sandboxes);
                 this.ETokenCache.Value.UpdateToken(key, token);
