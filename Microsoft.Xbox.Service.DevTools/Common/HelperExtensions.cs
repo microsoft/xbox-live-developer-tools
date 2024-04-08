@@ -12,7 +12,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
 
     internal static class HelperExtensions
     {
-        public static async Task<T> DeserializeJsonAsync<T>(this HttpContent content) 
+        public static async Task<T> DeserializeJsonAsync<T>(this HttpContent content)
         {
             using (Stream stream = await content.ReadAsStreamAsync())
             {

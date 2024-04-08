@@ -129,8 +129,8 @@ namespace Microsoft.Xbox.Services.DevTools.Common
                 request.Headers.Add("Authorization", $"XBL3.0 x={userHash};{token}");
             }
 
-            request.Headers.Expect.ParseAdd("100-continue");
-            request.Headers.UserAgent.ParseAdd("GameConfigCoreEditor/10.0.0.0 GameConfigEditor/10.0.0.0");
+            request.Headers.UserAgent.ParseAdd(UserAgent);
+            request.Headers.Expect.ParseAdd("100-continue")
 
             if (!request.Headers.Contains("Accept"))
             {
