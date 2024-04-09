@@ -130,7 +130,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
             }
 
             request.Headers.UserAgent.ParseAdd(UserAgent);
-            request.Headers.Expect.ParseAdd("100-continue")
+            request.Headers.Expect.ParseAdd("100-continue");
 
             if (!request.Headers.Contains("Accept"))
             {
