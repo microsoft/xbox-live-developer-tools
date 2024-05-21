@@ -10,6 +10,9 @@ trigger: none
 # - https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables
 name: $(Build.DefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 
+variables:
+- group: CoreSdk-PatRotatorAKV-XS
+
 jobs:
 
   ####################
