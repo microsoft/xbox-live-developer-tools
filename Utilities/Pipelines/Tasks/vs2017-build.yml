@@ -195,6 +195,8 @@ steps:
       description: 'XboxLiveDeveloperTools.$(CONFIGURATION)'
       pushPkgName: 'XboxLiveDeveloperTools.$(CONFIGURATION)'
       vpackToken: '$(PAT-XboxADO)'
+    env:
+      PAT: $(PAT-XboxADO)
 
   - task: PublishPipelineArtifact@1
     displayName: 'Publish Pipeline Artifact'
