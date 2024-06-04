@@ -11,54 +11,64 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
     internal class MsalTestAuthContext : IAuthContext
     {
-        private readonly string[] scopes = new[] { "Xboxlive.signin", "Xboxlive.offline_access" };  
-        private readonly IPublicClientApplication clientApp;
-        private AuthenticationResult authResult;
+        private readonly string[] scopes = new[] { "Xboxlive.signin", "Xboxlive.offline_access" };
+        private readonly IPublicClientApplication publicClientApplication;
+        private IAccount cachedAccount;
 
         public MsalTestAuthContext(string userName)
         {
-            const string ClientId = "b1eab458-325b-45a5-9692-ad6079c1eca8"; 
-            const string Instance = "https://login.microsoftonline.com/consumers/";
-
-            this.clientApp = PublicClientApplicationBuilder.Create(ClientId)
-                .WithAuthority($"{Instance}{this.Tenant}") 
+            this.publicClientApplication = PublicClientApplicationBuilder.Create(ClientSettings.Singleton.MsalXboxLiveClientId)
+                .WithAuthority($"{ClientSettings.Singleton.MsalLiveAuthority}{this.Tenant}")
                 .WithDefaultRedirectUri()
                 .Build();
-
             this.UserName = userName;
+            this.InitializeCachedAccount().GetAwaiter().GetResult();
         }
 
-        public DevAccountSource AccountSource { get; } = DevAccountSource.TestAccount; 
+        public DevAccountSource AccountSource { get; } = DevAccountSource.TestAccount;
 
-        public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.UDCAuthEndpoint;
+        public string XtdsEndpoint { get; set; } = ClientSettings.Singleton.XASUEndpoint;
 
         public string UserName { get; }
 
-        public bool HasCredential
-        {
-            get { return false; }
-        }
+        public bool HasCredential => this.HasAccountsAsync().GetAwaiter().GetResult();
 
-        public string Tenant => "consumers"; 
+        public string Tenant => "consumers";
 
         public async Task<string> AcquireTokenSilentAsync()
         {
-            var accounts = await this.clientApp.GetAccountsAsync();
-            var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, firstAccount).ExecuteAsync();
+            if (this.cachedAccount == null)
+            {
+                throw new InvalidOperationException("No cached user found, please call SignInAsync to sign in a user.");
+            }
 
-            return this.authResult?.AccessToken;
+            AuthenticationResult authResult = await this.publicClientApplication.AcquireTokenSilent(this.scopes, this.cachedAccount).ExecuteAsync();
+
+            return authResult?.AccessToken;
         }
 
         public async Task<string> AcquireTokenAsync()
         {
-            var accounts = await this.clientApp.GetAccountsAsync();
+            var accounts = await this.publicClientApplication.GetAccountsAsync();
             var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
+            AuthenticationResult result = await this.publicClientApplication.AcquireTokenInteractive(this.scopes)
                         .WithAccount(accounts.FirstOrDefault())
                         .WithPrompt(Prompt.SelectAccount)
                         .ExecuteAsync();
-            return this.authResult?.AccessToken;
+            return result?.AccessToken;
+        }
+
+        private async Task InitializeCachedAccount()
+        {
+            var accounts = await this.publicClientApplication.GetAccountsAsync();
+            this.cachedAccount = accounts.SingleOrDefault(
+        account => string.Compare(account.Username, this.UserName, StringComparison.OrdinalIgnoreCase) == 0);
+        }
+
+        public async Task<bool> HasAccountsAsync()
+        {
+            var accounts = await this.publicClientApplication.GetAccountsAsync();
+            return accounts.FirstOrDefault() != null;
         }
     }
 }

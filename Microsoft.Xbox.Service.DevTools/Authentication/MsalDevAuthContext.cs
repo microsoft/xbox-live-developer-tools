@@ -58,7 +58,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                         .WithAccount(accounts.FirstOrDefault())
                         .WithPrompt(Prompt.SelectAccount)
                         .ExecuteAsync();
-            Log.WriteLog(this.authResult.AccessToken);
             return this.authResult?.AccessToken;
         }
     }

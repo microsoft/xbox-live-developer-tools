@@ -9,6 +9,7 @@ namespace XblPlayerDataReset
     using System.Linq;
     using System.Net;
     using System.Net.Http;
+    using System.Runtime.Remoting.Messaging;
     using System.Threading.Tasks;
     using CommandLine;
     using CommandLine.Text;
@@ -23,24 +24,32 @@ namespace XblPlayerDataReset
 
         private static async Task<int> Main(string[] args)
         {
-            try
+            string[] testArgs = { "-c", "00000000-0000-0000-0000-000064353034", "-s", "XDKS.1", "-u", "XDKS-fernandotest00003@xboxtest.com" };
+            var res = 0;
+            for (int i = 0; i < 3; i++)
             {
-                ResetOptions options = null;
-                var parserResult = Parser.Default.ParseArguments<ResetOptions>(args)
-                    .WithParsed<ResetOptions>(parsedOptions => options = parsedOptions);
-                if (parserResult.Tag == ParserResultType.NotParsed)
+                try
                 {
+                    ResetOptions options = null;
+                    var parserResult = Parser.Default.ParseArguments<ResetOptions>(testArgs)
+                        .WithParsed<ResetOptions>(parsedOptions => options = parsedOptions);
+                    if (parserResult.Tag == ParserResultType.NotParsed)
+                    {
+                        return -1;
+                    }
+
+                    res = await OnReset(options);
+                    Console.WriteLine(res);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error: player data reset failed:");
+                    Console.WriteLine(ex.Message);
                     return -1;
                 }
+            }
 
-                return await OnReset(options);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: player data reset failed:");
-                Console.WriteLine(ex.Message);
-                return -1;
-            }
+            return res;
         }
 
         private static void PrintProviderDetails(List<JobProviderStatus> providers)
