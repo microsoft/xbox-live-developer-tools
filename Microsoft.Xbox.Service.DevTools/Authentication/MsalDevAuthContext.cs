@@ -8,12 +8,15 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System.Threading.Tasks;
     using Microsoft.Identity.Client;
     using Microsoft.Xbox.Services.DevTools.Common;
+    using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
     internal class MsalDevAuthContext : IAuthContext
     {
         private readonly string[] scopes = new[] { "https://partner.microsoft.com//.default" }; 
         private readonly IPublicClientApplication clientApp;
         private AuthenticationResult authResult;
+        private MsalTokenCache tokenCache = new MsalTokenCache();
+        private IAccount userAccount;
 
         public MsalDevAuthContext(string userName)
         {
@@ -24,6 +27,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 .WithAuthority($"{Instance}{this.Tenant}")
                 .WithDefaultRedirectUri()
                 .Build();
+
+            this.tokenCache.EnableSerialization(this.clientApp.UserTokenCache);
 
             this.UserName = userName;
         }
@@ -36,29 +41,39 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public bool HasCredential
         {
-            get { return false; }
+            get { return this.HasCredentialAsync().GetAwaiter().GetResult(); }
         }
 
-        public string Tenant => "common"; 
+        public string Tenant => "common";
+
+        public async Task<bool> HasCredentialAsync()
+        {
+            var accounts = this.clientApp != null
+                ? await this.clientApp.GetAccountsAsync()
+                : Enumerable.Empty<IAccount>();
+
+            return accounts.Count() > 0;
+        }
 
         public async Task<string> AcquireTokenSilentAsync()
         {
             var accounts = await this.clientApp.GetAccountsAsync();
-            var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, firstAccount).ExecuteAsync();
+            this.userAccount = string.IsNullOrEmpty(this.UserName)
+                ? accounts.LastOrDefault()
+                : accounts.LastOrDefault(a => a.Username.Equals(this.UserName, StringComparison.OrdinalIgnoreCase));
+
+            this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, this.userAccount).ExecuteAsync();
 
             return this.authResult?.AccessToken;
         }
 
         public async Task<string> AcquireTokenAsync()
         {
-            var accounts = await this.clientApp.GetAccountsAsync();
-            var firstAccount = accounts.FirstOrDefault();
             this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
-                        .WithAccount(accounts.FirstOrDefault())
-                        .WithPrompt(Prompt.SelectAccount)
+                        .WithLoginHint(this.UserName)
+                        .WithPrompt(string.IsNullOrEmpty(this.UserName) ? Prompt.SelectAccount : Prompt.NoPrompt)
                         .ExecuteAsync();
-            Log.WriteLog(this.authResult.AccessToken);
+            
             return this.authResult?.AccessToken;
         }
     }

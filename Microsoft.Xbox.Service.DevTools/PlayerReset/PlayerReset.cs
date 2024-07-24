@@ -98,6 +98,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
             {
                 result.OverallResult = ResetOverallResult.Succeeded;
             }
+            
             return result;
         }
 
