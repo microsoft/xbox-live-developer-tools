@@ -8,7 +8,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System.Threading.Tasks;
     using Microsoft.Identity.Client;
     using Microsoft.Xbox.Services.DevTools.Common;
-    using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
     internal class MsalDevAuthContext : IAuthContext
     {
@@ -31,6 +30,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             this.tokenCache.EnableSerialization(this.clientApp.UserTokenCache);
 
             this.UserName = userName;
+            this.userAccount = this.SearchAccounts().GetAwaiter().GetResult();
         }
 
         public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; 
@@ -55,13 +55,18 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return accounts.Count() > 0;
         }
 
-        public async Task<string> AcquireTokenSilentAsync()
+        public async Task<IAccount> SearchAccounts()
         {
             var accounts = await this.clientApp.GetAccountsAsync();
             this.userAccount = string.IsNullOrEmpty(this.UserName)
-                ? accounts.LastOrDefault()
-                : accounts.LastOrDefault(a => a.Username.Equals(this.UserName, StringComparison.OrdinalIgnoreCase));
+                ? accounts.SingleOrDefault()
+                : accounts.SingleOrDefault(a => a.Username.Equals(this.UserName, StringComparison.OrdinalIgnoreCase));
 
+            return this.userAccount;
+        }
+
+        public async Task<string> AcquireTokenSilentAsync()
+        {
             this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, this.userAccount).ExecuteAsync();
 
             return this.authResult?.AccessToken;
@@ -69,10 +74,19 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public async Task<string> AcquireTokenAsync()
         {
-            this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
-                        .WithLoginHint(this.UserName)
-                        .WithPrompt(string.IsNullOrEmpty(this.UserName) ? Prompt.SelectAccount : Prompt.NoPrompt)
-                        .ExecuteAsync();
+            if (this.userAccount != null)
+            {
+                this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
+                                  .WithAccount(this.userAccount)
+                                  .WithPrompt(Prompt.NoPrompt)
+                                  .ExecuteAsync();
+            }
+            else
+            {
+                this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
+                                  .WithPrompt(Prompt.SelectAccount)
+                                  .ExecuteAsync();
+            }
             
             return this.authResult?.AccessToken;
         }
