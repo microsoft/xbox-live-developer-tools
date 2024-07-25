@@ -147,6 +147,7 @@ namespace XblPlayerDataReset
                 {
                     Console.Error.WriteLine("The file could not be read:");
                     Console.Error.WriteLine("The file appears to have no content.");
+                    Console.Error.WriteLine(ne.Message);
                 }
                 catch (Exception e)
                 {

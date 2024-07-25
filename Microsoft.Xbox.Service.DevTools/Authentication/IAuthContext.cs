@@ -4,6 +4,7 @@
 namespace Microsoft.Xbox.Services.DevTools.Authentication
 {
     using System.Threading.Tasks;
+    using Microsoft.Identity.Client;
 
     internal interface IAuthContext
     {
@@ -20,5 +21,9 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         Task<string> AcquireTokenSilentAsync();
 
         Task<string> AcquireTokenAsync();
+
+        Task<bool> HasCredentialAsync();
+
+        Task<IAccount> SearchAccounts();
     }
 }

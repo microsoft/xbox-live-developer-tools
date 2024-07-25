@@ -14,6 +14,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         private readonly string[] scopes = new[] { "https://partner.microsoft.com//.default" }; 
         private readonly IPublicClientApplication clientApp;
         private AuthenticationResult authResult;
+        private MsalTokenCache tokenCache = new MsalTokenCache();
+        private IAccount userAccount;
 
         public MsalDevAuthContext(string userName)
         {
@@ -25,7 +27,10 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 .WithDefaultRedirectUri()
                 .Build();
 
+            this.tokenCache.EnableSerialization(this.clientApp.UserTokenCache);
+
             this.UserName = userName;
+            this.userAccount = this.SearchAccounts().GetAwaiter().GetResult();
         }
 
         public DevAccountSource AccountSource { get; } = DevAccountSource.WindowsDevCenter; 
@@ -36,29 +41,53 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public bool HasCredential
         {
-            get { return false; }
+            get { return this.HasCredentialAsync().GetAwaiter().GetResult(); }
         }
 
-        public string Tenant => "common"; 
+        public string Tenant => "common";
+
+        public async Task<bool> HasCredentialAsync()
+        {
+            var accounts = this.clientApp != null
+                ? await this.clientApp.GetAccountsAsync()
+                : Enumerable.Empty<IAccount>();
+
+            return accounts.Count() > 0;
+        }
+
+        public async Task<IAccount> SearchAccounts()
+        {
+            var accounts = await this.clientApp.GetAccountsAsync();
+            this.userAccount = string.IsNullOrEmpty(this.UserName)
+                ? accounts.SingleOrDefault()
+                : accounts.SingleOrDefault(a => a.Username.Equals(this.UserName, StringComparison.OrdinalIgnoreCase));
+
+            return this.userAccount;
+        }
 
         public async Task<string> AcquireTokenSilentAsync()
         {
-            var accounts = await this.clientApp.GetAccountsAsync();
-            var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, firstAccount).ExecuteAsync();
+            this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, this.userAccount).ExecuteAsync();
 
             return this.authResult?.AccessToken;
         }
 
         public async Task<string> AcquireTokenAsync()
         {
-            var accounts = await this.clientApp.GetAccountsAsync();
-            var firstAccount = accounts.FirstOrDefault();
-            this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
-                        .WithAccount(accounts.FirstOrDefault())
-                        .WithPrompt(Prompt.SelectAccount)
-                        .ExecuteAsync();
-            Log.WriteLog(this.authResult.AccessToken);
+            if (this.userAccount != null)
+            {
+                this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
+                                  .WithAccount(this.userAccount)
+                                  .WithPrompt(Prompt.NoPrompt)
+                                  .ExecuteAsync();
+            }
+            else
+            {
+                this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
+                                  .WithPrompt(Prompt.SelectAccount)
+                                  .ExecuteAsync();
+            }
+            
             return this.authResult?.AccessToken;
         }
     }
