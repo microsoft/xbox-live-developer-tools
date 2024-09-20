@@ -11,7 +11,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
     internal class MsalDevAuthContext : IAuthContext
     {
-        private readonly string[] scopes = new[] { "https://partner.microsoft.com//.default" }; 
+        private readonly string[] scopes = new[] { "https://api.partner.microsoft.com//.default" }; 
         private readonly IPublicClientApplication clientApp;
         private AuthenticationResult authResult;
         private MsalTokenCache tokenCache = new MsalTokenCache();
@@ -87,7 +87,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                                   .WithPrompt(Prompt.SelectAccount)
                                   .ExecuteAsync();
             }
-            
+
             return this.authResult?.AccessToken;
         }
     }
