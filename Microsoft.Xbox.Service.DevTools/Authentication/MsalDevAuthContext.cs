@@ -68,6 +68,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         public async Task<string> AcquireTokenSilentAsync()
         {
             this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, this.userAccount).ExecuteAsync();
+            
             return this.authResult?.AccessToken;
         }
 
@@ -86,6 +87,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                                   .WithPrompt(Prompt.SelectAccount)
                                   .ExecuteAsync();
             }
+
             return this.authResult?.AccessToken;
         }
     }
