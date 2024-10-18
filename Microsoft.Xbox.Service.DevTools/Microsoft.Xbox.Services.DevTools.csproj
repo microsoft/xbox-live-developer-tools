@@ -10,6 +10,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.Xbox.Services.DevTools</RootNamespace>
     <AssemblyName>Microsoft.Xbox.Services.DevTools</AssemblyName>
+    <Version Condition=" '$(BINARIES_BUILD_VERSION)' == '' ">1.0.0.0</Version>
+    <Version Condition=" '$(BINARIES_BUILD_VERSION)' != '' ">$(BINARIES_BUILD_VERSION)</Version>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
