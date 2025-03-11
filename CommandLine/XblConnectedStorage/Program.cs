@@ -138,6 +138,7 @@ namespace XblConnectedStorage
                     }
 
                     xbStorageXmlWriter.WriteEndElement(); // Blobs
+                    xbStorageXmlWriter.WriteEndElement(); // Container
                 }
 
                 xbStorageXmlWriter.WriteEndElement(); // Containers
