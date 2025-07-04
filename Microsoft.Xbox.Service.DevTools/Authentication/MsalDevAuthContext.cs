@@ -90,5 +90,11 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
             return this.authResult?.AccessToken;
         }
+
+        public async Task<string> AcquireTokenCachedAsync()
+        {
+            // Base method is already async
+            return await this.AcquireTokenAsync();
+        }
     }
 }

@@ -135,6 +135,30 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return account;
         }
 
+        public async Task<TestAccount> SignInTestAccountSilentAsync(string sandbox)
+        {
+            if (this.AuthContext == null)
+            {
+                throw new InvalidOperationException("User Info is not found.");
+            }
+
+            if (this.AuthContext.AccountSource == DevAccountSource.XboxDeveloperPortal)
+            {
+                throw new InvalidOperationException("XDP logins are deprecated, please use a Partner Center or Test account");
+            }
+
+            if (this.AuthContext.AccountSource == DevAccountSource.WindowsDevCenter)
+            {
+                throw new InvalidOperationException("To log in a Partner Center account, call the SignInAsync method");
+            }
+
+            string msaToken = await this.AuthContext.AcquireTokenCachedAsync();
+            XasTokenResponse token = await this.FetchXstsToken(msaToken, sandbox);
+
+            var account = new TestAccount(token);
+            return account;
+        }
+
         protected async Task<XasTokenResponse> FetchXdtsToken(string aadToken, string scid, IEnumerable<string> sandboxes)
         {
             using (var tokenRequest = new XboxLiveHttpRequest())

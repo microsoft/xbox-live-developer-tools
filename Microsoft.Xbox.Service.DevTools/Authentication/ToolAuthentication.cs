@@ -138,6 +138,14 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return testAccount;
         }
 
+        public static async Task<TestAccount> SignInTestAccountSilentAsync(string userName, string sandbox)
+        {
+            SetAuthInfo(DevAccountSource.TestAccount, userName, "consumers");
+
+            TestAccount testAccount = await Client.SignInTestAccountSilentAsync(sandbox);
+            return testAccount;
+        }
+
         /// <summary>
         /// Sign out the current signed in developer account.
         /// </summary>

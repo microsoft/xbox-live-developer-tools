@@ -164,7 +164,15 @@ namespace XblPlayerDataReset
                 // Sign into each account individually
                 foreach (string testAccountName in testAccountNames)
                 {
-                    TestAccount ta = await ToolAuthentication.SignInTestAccountAsync(testAccountName, options.Sandbox);
+                    TestAccount ta = null;
+                    if (options.Silent)
+                    {
+                        ta = await ToolAuthentication.SignInTestAccountSilentAsync(testAccountName, options.Sandbox);
+                    }
+                    else
+                    {
+                        ta = await ToolAuthentication.SignInTestAccountAsync(testAccountName, options.Sandbox);
+                    }
 
                     // If we have a failure, output the account and stop the process
                     if (ta == null)
@@ -302,6 +310,10 @@ namespace XblPlayerDataReset
             [Option('d', "delimiter", Required = false, Default = ",",
                 HelpText = "Delimiter that separates accounts to reset. Defaults to \",\".")]
             public string Delimiter { get; set; }
+
+            [Option('i', "silent", Required = false,
+                HelpText = "Do a silent connection")]
+            public bool Silent { get; set; }
 
             [Usage(ApplicationAlias = "XblPlayerDataReset")]
             public static IEnumerable<Example> Examples

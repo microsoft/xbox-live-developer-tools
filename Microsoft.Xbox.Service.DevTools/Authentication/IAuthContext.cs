@@ -20,6 +20,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         Task<string> AcquireTokenSilentAsync();
 
+        Task<string> AcquireTokenCachedAsync();
+
         Task<string> AcquireTokenAsync();
 
         Task<bool> HasCredentialAsync();

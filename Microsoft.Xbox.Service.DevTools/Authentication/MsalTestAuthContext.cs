@@ -81,5 +81,15 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
             return this.authResult?.AccessToken;
         }
+
+        public async Task<string> AcquireTokenCachedAsync()
+        {
+            this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
+                        .WithLoginHint(this.UserName)
+                        .WithPrompt(Prompt.NoPrompt)
+                        .ExecuteAsync();
+
+            return this.authResult?.AccessToken;
+        }
     }
 }
