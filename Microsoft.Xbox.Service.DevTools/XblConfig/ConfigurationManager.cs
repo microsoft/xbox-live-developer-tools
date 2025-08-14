@@ -872,8 +872,8 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
                         imageResponse = await httpResponse.Content.DeserializeJsonAsync<AchievementImagesResponse>();
                         allImages.AddRange(imageResponse.Images);
                     }
-                    page += 1;
-                } while (imageResponse.Images.Count() >= maxQueryCount);
+                    page++;
+                } while (imageResponse.Images.Count() == maxQueryCount);
                 return new ConfigResponse<IEnumerable<AchievementImage>>()
                 {
                     CorrelationId = lastCorrelationId, // No correlation ID for the entire collection, just for each individual request.
