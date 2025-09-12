@@ -29,7 +29,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         /// <summary>
         /// Gets or sets the user ID of the user that initiated the commit.
         /// </summary>
-        public ulong User { get; set; }
+        public string User { get; set; }
 
         /// <summary>
         /// Gets or sets the version of the changeset.
