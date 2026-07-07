@@ -24,7 +24,7 @@ namespace XblConfig
             foreach (PropertyInfo property in properties)
             {
                 object propertyValue = property.GetValue(obj);
-                string propertyString = propertyValue.ToString();
+                string propertyString = propertyValue?.ToString() ?? string.Empty;
                 if (propertyValue is IEnumerable && !(propertyValue is string))
                 {
                     object[] propVal = ((IEnumerable)propertyValue).Cast<object>().ToArray();
@@ -74,7 +74,7 @@ namespace XblConfig
 
                 foreach (object item in list)
                 {
-                    int len = item.GetType().GetProperty(property.Name).GetValue(item).ToString().Length;
+                    int len = (item.GetType().GetProperty(property.Name).GetValue(item)?.ToString() ?? string.Empty).Length;
                     if (len > maxLength)
                     {
                         maxLength = len;
