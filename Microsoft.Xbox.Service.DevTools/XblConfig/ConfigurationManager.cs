@@ -832,7 +832,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
             {
                 XboxLiveHttpResponse response = await request.SendAsync(() =>
                 {
-                    return new HttpRequestMessage(HttpMethod.Get, new Uri(xachUri, $"/scids/{scid}/images/{assetId}"));
+                    return new HttpRequestMessage(HttpMethod.Get, new Uri(xachUri, $"/achievementimages/scids/{scid}/images/{assetId}"));
                 });
                 using (HttpResponseMessage httpResponse = response.Response)
                 {
@@ -863,7 +863,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
                 {
                     XboxLiveHttpResponse response = await request.SendAsync(() =>
                     {
-                        return new HttpRequestMessage(HttpMethod.Get, new Uri(xachUri, $"/scids/{scid}/images/?start={page * maxQueryCount}&count={maxQueryCount}"));
+                        return new HttpRequestMessage(HttpMethod.Get, new Uri(xachUri, $"/achievementimages/scids/{scid}/images/?start={page * maxQueryCount}&count={maxQueryCount}"));
                     });
                     using (HttpResponseMessage httpResponse = response.Response)
                     {
@@ -907,7 +907,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
             {
                 XboxLiveHttpResponse response = await request.SendAsync(() =>
                 {
-                    return new HttpRequestMessage(HttpMethod.Post, new Uri(xachUri, "/assets/initialize"));
+                    return new HttpRequestMessage(HttpMethod.Post, new Uri(xachUri, "/achievementimages/assets/initialize"));
                 });
                 using (HttpResponseMessage httpResponse = response.Response)
                 {
@@ -997,7 +997,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
             {
                 XboxLiveHttpResponse response = await request.SendAsync(() =>
                 {
-                    HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, new Uri(xachUri, $"/scids/{scid}/images"));
+                    HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, new Uri(xachUri, $"/achievementimages/scids/{scid}/images"));
                     AchievementImageUploadRequest requestBody = new AchievementImageUploadRequest() { XfusId = xfusId };
                     message.Content = new StringContent(requestBody.ToJson());
                     message.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
