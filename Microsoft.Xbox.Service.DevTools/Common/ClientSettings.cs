@@ -64,7 +64,7 @@ namespace Microsoft.Xbox.Services.DevTools.Common
 
         public string XCertEndpoint { get; private set; } = "https://cert.mgt.xboxlive.com/";
 
-        public string XAchEndpoint { get; private set; } = "https://xblconfiggateway.xboxservices.com/";
+        public string XblConfigGatewayEndpoint { get; private set; } = "https://xblconfiggateway.xboxservices.com/";
 
         public string XFusEndpoint { get; private set; } = "https://upload.xboxlive.com/";
 
