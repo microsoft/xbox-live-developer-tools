@@ -9,6 +9,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System.Net.Http;
     using System.Threading.Tasks;
     using DevTools.Common;
+    using Microsoft.Identity.Client;
     using Newtonsoft.Json;
 
     internal class AuthClient
@@ -111,7 +112,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return account;
         }
 
-        public async Task<TestAccount> SignInTestAccountAsync(string sandbox)
+        public async Task<TestAccount> SignInTestAccountAsync(string sandbox, bool tryCached)
         {
             if (this.AuthContext == null)
             {
@@ -128,7 +129,23 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 throw new InvalidOperationException("To log in a Partner Center account, call the SignInAsync method");
             }
 
-            string msaToken = await this.AuthContext.AcquireTokenAsync();
+            string msaToken;
+            if (!tryCached)
+            {
+                msaToken = await this.AuthContext.AcquireTokenAsync();
+            }
+            else
+            {
+                try
+                {
+                    msaToken = await this.AuthContext.AcquireTokenSilentAsync();
+                }
+                catch (MsalUiRequiredException)
+                {
+                    msaToken = await this.AuthContext.AcquireTokenAsync();
+                }
+            }
+
             XasTokenResponse token = await this.FetchXstsToken(msaToken, sandbox);
 
             var account = new TestAccount(token);

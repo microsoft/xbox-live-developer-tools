@@ -129,12 +129,14 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         /// Attempt to sign in a test account, UI will be triggered if necessary 
         /// </summary>
         /// <param name="userName">The user name of the account, optional.</param>
+        /// <param name="sandbox">The target sandbox for the XToken</param>
+        /// <param name="tryCached">Try authentifying using cached credential first</param>
         /// <returns>TestAccount object contains test account info.</returns>
-        public static async Task<TestAccount> SignInTestAccountAsync(string userName, string sandbox)
+        public static async Task<TestAccount> SignInTestAccountAsync(string userName, string sandbox, bool tryCached)
         {
             SetAuthInfo(DevAccountSource.TestAccount, userName, "consumers");
 
-            TestAccount testAccount = await Client.SignInTestAccountAsync(sandbox);
+            TestAccount testAccount = await Client.SignInTestAccountAsync(sandbox, tryCached);
             return testAccount;
         }
 
