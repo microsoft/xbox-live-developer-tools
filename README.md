@@ -54,10 +54,125 @@ Developer account {Name} has successfully signed out.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+### XblTestAccount.exe
+
+XblTestAccount signs in an Xbox Live test account and caches the credential, so that later runs obtain a user token
+without showing any UI. It also reads and changes the privileges and privacy settings of the signed in account, which is
+the command line equivalent of the Privacy and Privilege tabs in XblTestAccountGui.
+
+#### Usage
+
+***signin:*** Signs in a test account and caches the credential. UI is only shown when there is no usable cached
+credential, or when `--force` is passed.
+
+```
+XblTestAccount.exe signin --name xxx@xboxtest.com --sandbox XXXXXX.0 [--force]
+```
+
+***Success output example:***
+
+```
+Test account {UserName} has successfully signed in to sandbox {Sandbox}.
+    Gamertag : {gamertag}
+    XUID : {xuid}
+    Sandbox : {sandbox}
+    Age Group : {ageGroup}
+    Privileges : {privileges}
+    Restricted Privileges : {restrictedPrivileges}
+```
+
+***show:*** Displays the signed in test account. Privileges are claims on the token, so `show` reports them as they were
+at sign in; add `--refresh` to mint a new token and see them as they are now.
+
+```
+XblTestAccount.exe show [--refresh] [--sandbox XXXXXX.0]
+```
+
+***signout:*** Deletes the last signed in test account information, and clears up cached test account tokens.
+
+```
+XblTestAccount.exe signout
+```
+
+***privilege:*** Reports, blocks or allows privileges on the signed in test account. The action defaults to `get`, and
+the sandbox to the one the account signed in to.
+
+```
+XblTestAccount.exe privilege [get|block|allow] [ids] [--sandbox XXXXXX.0]
+```
+
+***Success output example:***
+
+```
+> XblTestAccount.exe privilege
+Restricted privileges for {gamertag} ({xuid}):
+    189  Non-interactive Sessions  set by the parental service
+    252  Comms (text and voice)    follows privacy setting comms
+    254  Multiplayer               set by the parental service
+```
+
+A privilege is restricted either by the parental service directly, or because the service derived it from a privacy
+setting, in which case it appears only in the token claims. `get` reports both and says which; `block` and `allow` report
+only what the parental service holds, so run `privilege` afterwards for the effective set. An entry with no annotation is
+fixed by the service for a reason it does not report, such as the age group.
+
+Only **185 (Cross Network Play)** and **254 (Multiplayer)** can be blocked and allowed, matching what XblTestAccountGui
+exposes; the tool refuses other ids up front rather than letting the service reject them with a bare HTTP 400. Privileges
+that the service derives from a privacy setting are changed through that setting instead:
+
+| Privilege | Controlled by |
+|---|---|
+| 247 (User Generated Content) | `privacy --name ugc --value Blocked` |
+| 252 (Comms (text and voice)) | `privacy --name comms --value Blocked` |
+
+The claims settle a little after a change, so a `show --refresh` issued immediately afterwards may still report the old
+value; repeat it after a moment.
+
+***list-privileges:*** Lists the known privilege ids, marking which can be changed directly and which follow a privacy
+setting.
+
+```
+XblTestAccount.exe list-privileges
+```
+
+***privacy:*** Reports or changes the privacy settings of the signed in test account. With no arguments it reports every
+setting the service returns, and with `--name` alone it reports that one. `--name` takes a full setting name or a short
+alias, and accepts any setting the service exposes, not only the documented ones.
+
+```
+XblTestAccount.exe privacy [--name <setting>] [--value Everyone|PeopleOnMyList|Blocked] [--sandbox XXXXXX.0]
+```
+
+***Success output example:***
+
+```
+> XblTestAccount.exe privacy --name cross-network --value Blocked
+Setting CommunicateDuringCrossNetworkPlay to Blocked on {gamertag} ({xuid}) in sandbox {sandbox}.
+Privacy settings for {gamertag} ({xuid}):
+    CommunicateDuringCrossNetworkPlay  Blocked
+```
+
+A privacy setting is the account's own choice about who it shares with, whereas a privilege is a restriction the parental
+service applies. A write is not immediately visible to a read, so the tool reads the value back until the change appears
+and warns if it never does.
+
+***list-privacy-settings:*** Lists the documented privacy settings, their aliases and the accepted values, noting which
+privilege each controls. The service usually exposes more settings than these; run `privacy` with no arguments to see
+them all.
+
+```
+XblTestAccount.exe list-privacy-settings
+```
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 ### XblPlayerDataReset.exe 
 
 XblPlayerDataReset is used to reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history. An individual or group of accounts can be reset by its
 email address, or to reset an account by XUID, first run XblDevAccount.exe to log in with a Partner Center account.
+
+Resetting by email signs in each test account. Sign in UI is only shown for an account that has no cached credential yet,
+so running `XblTestAccount.exe signin` once per account beforehand lets this run unattended.
 
 #### Usage:
 ```
