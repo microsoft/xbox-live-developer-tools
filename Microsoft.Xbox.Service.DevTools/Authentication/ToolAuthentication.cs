@@ -16,6 +16,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     public class ToolAuthentication
     {
         private const string CacheFile = "lastUser";
+        private const string TestAccountCacheFile = "lastTestUser";
         private static object initLock = new object();
 
         private ToolAuthentication()
@@ -48,6 +49,40 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             catch (Exception e)
             {
                 Log.WriteLog("Failed to load last signin user: " + e.Message);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Load the last signed in test account from local cache and set as sign in info.
+        /// </summary>
+        /// <returns>The TestAccount object represents the last signed in test account, or null if there isn't one.</returns>
+        public static TestAccount LoadLastSignedInTestAccount()
+        {
+            TestAccount result = null;
+            try
+            {
+                string lastSignInTestUserCacheFile = Path.Combine(ClientSettings.Singleton.CacheFolder, TestAccountCacheFile);
+
+                if (File.Exists(lastSignInTestUserCacheFile))
+                {
+                    result = JsonConvert.DeserializeObject<TestAccount>(File.ReadAllText(lastSignInTestUserCacheFile));
+                }
+
+                if (result != null && !string.IsNullOrEmpty(result.UserName))
+                {
+                    ToolAuthentication.SetAuthInfo(DevAccountSource.TestAccount, result.UserName, "consumers");
+                }
+                else
+                {
+                    result = null;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.WriteLog("Failed to load last signin test account: " + e.Message);
+                result = null;
             }
 
             return result;
@@ -88,17 +123,53 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         /// <returns>Developer eToken for specific serviceConfigurationId and sandbox</returns>
         public static async Task<string> GetTestTokenSilentlyAsync(string sandbox)
         {
+            return await GetTestTokenSilentlyAsync(sandbox, false);
+        }
+
+        /// <summary>
+        /// Attempt to fetch a test xToken without triggering any UI.
+        /// </summary>
+        /// <param name="sandbox">The target sandbox for the XToken</param>
+        /// <param name="forceRefresh">True to ignore any cached token and mint a new one. Callers
+        /// that change privileges need this, because the service rejects tokens issued before the
+        /// change even though they have not expired.</param>
+        /// <returns>Developer eToken for specific serviceConfigurationId and sandbox</returns>
+        public static async Task<string> GetTestTokenSilentlyAsync(string sandbox, bool forceRefresh)
+        {
             if (Client.AuthContext == null)
             {
-                throw new InvalidOperationException("User Info is not found, call Auth.SignInTestAccountAsync first.");
+                throw new InvalidOperationException("User Info is not found, call Auth.SignInTestAccountAsync or Auth.LoadLastSignedInTestAccount first.");
             }
 
-            var xtoken = await Client.GetXTokenAsync(sandbox, false);
+            var xtoken = await Client.GetXTokenAsync(sandbox, forceRefresh);
             return PrepareForAuthHeader(xtoken);
         }
 
         /// <summary>
-        /// Attempt to sign in developer account, UI will be triggered if necessary 
+        /// Attempt to fetch the current state of the signed in test account without triggering any UI.
+        /// </summary>
+        /// <param name="sandbox">The target sandbox for the XToken</param>
+        /// <param name="forceRefresh">True to ignore any cached token and mint a new one. Callers
+        /// that want to observe a privilege or privacy change need this, because the claims are
+        /// only as fresh as the token they came from.</param>
+        /// <returns>A TestAccount carrying the claims of the token that was fetched.</returns>
+        public static async Task<TestAccount> GetTestAccountSilentlyAsync(string sandbox, bool forceRefresh)
+        {
+            if (Client.AuthContext == null)
+            {
+                throw new InvalidOperationException("User Info is not found, call Auth.SignInTestAccountAsync or Auth.LoadLastSignedInTestAccount first.");
+            }
+
+            XasTokenResponse xtoken = await Client.GetXTokenAsync(sandbox, forceRefresh);
+            return new TestAccount(xtoken)
+            {
+                UserName = Client.AuthContext.UserName,
+                Sandbox = sandbox
+            };
+        }
+
+        /// <summary>
+        /// Attempt to sign in developer account, UI will be triggered if necessary
         /// </summary>
         /// <param name="accountSource">The account source where the developer account was registered.</param>
         /// <param name="userName">The user name of the account, optional.</param>
@@ -126,16 +197,67 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         }
 
         /// <summary>
-        /// Attempt to sign in a test account, UI will be triggered if necessary 
+        /// Attempt to sign in a test account. A cached credential is reused when one is available,
+        /// so no UI is triggered unless interaction is actually required.
         /// </summary>
         /// <param name="userName">The user name of the account, optional.</param>
+        /// <param name="sandbox">The target sandbox for the test account.</param>
         /// <returns>TestAccount object contains test account info.</returns>
         public static async Task<TestAccount> SignInTestAccountAsync(string userName, string sandbox)
         {
+            return await SignInTestAccountAsync(userName, sandbox, false);
+        }
+
+        /// <summary>
+        /// Attempt to sign in a test account, UI will be triggered if necessary.
+        /// </summary>
+        /// <param name="userName">The user name of the account, optional.</param>
+        /// <param name="sandbox">The target sandbox for the test account.</param>
+        /// <param name="forceInteractiveSignIn">When true, any cached credential is ignored and the sign in UI is always shown.</param>
+        /// <returns>TestAccount object contains test account info.</returns>
+        public static async Task<TestAccount> SignInTestAccountAsync(string userName, string sandbox, bool forceInteractiveSignIn)
+        {
             SetAuthInfo(DevAccountSource.TestAccount, userName, "consumers");
 
-            TestAccount testAccount = await Client.SignInTestAccountAsync(sandbox);
+            TestAccount testAccount = await Client.SignInTestAccountAsync(sandbox, forceInteractiveSignIn);
+            SaveLastSignedInTestAccount(testAccount);
+
             return testAccount;
+        }
+
+        // Test hook
+        internal static async Task<TestAccount> SignInTestAccountAsync(string sandbox, IAuthContext authContext)
+        {
+            Client.AuthContext = authContext;
+
+            TestAccount testAccount = await Client.SignInTestAccountAsync(sandbox, false);
+            SaveLastSignedInTestAccount(testAccount);
+
+            return testAccount;
+        }
+
+        /// <summary>
+        /// Sign out the current signed in test account.
+        /// </summary>
+        public static void SignOutTestAccount()
+        {
+            lock (initLock)
+            {
+                string testAccountCacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, TestAccountCacheFile);
+                if (File.Exists(testAccountCacheFilePath))
+                {
+                    File.Delete(testAccountCacheFilePath);
+                }
+
+                // The xsts cache only ever holds test account tokens, so clearing it does not
+                // affect a signed in Partner Center account.
+                Client.XTokenCache.Value.Clear();
+
+                if (Client.AuthContext != null && Client.AuthContext.AccountSource == DevAccountSource.TestAccount)
+                {
+                    Client.AuthContext = null;
+                }
+            }
         }
 
         /// <summary>
@@ -174,6 +296,19 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             catch (Exception e)
             {
                 Log.WriteLog("Failed to save last signin user: " + e.Message);
+            }
+        }
+
+        private static void SaveLastSignedInTestAccount(TestAccount account)
+        {
+            try
+            {
+                string lastSignInTestUserCacheFile = Path.Combine(ClientSettings.Singleton.CacheFolder, TestAccountCacheFile);
+                File.WriteAllText(lastSignInTestUserCacheFile, JsonConvert.SerializeObject(account));
+            }
+            catch (Exception e)
+            {
+                Log.WriteLog("Failed to save last signin test account: " + e.Message);
             }
         }
 
