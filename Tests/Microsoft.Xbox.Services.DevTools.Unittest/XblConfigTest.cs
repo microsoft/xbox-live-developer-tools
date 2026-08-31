@@ -279,7 +279,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             int fileSize = (int)image.Length;
             Guid xfusId = Guid.NewGuid();
             string xfusToken = "1234";
-            Uri initUri = new Uri(new Uri(ClientSettings.Singleton.XAchEndpoint), "/assets/initialize");
+            Uri initUri = new Uri(new Uri(ClientSettings.Singleton.XblConfigGatewayEndpoint), "/achievementimages/assets/initialize");
 
             XachInitializeResponse initResponse = new XachInitializeResponse()
             {
@@ -349,7 +349,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
                 .WithHeaders("Authorization", expectedToken)
                 .Respond(res => this.ExpectedJsonResponse(uploadResponse));
 
-            Uri finalizeUri = new Uri(new Uri(ClientSettings.Singleton.XAchEndpoint), $"/scids/{DefaultScid}/images");
+            Uri finalizeUri = new Uri(new Uri(ClientSettings.Singleton.XblConfigGatewayEndpoint), $"/achievementimages/scids/{DefaultScid}/images");
 
             this.mockHandler.Expect(finalizeUri.ToString())
                 .WithHeaders("Authorization", expectedToken)

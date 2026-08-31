@@ -38,7 +38,7 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         /// <summary>
         /// Gets or sets the package family name ID.
         /// </summary>
-        [Display(Name = "Package Family Name", Order = 4, ListOrder = 2)]
+        [Display(Name = "Package Family Name", Order = 4, ListOrder = 3)]
         public string PfnId { get; set; }
 
         /// <summary>
@@ -56,25 +56,25 @@ namespace Microsoft.Xbox.Services.DevTools.XblConfig
         /// <summary>
         /// Gets or sets the title ID.
         /// </summary>
-        [Display(Name = "Title ID", Order = 6, ListOrder = 3)]
+        [Display(Name = "Title ID", Order = 6, ListOrder = 4)]
         public uint TitleId { get; set; }
 
         /// <summary>
         /// Gets or sets the Xbox Live tier.
         /// </summary>
-        [Display(Name = "Tier", Order = 7, ListOrder = 4)]
+        [Display(Name = "Tier", Order = 7, ListOrder = 5)]
         public XboxLiveTier XboxLiveTier { get; set; }
 
         /// <summary>
         /// Gets or sets the product name.
         /// </summary>
-        [Display(Name = "Product Name", Order = 9, ListOrder = 1)]
+        [Display(Name = "Product Name", Order = 9, ListOrder = 2)]
         public string ProductName { get; set; }
 
         /// <summary>
         /// Gets or sets the product name.
         /// </summary>
-        [Display(Name = "Bound Title ID", Order = 10, ListOrder = 1)]
+        [Display(Name = "Bound Title ID", Order = 10, ListOrder = 6)]
         public string BoundTitleId { get; set; }
     }
 }
