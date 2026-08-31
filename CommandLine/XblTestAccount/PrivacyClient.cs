@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation
+﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XblTestAccount
@@ -6,9 +6,9 @@ namespace XblTestAccount
     using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
     /// <summary>
@@ -61,7 +61,7 @@ namespace XblTestAccount
             };
 
             await UserServiceRequest.SendAsync(
-                sandbox, HttpMethod.Put, WriteEndpoint, ContractVersion, payload.ToString(Newtonsoft.Json.Formatting.None));
+                sandbox, HttpMethod.Put, WriteEndpoint, ContractVersion, payload.ToString(Formatting.None));
 
             // The write does not report the resulting state, and a read issued straight afterwards
             // can still return the previous value, so the read back is repeated until the new value

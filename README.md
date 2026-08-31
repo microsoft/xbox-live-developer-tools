@@ -7,6 +7,7 @@ The Microsoft Xbox Live Tooling API provides a way to:
 * Reset a player's data in test sandboxes. Data includes achievements, leaderboards, stats and title history.
 * Manage a title's global storage in test sandboxes.
 * Manage a title's Xbox Live configuration.
+* Sign in Xbox Live test accounts and manage their privileges and privacy settings.
 
 To get access to Xbox Live services you must be a managed developer, enrolled in the [ID@Xbox](http://www.xbox.com/Developers/id) program or participating in the [Xbox Live Creators Program](https://aka.ms/xblcp). To learn more about these programs, please refer to the [developer program overview](https://docs.microsoft.com/windows/uwp/xbox-live/developer-program-overview).
 

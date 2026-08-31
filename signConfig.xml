@@ -6,6 +6,7 @@
     <file src="__RELBINPATH__\bin\XblPlayerDataReset\XblPlayerDataReset.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\XblPlayerDataReset\XblPlayerDataReset.exe" />
     <file src="__RELBINPATH__\bin\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe" />
     <file src="__RELBINPATH__\bin\XblDevAccount\XblDevAccount.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\XblDevAccount\XblDevAccount.exe" />
+    <file src="__RELBINPATH__\bin\XblTestAccount\XblTestAccount.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\XblTestAccount\XblTestAccount.exe" />
     <file src="__RELBINPATH__\bin\XblConfig\XblConfig.exe" signType="AuthenticodeFormer" dest="__RELBINPATH__\bin\XblConfig\XblConfig.exe" />
   </job>
 </SignConfigXML>

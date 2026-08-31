@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation
+﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XblTestAccount
@@ -9,6 +9,7 @@ namespace XblTestAccount
     using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
     /// <summary>
@@ -52,7 +53,7 @@ namespace XblTestAccount
             };
 
             string response = await UserServiceRequest.SendAsync(
-                sandbox, HttpMethod.Post, BuildUri(xuid), ContractVersion, payload.ToString(Newtonsoft.Json.Formatting.None));
+                sandbox, HttpMethod.Post, BuildUri(xuid), ContractVersion, payload.ToString(Formatting.None));
 
             return ParseRestrictions(response);
         }

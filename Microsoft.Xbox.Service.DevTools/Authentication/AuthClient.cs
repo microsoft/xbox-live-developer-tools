@@ -112,11 +112,6 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return account;
         }
 
-        public async Task<TestAccount> SignInTestAccountAsync(string sandbox)
-        {
-            return await this.SignInTestAccountAsync(sandbox, false);
-        }
-
         public async Task<TestAccount> SignInTestAccountAsync(string sandbox, bool forceInteractiveSignIn)
         {
             if (this.AuthContext == null)

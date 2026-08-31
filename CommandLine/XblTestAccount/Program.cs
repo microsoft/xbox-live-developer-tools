@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation
+﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace XblTestAccount
@@ -90,7 +90,7 @@ namespace XblTestAccount
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                Console.Error.WriteLine("Error: " + ex.Message);
                 exitCode = -1;
             }
 
@@ -123,14 +123,14 @@ namespace XblTestAccount
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine("Error: test account signin failed");
+                Console.Error.WriteLine("Error: test account signin failed");
                 if (ex.Message.Contains(Convert.ToString((int)HttpStatusCode.Unauthorized)))
                 {
-                    Console.WriteLine("Unable to authorize this account with Xbox Live. Please check your account.");
+                    Console.Error.WriteLine("Unable to authorize this account with Xbox Live. Please check your account.");
                 }
                 else
                 {
-                    Console.WriteLine(ex.Message);
+                    Console.Error.WriteLine(ex.Message);
                 }
 
                 return -1;
@@ -142,7 +142,7 @@ namespace XblTestAccount
             TestAccount testAccount = ToolAuthentication.LoadLastSignedInTestAccount();
             if (testAccount == null)
             {
-                Console.WriteLine("No signed in test account found.");
+                Console.Error.WriteLine("No signed in test account found.");
                 return -1;
             }
 
@@ -156,7 +156,7 @@ namespace XblTestAccount
             TestAccount testAccount = ToolAuthentication.LoadLastSignedInTestAccount();
             if (testAccount == null)
             {
-                Console.WriteLine("No signed in test account found.");
+                Console.Error.WriteLine("No signed in test account found.");
                 return -1;
             }
 
@@ -169,7 +169,7 @@ namespace XblTestAccount
                 string sandbox = string.IsNullOrEmpty(options.Sandbox) ? testAccount.Sandbox : options.Sandbox;
                 if (string.IsNullOrEmpty(sandbox))
                 {
-                    Console.WriteLine("Error: no sandbox was given and the signed in test account does not record one.");
+                    Console.Error.WriteLine("Error: no sandbox was given and the signed in test account does not record one.");
                     return -1;
                 }
 
@@ -179,8 +179,8 @@ namespace XblTestAccount
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error: could not refresh the test account claims.");
-                    Console.WriteLine(ex.Message);
+                    Console.Error.WriteLine("Error: could not refresh the test account claims.");
+                    Console.Error.WriteLine(ex.Message);
                     return -1;
                 }
             }
@@ -224,14 +224,14 @@ namespace XblTestAccount
             TestAccount testAccount = ToolAuthentication.LoadLastSignedInTestAccount();
             if (testAccount == null)
             {
-                Console.WriteLine("No signed in test account found. Run \"XblTestAccount signin\" first.");
+                Console.Error.WriteLine("No signed in test account found. Run \"XblTestAccount signin\" first.");
                 return -1;
             }
 
             string sandbox = string.IsNullOrEmpty(options.Sandbox) ? testAccount.Sandbox : options.Sandbox;
             if (string.IsNullOrEmpty(sandbox))
             {
-                Console.WriteLine("Error: no sandbox was given and the signed in test account does not record one.");
+                Console.Error.WriteLine("Error: no sandbox was given and the signed in test account does not record one.");
                 return -1;
             }
 
@@ -244,7 +244,7 @@ namespace XblTestAccount
             // mismatch, so it is parsed here where a useful message can be given.
             if (!TryParseAction(options.Action, out PrivilegeAction action))
             {
-                Console.WriteLine($"Error: unknown action \"{options.Action}\". Expected get, block or allow.");
+                Console.Error.WriteLine($"Error: unknown action \"{options.Action}\". Expected get, block or allow.");
                 return -1;
             }
 
@@ -253,13 +253,13 @@ namespace XblTestAccount
 
             if (isMutation && privileges.Count == 0)
             {
-                Console.WriteLine($"Error: the {ActionWord(action)} action requires at least one privilege, for example \"XblTestAccount privilege {ActionWord(action)} 185\".");
+                Console.Error.WriteLine($"Error: the {ActionWord(action)} action requires at least one privilege, for example \"XblTestAccount privilege {ActionWord(action)} 185\".");
                 return -1;
             }
 
             if (!isMutation && privileges.Count > 0)
             {
-                Console.WriteLine("Error: the get action does not take a privilege list.");
+                Console.Error.WriteLine("Error: the get action does not take a privilege list.");
                 return -1;
             }
 
@@ -270,8 +270,8 @@ namespace XblTestAccount
                 List<int> notEditable = privileges.Where(id => !PrivilegeNames.IsEditable(id)).ToList();
                 if (notEditable.Count > 0)
                 {
-                    Console.WriteLine($"Error: {DescribePrivileges(notEditable)} cannot be changed by the account itself.");
-                    Console.WriteLine($"Only {DescribePrivileges(PrivilegeNames.Editable)} can be blocked and allowed this way.");
+                    Console.Error.WriteLine($"Error: {DescribePrivileges(notEditable)} cannot be changed by the account itself.");
+                    Console.Error.WriteLine($"Only {DescribePrivileges(PrivilegeNames.Editable)} can be blocked and allowed this way.");
 
                     // Where the privilege is derived from a privacy setting, changing that setting
                     // is what the caller actually wants, so point at it rather than just refusing.
@@ -281,16 +281,16 @@ namespace XblTestAccount
                         if (PrivilegeNames.TryGetPrivacyEquivalent(id, out string alias))
                         {
                             string want = action == PrivilegeAction.Block ? "Blocked" : "Everyone";
-                            Console.WriteLine();
-                            Console.WriteLine($"{PrivilegeNames.Describe(id)} follows a privacy setting. To {ActionWord(action)} it, run:");
-                            Console.WriteLine($"    XblTestAccount privacy -n {alias} -v {want}");
+                            Console.Error.WriteLine();
+                            Console.Error.WriteLine($"{PrivilegeNames.Describe(id)} follows a privacy setting. To {ActionWord(action)} it, run:");
+                            Console.Error.WriteLine($"    XblTestAccount privacy -n {alias} -v {want}");
                             suggested = true;
                         }
                     }
 
                     if (!suggested)
                     {
-                        Console.WriteLine("The remaining privileges are either fixed by the service or derived from another privilege.");
+                        Console.Error.WriteLine("The remaining privileges are either fixed by the service or derived from another privilege.");
                     }
 
                     return -1;
@@ -332,7 +332,7 @@ namespace XblTestAccount
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Warning: could not read the token claims, reporting the parental service only. {ex.Message}");
+                        Console.Error.WriteLine($"Warning: could not read the token claims, reporting the parental service only. {ex.Message}");
                     }
                 }
 
@@ -380,8 +380,8 @@ namespace XblTestAccount
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine("Error: the privilege call failed.");
-                Console.WriteLine(ex.Message);
+                Console.Error.WriteLine("Error: the privilege call failed.");
+                Console.Error.WriteLine(ex.Message);
                 return -1;
             }
         }
@@ -427,14 +427,14 @@ namespace XblTestAccount
             TestAccount testAccount = ToolAuthentication.LoadLastSignedInTestAccount();
             if (testAccount == null)
             {
-                Console.WriteLine("No signed in test account found. Run \"XblTestAccount signin\" first.");
+                Console.Error.WriteLine("No signed in test account found. Run \"XblTestAccount signin\" first.");
                 return -1;
             }
 
             string sandbox = string.IsNullOrEmpty(options.Sandbox) ? testAccount.Sandbox : options.Sandbox;
             if (string.IsNullOrEmpty(sandbox))
             {
-                Console.WriteLine("Error: no sandbox was given and the signed in test account does not record one.");
+                Console.Error.WriteLine("Error: no sandbox was given and the signed in test account does not record one.");
                 return -1;
             }
 
@@ -447,7 +447,7 @@ namespace XblTestAccount
             // to apply to, so only that combination is rejected.
             if (hasValue && !hasSetting)
             {
-                Console.WriteLine("Error: -v needs the setting to change, for example -n cross-network -v Blocked.");
+                Console.Error.WriteLine("Error: -v needs the setting to change, for example -n cross-network -v Blocked.");
                 return -1;
             }
 
@@ -461,7 +461,7 @@ namespace XblTestAccount
                 setting = PrivacyNames.Resolve(options.Setting);
                 if (setting == null)
                 {
-                    Console.WriteLine($"Error: unknown privacy setting \"{options.Setting}\". Run \"XblTestAccount list-privacy-settings\" to see the known settings.");
+                    Console.Error.WriteLine($"Error: unknown privacy setting \"{options.Setting}\". Run \"XblTestAccount list-privacy-settings\" to see the known settings.");
                     return -1;
                 }
             }
@@ -470,7 +470,7 @@ namespace XblTestAccount
             {
                 if (!TryParseEnumName(NormalizeValue(options.Value), out PrivacyValue parsed))
                 {
-                    Console.WriteLine($"Error: unknown value \"{options.Value}\". Expected {string.Join(", ", Enum.GetNames(typeof(PrivacyValue)))}.");
+                    Console.Error.WriteLine($"Error: unknown value \"{options.Value}\". Expected {string.Join(", ", Enum.GetNames(typeof(PrivacyValue)))}.");
                     return -1;
                 }
 
@@ -487,8 +487,8 @@ namespace XblTestAccount
                     IDictionary<string, string> current = await PrivacyClient.GetSettingsAsync(sandbox, xuid);
                     if (!current.ContainsKey(setting))
                     {
-                        Console.WriteLine($"Error: the service does not expose a privacy setting named \"{options.Setting}\".");
-                        Console.WriteLine($"The settings available on this account are: {string.Join(", ", current.Keys)}.");
+                        Console.Error.WriteLine($"Error: the service does not expose a privacy setting named \"{options.Setting}\".");
+                        Console.Error.WriteLine($"The settings available on this account are: {string.Join(", ", current.Keys)}.");
                         return -1;
                     }
 
@@ -503,8 +503,8 @@ namespace XblTestAccount
                     {
                         if (!settings.ContainsKey(setting))
                         {
-                            Console.WriteLine($"Error: the service does not expose a privacy setting named \"{options.Setting}\".");
-                            Console.WriteLine($"The settings available on this account are: {string.Join(", ", settings.Keys)}.");
+                            Console.Error.WriteLine($"Error: the service does not expose a privacy setting named \"{options.Setting}\".");
+                            Console.Error.WriteLine($"The settings available on this account are: {string.Join(", ", settings.Keys)}.");
                             return -1;
                         }
 
@@ -534,17 +534,17 @@ namespace XblTestAccount
                     && (!settings.TryGetValue(setting, out string applied)
                         || !string.Equals(applied, value.Value.ToString(), StringComparison.OrdinalIgnoreCase)))
                 {
-                    Console.WriteLine();
-                    Console.WriteLine($"Warning: the service accepted the change but still reports {setting} as {applied ?? "missing"}.");
-                    Console.WriteLine("It can take a moment to become visible. Run \"XblTestAccount privacy\" again to confirm.");
+                    Console.Error.WriteLine();
+                    Console.Error.WriteLine($"Warning: the service accepted the change but still reports {setting} as {applied ?? "missing"}.");
+                    Console.Error.WriteLine("It can take a moment to become visible. Run \"XblTestAccount privacy\" again to confirm.");
                 }
 
                 return 0;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine("Error: the privacy call failed.");
-                Console.WriteLine(ex.Message);
+                Console.Error.WriteLine("Error: the privacy call failed.");
+                Console.Error.WriteLine(ex.Message);
                 return -1;
             }
         }
