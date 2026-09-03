@@ -3,37 +3,65 @@
 
 namespace XblTestAccount
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>
-    /// Friendly names for the Xbox Live privilege ids handled by the parental service.
+    /// Friendly names for the Xbox Live privilege ids that appear in an account's token claims and
+    /// in the parental service.
     /// </summary>
+    /// <remarks>
+    /// The names follow the GDK XUserPrivilege enumeration and the Win32 KnownGamingPrivileges
+    /// enumeration in gamingtcui.h, which between them cover the ids a modern account holds. The
+    /// remainder are ids that appear in the token claim example in the GDK documentation for the
+    /// server side handling of user privileges. An id outside this set is reported as its number,
+    /// as the service mints new ones from time to time.
+    /// </remarks>
     internal static class PrivilegeNames
     {
         private static readonly Dictionary<int, string> NameMapping = new Dictionary<int, string>
         {
             { 185, "Cross Network Play" },
+            { 188, "Clubs" },
             { 189, "Non-interactive Sessions" },
+            { 190, "Broadcast" },
+            { 196, "Manage Profile Privacy" },
             { 197, "View Friends List" },
             { 198, "Game DVR" },
             { 199, "Share Kinect Content" },
-            { 203, "Join Parties" },
+            { 203, "Multiplayer Parties" },
             { 205, "Comms In-game Voice" },
             { 206, "Comms Voice (Skype)" },
             { 207, "Cloud Gaming Manage Session" },
             { 208, "Cloud Gaming Join Session" },
             { 209, "Cloud Saved Games" },
+            { 211, "Share Content Outside Xbox" },
+            { 212, "Unfiltered Programming" },
             { 214, "Premium Content" },
             { 217, "Internet Browser" },
             { 219, "Subscription Content" },
             { 220, "Social Network Sharing" },
             { 224, "Premium Video" },
+            { 226, "Dedicated Server Multiplayer" },
+            { 227, "Manage Payment Instruments" },
+            { 228, "Switch Microsoft Account" },
+            { 229, "Share Friends List (People On My List)" },
+            { 230, "Share Friends List" },
+            { 231, "Store App Access" },
+            { 234, "Video Communications (People On My List)" },
             { 235, "Video Communications" },
+            { 237, "Explicit Music Content" },
+            { 240, "Cross Platform System Communication" },
+            { 243, "Share Presence (People On My List)" },
+            { 244, "Share Presence" },
             { 245, "Purchase Content" },
+            { 246, "User Generated Content (People On My List)" },
             { 247, "User Generated Content" },
+            { 248, "Profile Viewing (People On My List)" },
             { 249, "Profile Viewing" },
+            { 251, "Comms (People On My List)" },
             { 252, "Comms (text and voice)" },
-            { 254, "Multiplayer" },
+            { 254, "Multiplayer Sessions" },
             { 255, "Add Friend" },
         };
 
@@ -49,8 +77,8 @@ namespace XblTestAccount
         // out of the account's granted privileges and into its restricted ones.
         private static readonly Dictionary<int, string> PrivacyEquivalent = new Dictionary<int, string>
         {
-            { 247, "ugc" },
-            { 252, "comms" },
+            { 247, "AllowUserCreatedContentViewing" },
+            { 252, "CommunicateUsingTextAndVoice" },
         };
 
         /// <summary>
@@ -64,19 +92,35 @@ namespace XblTestAccount
         internal static IEnumerable<int> Editable => EditableIds;
 
         /// <summary>
-        /// Gets the privileges that follow a privacy setting, keyed by privilege id.
-        /// </summary>
-        internal static IReadOnlyDictionary<int, string> PrivacyControlled => PrivacyEquivalent;
-
-        /// <summary>
-        /// Gets the privacy setting alias that controls a privilege, where one is known.
+        /// Gets the privacy setting that controls a privilege, where one is known.
         /// </summary>
         /// <param name="id">The privilege id.</param>
-        /// <param name="alias">Receives the privacy setting alias that controls the privilege.</param>
+        /// <param name="setting">Receives the name of the privacy setting that controls it.</param>
         /// <returns>True when the privilege is controlled by a privacy setting.</returns>
-        internal static bool TryGetPrivacyEquivalent(int id, out string alias)
+        internal static bool TryGetPrivacySetting(int id, out string setting)
         {
-            return PrivacyEquivalent.TryGetValue(id, out alias);
+            return PrivacyEquivalent.TryGetValue(id, out setting);
+        }
+
+        /// <summary>
+        /// Gets the privilege that a privacy setting controls, where one is known.
+        /// </summary>
+        /// <param name="setting">The privacy setting name as reported by the service.</param>
+        /// <param name="id">Receives the privilege id the setting controls.</param>
+        /// <returns>True when the setting controls a known privilege.</returns>
+        internal static bool TryGetPrivilegeForSetting(string setting, out int id)
+        {
+            foreach (var entry in PrivacyEquivalent)
+            {
+                if (string.Equals(entry.Value, setting, StringComparison.OrdinalIgnoreCase))
+                {
+                    id = entry.Key;
+                    return true;
+                }
+            }
+
+            id = 0;
+            return false;
         }
 
         /// <summary>
@@ -98,6 +142,19 @@ namespace XblTestAccount
         internal static bool TryGetName(int id, out string name)
         {
             return NameMapping.TryGetValue(id, out name);
+        }
+
+        /// <summary>
+        /// Gets the friendly name of a privilege, or a stand in when the id is not one this tool
+        /// knows. The service mints new ids from time to time, so an unknown id is reported rather
+        /// than hidden.
+        /// </summary>
+        /// <param name="id">The privilege id.</param>
+        /// <param name="fallback">The name to use when the privilege is not known.</param>
+        /// <returns>The friendly name, or the fallback.</returns>
+        internal static string GetName(int id, string fallback)
+        {
+            return TryGetName(id, out string name) ? name : fallback;
         }
 
         /// <summary>

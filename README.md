@@ -78,16 +78,44 @@ Test account {UserName} has successfully signed in to sandbox {Sandbox}.
     XUID : {xuid}
     Sandbox : {sandbox}
     Age Group : {ageGroup}
-    Privileges : {privileges}
-    Restricted Privileges : {restrictedPrivileges}
+
+Run "XblTestAccount show" for its privileges and privacy settings.
 ```
 
-***show:*** Displays the signed in test account. Privileges are claims on the token, so `show` reports them as they were
-at sign in; add `--refresh` to mint a new token and see them as they are now.
+***show:*** Displays everything known about the signed in test account: who it is, the state of every privilege on its
+token, and the value of every privacy setting the service exposes. Privileges are claims on the token, so `show` reports
+them as they were at sign in; add `--refresh` to mint a new token and see them as they are now.
 
 ```
 XblTestAccount.exe show [--refresh] [--sandbox XXXXXX.0]
 ```
+
+***Success output example:***
+
+```
+> XblTestAccount.exe show --refresh
+Test account {UserName} is currently signed in.
+    Gamertag : {gamertag}
+    XUID : {xuid}
+    Sandbox : {sandbox}
+    Age Group : Adult
+
+Privileges:
+    185  Cross Network Play        Granted     (editable)
+    189  Non-interactive Sessions  Restricted
+    252  Comms (text and voice)    Restricted  (set with: privacy set CommunicateUsingTextAndVoice)
+    254  Multiplayer Sessions      Restricted  (editable)
+    ...
+
+Privacy settings:
+    AllowUserCreatedContentViewing     Everyone  (controls privilege 247)
+    CommunicateDuringCrossNetworkPlay  Everyone
+    CommunicateUsingTextAndVoice       Blocked   (controls privilege 252)
+    ...
+```
+
+A privilege whose id this tool does not have a name for is reported as `(unknown)`, because the service mints new ids
+from time to time.
 
 ***signout:*** Deletes the last signed in test account information, and clears up cached test account tokens.
 
@@ -95,75 +123,62 @@ XblTestAccount.exe show [--refresh] [--sandbox XXXXXX.0]
 XblTestAccount.exe signout
 ```
 
-***privilege:*** Reports, blocks or allows privileges on the signed in test account. The action defaults to `get`, and
-the sandbox to the one the account signed in to.
+***privilege:*** Lists the known privileges, or blocks and allows them on the signed in test account. The action is
+required, and the sandbox defaults to the one the account signed in to.
 
 ```
-XblTestAccount.exe privilege [get|block|allow] [ids] [--sandbox XXXXXX.0]
+XblTestAccount.exe privilege listall
+XblTestAccount.exe privilege block <ids> [--sandbox XXXXXX.0]
+XblTestAccount.exe privilege allow <ids> [--sandbox XXXXXX.0]
 ```
 
 ***Success output example:***
 
 ```
-> XblTestAccount.exe privilege
-Restricted privileges for {gamertag} ({xuid}):
-    189  Non-interactive Sessions  set by the parental service
-    252  Comms (text and voice)    follows privacy setting comms
-    254  Multiplayer               set by the parental service
+> XblTestAccount.exe privilege block 185
+Restricting 185 (Cross Network Play) on {gamertag} ({xuid}) in sandbox {sandbox}.
+Privileges now restricted by the parental service for {gamertag} ({xuid}):
+    185  Cross Network Play
+
+This is only what the parental service holds. Run "XblTestAccount show --refresh" for the effective set.
 ```
 
-A privilege is restricted either by the parental service directly, or because the service derived it from a privacy
-setting, in which case it appears only in the token claims. `get` reports both and says which; `block` and `allow` report
-only what the parental service holds, so run `privilege` afterwards for the effective set. An entry with no annotation is
-fixed by the service for a reason it does not report, such as the age group.
+`block` and `allow` report only what the parental service holds. A privilege the service derives from a privacy setting
+is enforced through the token claims and never appears there, which is why `show --refresh` is the way to read the
+effective set.
 
-Only **185 (Cross Network Play)** and **254 (Multiplayer)** can be blocked and allowed, matching what XblTestAccountGui
-exposes; the tool refuses other ids up front rather than letting the service reject them with a bare HTTP 400. Privileges
-that the service derives from a privacy setting are changed through that setting instead:
+Only **185 (Cross Network Play)** and **254 (Multiplayer Sessions)** can be blocked and allowed, matching what
+XblTestAccountGui exposes; the tool refuses other ids up front rather than letting the service reject them with a bare
+HTTP 400. Privileges that the service derives from a privacy setting are changed through that setting instead:
 
 | Privilege | Controlled by |
 |---|---|
-| 247 (User Generated Content) | `privacy --name ugc --value Blocked` |
-| 252 (Comms (text and voice)) | `privacy --name comms --value Blocked` |
+| 247 (User Generated Content) | `privacy set AllowUserCreatedContentViewing Blocked` |
+| 252 (Comms (text and voice)) | `privacy set CommunicateUsingTextAndVoice Blocked` |
 
 The claims settle a little after a change, so a `show --refresh` issued immediately afterwards may still report the old
 value; repeat it after a moment.
 
-***list-privileges:*** Lists the known privilege ids, marking which can be changed directly and which follow a privacy
-setting.
+***privacy:*** Lists the privacy settings of the signed in test account, or changes one of them. The action is required.
+`listall` reports every setting the service exposes with its current value, so it is also the way to discover the setting
+names that `set` accepts. Setting names are matched without regard to case.
 
 ```
-XblTestAccount.exe list-privileges
-```
-
-***privacy:*** Reports or changes the privacy settings of the signed in test account. With no arguments it reports every
-setting the service returns, and with `--name` alone it reports that one. `--name` takes a full setting name or a short
-alias, and accepts any setting the service exposes, not only the documented ones.
-
-```
-XblTestAccount.exe privacy [--name <setting>] [--value Everyone|PeopleOnMyList|Blocked] [--sandbox XXXXXX.0]
+XblTestAccount.exe privacy listall [--sandbox XXXXXX.0]
+XblTestAccount.exe privacy set <setting> <Everyone|PeopleOnMyList|Blocked> [--sandbox XXXXXX.0]
 ```
 
 ***Success output example:***
 
 ```
-> XblTestAccount.exe privacy --name cross-network --value Blocked
+> XblTestAccount.exe privacy set CommunicateDuringCrossNetworkPlay Blocked
 Setting CommunicateDuringCrossNetworkPlay to Blocked on {gamertag} ({xuid}) in sandbox {sandbox}.
-Privacy settings for {gamertag} ({xuid}):
-    CommunicateDuringCrossNetworkPlay  Blocked
+CommunicateDuringCrossNetworkPlay is now Blocked.
 ```
 
 A privacy setting is the account's own choice about who it shares with, whereas a privilege is a restriction the parental
 service applies. A write is not immediately visible to a read, so the tool reads the value back until the change appears
 and warns if it never does.
-
-***list-privacy-settings:*** Lists the documented privacy settings, their aliases and the accepted values, noting which
-privilege each controls. The service usually exposes more settings than these; run `privacy` with no arguments to see
-them all.
-
-```
-XblTestAccount.exe list-privacy-settings
-```
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

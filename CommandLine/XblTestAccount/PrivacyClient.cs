@@ -6,10 +6,32 @@ namespace XblTestAccount
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+
+    /// <summary>
+    /// The values the Xbox Live privacy service accepts for a privacy setting.
+    /// </summary>
+    internal enum PrivacyValue
+    {
+        /// <summary>
+        /// Anyone is allowed.
+        /// </summary>
+        Everyone,
+
+        /// <summary>
+        /// Only people on the account's friends list are allowed.
+        /// </summary>
+        PeopleOnMyList,
+
+        /// <summary>
+        /// Nobody is allowed.
+        /// </summary>
+        Blocked,
+    }
 
     /// <summary>
     /// Reads and writes the privacy settings of the signed in test account. This is the same call
@@ -84,6 +106,29 @@ namespace XblTestAccount
             }
 
             return settings;
+        }
+
+        /// <summary>
+        /// Matches a setting name against the set the service reports.
+        /// </summary>
+        /// <remarks>
+        /// The service is the only authority on which settings exist, and it exposes more of them
+        /// than this tool could usefully hard code, so a name is resolved against a live read
+        /// rather than a table held here. Matching is case insensitive, and the name the service
+        /// uses is returned so that the write carries the casing it expects.
+        /// </remarks>
+        /// <param name="settings">The settings as reported by the service.</param>
+        /// <param name="name">The setting name supplied on the command line.</param>
+        /// <returns>The name the service uses, or null when the service has no such setting.</returns>
+        internal static string ResolveSettingName(IDictionary<string, string> settings, string name)
+        {
+            if (settings == null || string.IsNullOrWhiteSpace(name))
+            {
+                return null;
+            }
+
+            string trimmed = name.Trim();
+            return settings.Keys.FirstOrDefault(known => string.Equals(known, trimmed, StringComparison.OrdinalIgnoreCase));
         }
 
         private static IDictionary<string, string> ParseSettings(string response)

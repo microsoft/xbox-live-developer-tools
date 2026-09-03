@@ -60,8 +60,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PrivacyClient.cs" />
-    <Compile Include="PrivacyNames.cs" />
-    <Compile Include="PrivacyValue.cs" />
     <Compile Include="PrivilegeClient.cs" />
     <Compile Include="PrivilegeNames.cs" />
     <Compile Include="Program.cs" />
