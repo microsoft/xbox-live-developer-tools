@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation
+// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace Microsoft.Xbox.Services.DevTools.Unittest
@@ -54,7 +54,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Guid jobId = Guid.NewGuid();
             var submitJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/submitJob");
             string submitJobResponse = $"\"{jobId}\"";
-            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\"}}";
+            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\",\"sandbox\":\"{DefaultSandbox}\"}}";
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
@@ -113,7 +113,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Guid jobId = Guid.NewGuid();
             var submitJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/submitJob");
             string submitJobResponse = $"\"{jobId}\"";
-            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\"}}";
+            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\",\"sandbox\":\"{DefaultSandbox}\"}}";
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
@@ -165,7 +165,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Guid jobId = Guid.NewGuid();
             var submitJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/submitJob");
             string submitJobResponse = $"\"{jobId}\"";
-            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\"}}";
+            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\",\"sandbox\":\"{DefaultSandbox}\"}}";
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
@@ -234,7 +234,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             Guid jobId = Guid.NewGuid();
             var submitJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/submitJob");
             string submitJobResponse = $"\"{jobId}\"";
-            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\"}}";
+            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\",\"sandbox\":\"{DefaultSandbox}\"}}";
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)
@@ -266,7 +266,7 @@ namespace Microsoft.Xbox.Services.DevTools.Unittest
             var mockHttp = new MockHttpMessageHandler();
             Guid jobId = Guid.NewGuid();
             var submitJobUri = new Uri(new Uri(ClientSettings.Singleton.OmegaResetToolEndpoint), "/submitJob");
-            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\"}}";
+            string submitJobContent = $"{{\"userId\":\"{DefaultXuid}\",\"Scid\":\"{DefaultScid}\",\"sandbox\":\"{DefaultSandbox}\"}}";
 
             mockHttp.Expect(submitJobUri.ToString())
                 .WithContent(submitJobContent)

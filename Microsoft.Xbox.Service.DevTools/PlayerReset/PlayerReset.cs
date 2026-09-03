@@ -179,7 +179,7 @@ namespace Microsoft.Xbox.Services.DevTools.PlayerReset
                 var response = await submitRequest.SendAsync(()=> 
                 {
                     var requestMsg = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "submitJob"));
-                    var requestContent = JsonConvert.SerializeObject(new JobSubmitRequest(scid, xuid));
+                    var requestContent = JsonConvert.SerializeObject(new JobSubmitRequest(scid, xuid, sandbox));
                     requestMsg.Content = new StringContent(requestContent);
                     requestMsg.Headers.Add("x-xbl-contract-version", "100");
 
