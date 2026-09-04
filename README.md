@@ -132,7 +132,7 @@ Privileges for {gamertag} ({xuid}):
     ...
 
 > XblTestAccount.exe privilege block 185
-Restricting 185 (Cross Network Play) on {gamertag} ({xuid}) in sandbox {sandbox}.
+Restricting 185 (Cross Network Play) on {gamertag} ({xuid}).
 Done. Run "XblTestAccount privilege show --refresh -b" for the privileges now restricted.
 ```
 
@@ -180,7 +180,7 @@ Privacy settings for {gamertag} ({xuid}):
     ...
 
 > XblTestAccount.exe privacy set CommunicateDuringCrossNetworkPlay Blocked
-Setting CommunicateDuringCrossNetworkPlay to Blocked on {gamertag} ({xuid}) in sandbox {sandbox}.
+Setting CommunicateDuringCrossNetworkPlay to Blocked on {gamertag} ({xuid}).
 CommunicateDuringCrossNetworkPlay is now Blocked.
 ```
 

@@ -442,7 +442,7 @@ namespace XblTestAccount
             try
             {
                 string gerund = block ? "Restricting" : "Unrestricting";
-                Console.WriteLine($"{gerund} {DescribePrivileges(privileges)} on {testAccount.Gamertag} ({xuid}) in sandbox {sandbox}.");
+                Console.WriteLine($"{gerund} {DescribePrivileges(privileges)} on {testAccount.Gamertag} ({xuid}).");
 
                 await PrivilegeClient.SetRestrictionsAsync(sandbox, xuid, privileges, block);
 
@@ -569,7 +569,7 @@ namespace XblTestAccount
                     return -1;
                 }
 
-                Console.WriteLine($"Setting {setting} to {value} on {testAccount.Gamertag} ({xuid}) in sandbox {sandbox}.");
+                Console.WriteLine($"Setting {setting} to {value} on {testAccount.Gamertag} ({xuid}).");
                 settings = await PrivacyClient.SetSettingAsync(sandbox, xuid, setting, value);
 
                 settings.TryGetValue(setting, out string applied);
