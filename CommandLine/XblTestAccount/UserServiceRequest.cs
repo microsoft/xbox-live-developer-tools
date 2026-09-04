@@ -51,7 +51,18 @@ namespace XblTestAccount
         {
             // These services require a user XSTS token. A Partner Center developer eToken is
             // rejected with HTTP 401 even for a read-only GET.
-            string authHeader = await ToolAuthentication.GetTestTokenSilentlyAsync(sandbox, forceTokenRefresh);
+            string authHeader;
+            try
+            {
+                authHeader = await ToolAuthentication.GetTestTokenSilentlyAsync(sandbox, forceTokenRefresh);
+            }
+            catch (Exception ex)
+            {
+                // Minting the token is a separate step from the call it authenticates, and it
+                // fails for its own reasons, so it is reported as itself rather than as the
+                // service refusing the request.
+                throw new TestAccountTokenException(sandbox, ex);
+            }
 
             using (var client = new HttpClient())
             using (var request = new HttpRequestMessage(method, uri))

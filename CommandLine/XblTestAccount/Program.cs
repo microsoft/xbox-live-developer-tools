@@ -20,7 +20,6 @@ namespace XblTestAccount
     {
         private const string ToolName = "XblTestAccount";
         private const string UnknownPrivilegeName = "(unknown)";
-        private const string SandboxHelp = "Optional. The sandbox to use. Defaults to the sandbox the test account signed in to.";
         private const string HelpHelp = "Display this help screen.";
         private const string VersionHelp = "Display version information.";
         private const string JsonHelp = "Optional. Write the output as parsable json instead of a table.";
@@ -319,7 +318,7 @@ namespace XblTestAccount
                 return -1;
             }
 
-            if (!TryResolveSandbox(testAccount, options.Sandbox, out string sandbox))
+            if (!TryResolveSandbox(testAccount, out string sandbox))
             {
                 return -1;
             }
@@ -335,9 +334,7 @@ namespace XblTestAccount
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine("Error: could not refresh the test account claims.");
-                    Console.Error.WriteLine(ex.Message);
-                    return -1;
+                    return ReportTokenFailure(new TestAccountTokenException(sandbox, ex));
                 }
             }
 
@@ -433,7 +430,7 @@ namespace XblTestAccount
                 return -1;
             }
 
-            if (!TryResolveSandbox(testAccount, options.Sandbox, out string sandbox))
+            if (!TryResolveSandbox(testAccount, out string sandbox))
             {
                 return -1;
             }
@@ -451,6 +448,10 @@ namespace XblTestAccount
 
                 Console.WriteLine($"Done. Run \"{ToolName} privilege show --refresh -b\" for the privileges now restricted.");
                 return 0;
+            }
+            catch (TestAccountTokenException ex)
+            {
+                return ReportTokenFailure(ex);
             }
             catch (HttpRequestException ex)
             {
@@ -473,7 +474,7 @@ namespace XblTestAccount
                 return -1;
             }
 
-            if (!TryResolveSandbox(testAccount, options.Sandbox, out string sandbox))
+            if (!TryResolveSandbox(testAccount, out string sandbox))
             {
                 return -1;
             }
@@ -499,6 +500,10 @@ namespace XblTestAccount
                 Console.WriteLine($"Privacy settings for {testAccount.Gamertag} ({testAccount.Xuid}):");
                 DisplayPrivacySettings(settings);
                 return 0;
+            }
+            catch (TestAccountTokenException ex)
+            {
+                return ReportTokenFailure(ex);
             }
             catch (HttpRequestException ex)
             {
@@ -542,7 +547,7 @@ namespace XblTestAccount
                 return -1;
             }
 
-            if (!TryResolveSandbox(testAccount, options.Sandbox, out string sandbox))
+            if (!TryResolveSandbox(testAccount, out string sandbox))
             {
                 return -1;
             }
@@ -584,6 +589,10 @@ namespace XblTestAccount
                 }
 
                 return 0;
+            }
+            catch (TestAccountTokenException ex)
+            {
+                return ReportTokenFailure(ex);
             }
             catch (HttpRequestException ex)
             {
@@ -689,19 +698,46 @@ namespace XblTestAccount
         }
 
         /// <summary>
-        /// Resolves the sandbox to work against, falling back to the one the account signed in to.
+        /// Reports that a user token could not be minted for the signed in test account. The
+        /// sandbox is no longer a choice the caller makes, so the account or its cached credential
+        /// is what needs attention.
         /// </summary>
+        /// <param name="exception">The failure raised while minting the token.</param>
+        /// <returns>The exit code for a failed command.</returns>
+        private static int ReportTokenFailure(TestAccountTokenException exception)
+        {
+            Console.Error.WriteLine($"Error: could not obtain a token for the signed in test account in sandbox {exception.Sandbox}.");
+            Console.Error.WriteLine("The cached credential may have expired, or the account may no longer be able to sign in to that sandbox.");
+            Console.Error.WriteLine($"Run \"{ToolName} signin -u <name> -s <sandbox>\" to sign it in again.");
+
+            string detail = exception.InnerException?.Message;
+            if (!string.IsNullOrWhiteSpace(detail))
+            {
+                Console.Error.WriteLine(detail);
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Gets the sandbox to work against, which is always the one the account signed in to.
+        /// </summary>
+        /// <remarks>
+        /// The parental and privacy services are keyed by XUID and neither endpoint takes a
+        /// sandbox, so there is nothing for the caller to choose. The sandbox is still needed to
+        /// mint the user token that authenticates the call.
+        /// </remarks>
         /// <param name="testAccount">The signed in test account.</param>
-        /// <param name="requested">The sandbox given on the command line, if any.</param>
         /// <param name="sandbox">Receives the sandbox to use.</param>
         /// <returns>True when a sandbox could be resolved.</returns>
-        private static bool TryResolveSandbox(TestAccount testAccount, string requested, out string sandbox)
+        private static bool TryResolveSandbox(TestAccount testAccount, out string sandbox)
         {
-            sandbox = string.IsNullOrEmpty(requested) ? testAccount.Sandbox : requested;
+            sandbox = testAccount.Sandbox;
 
             if (string.IsNullOrEmpty(sandbox))
             {
-                Console.Error.WriteLine("Error: no sandbox was given and the signed in test account does not record one.");
+                Console.Error.WriteLine("Error: the signed in test account does not record a sandbox.");
+                Console.Error.WriteLine($"Run \"{ToolName} signin\" again to sign it in.");
                 return false;
             }
 
@@ -1140,7 +1176,6 @@ namespace XblTestAccount
             Console.WriteLine();
             WriteEntries(new[]
             {
-                Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
                 Entry("block", "block a privilege"),
                 Entry("allow", "allow a privilege"),
@@ -1156,7 +1191,6 @@ namespace XblTestAccount
             WriteEntries(new[]
             {
                 Entry("privilegenumber", "i.e. 254"),
-                Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
             });
 
@@ -1173,7 +1207,6 @@ namespace XblTestAccount
                 Entry("-j, --json", JsonHelp),
                 Entry("-b, --blocked", "Optional. Report only the privileges that are restricted."),
                 Entry("-r, --refresh", "Optional. Mint a new token so that the privileges are reported as they are now, rather than as they were at sign in."),
-                Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
             });
 
@@ -1202,7 +1235,6 @@ namespace XblTestAccount
             Console.WriteLine();
             WriteEntries(new[]
             {
-                Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
                 Entry("set", "set a privacy setting"),
                 Entry("show (-j)", "show privacy settings, pass -j to output as parsable json"),
@@ -1218,7 +1250,6 @@ namespace XblTestAccount
             {
                 Entry("setting", "i.e. CommunicateUsingTextAndVoice"),
                 Entry("value", $"i.e. Blocked. One of {string.Join(", ", Enum.GetNames(typeof(PrivacyValue)))}."),
-                Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
             });
 
@@ -1233,7 +1264,6 @@ namespace XblTestAccount
             WriteEntries(new[]
             {
                 Entry("-j, --json", JsonHelp),
-                Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
             });
 
@@ -1274,18 +1304,6 @@ namespace XblTestAccount
             /// Gets or sets the privacy setting that controls the privilege, where one does.
             /// </summary>
             public string PrivacySetting { get; set; }
-        }
-
-        /// <summary>
-        /// The sandbox option, which every command that calls the service takes.
-        /// </summary>
-        private class SandboxOptions
-        {
-            /// <summary>
-            /// Gets or sets the sandbox to work against.
-            /// </summary>
-            [Option('s', "sandbox", Required = false, HelpText = SandboxHelp)]
-            public string Sandbox { get; set; }
         }
 
         /// <summary>
@@ -1337,7 +1355,7 @@ namespace XblTestAccount
         /// <summary>
         /// The options of the privilege show command.
         /// </summary>
-        private class PrivilegeShowOptions : SandboxOptions
+        private class PrivilegeShowOptions
         {
             /// <summary>
             /// Gets or sets a value indicating whether to write the output as json.
@@ -1363,7 +1381,7 @@ namespace XblTestAccount
         /// <summary>
         /// The options of the privilege block and privilege allow commands.
         /// </summary>
-        private class PrivilegeChangeOptions : SandboxOptions
+        private class PrivilegeChangeOptions
         {
             /// <summary>
             /// Gets or sets the privilege numbers to change.
@@ -1383,7 +1401,7 @@ namespace XblTestAccount
         /// <summary>
         /// The options of the privacy show command.
         /// </summary>
-        private class PrivacyShowOptions : SandboxOptions
+        private class PrivacyShowOptions
         {
             /// <summary>
             /// Gets or sets a value indicating whether to write the output as json.
@@ -1395,7 +1413,7 @@ namespace XblTestAccount
         /// <summary>
         /// The options of the privacy set command.
         /// </summary>
-        private class PrivacySetOptions : SandboxOptions
+        private class PrivacySetOptions
         {
             /// <summary>
             /// Gets or sets the privacy setting to change.

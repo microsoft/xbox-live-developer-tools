@@ -61,11 +61,6 @@ XblTestAccount signs in an Xbox Live test account and caches the credential, so 
 without showing any UI. It also reads and changes the privileges and privacy settings of the signed in account, which is
 the command line equivalent of the Privacy and Privilege tabs in XblTestAccountGui.
 
-Privileges and privacy settings belong to the account rather than to a sandbox: the parental and privacy services are
-keyed by XUID, and neither endpoint takes a sandbox. `--sandbox` only chooses which sandbox the user token is minted
-for, which is why it defaults to the one the account signed in to. Naming a sandbox the account is not provisioned for
-fails while obtaining the token, with HTTP 401, rather than returning different settings.
-
 #### Usage
 
 ***signin:*** Signs in a test account and caches the credential. UI is only shown when there is no usable cached
@@ -115,9 +110,9 @@ XblTestAccount.exe signout
 and the sandbox defaults to the one the account signed in to.
 
 ```
-XblTestAccount.exe privilege show [--refresh] [--blocked] [--json] [--sandbox XXXXXX.0]
-XblTestAccount.exe privilege block <privilegenumber...> [--sandbox XXXXXX.0]
-XblTestAccount.exe privilege allow <privilegenumber...> [--sandbox XXXXXX.0]
+XblTestAccount.exe privilege show [--refresh] [--blocked] [--json]
+XblTestAccount.exe privilege block <privilegenumber...>
+XblTestAccount.exe privilege allow <privilegenumber...>
 ```
 
 `privilege show` reports every privilege this tool knows the name of together with the state the account holds it in, so
@@ -170,8 +165,8 @@ the old value; repeat it after a moment.
 names that `set` accepts. Setting names are matched without regard to case.
 
 ```
-XblTestAccount.exe privacy show [--json] [--sandbox XXXXXX.0]
-XblTestAccount.exe privacy set <setting> <Everyone|PeopleOnMyList|Blocked> [--sandbox XXXXXX.0]
+XblTestAccount.exe privacy show [--json]
+XblTestAccount.exe privacy set <setting> <Everyone|PeopleOnMyList|Blocked>
 ```
 
 ***Success output example:***
