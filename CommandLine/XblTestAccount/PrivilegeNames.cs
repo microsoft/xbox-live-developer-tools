@@ -72,13 +72,26 @@ namespace XblTestAccount
         private static readonly HashSet<int> EditableIds = new HashSet<int> { 185, 254 };
 
         // Some privileges are derived by the service from a privacy setting rather than being set
-        // directly, so restricting the privacy setting is what restricts the privilege. Both of
-        // these were confirmed against the service: blocking the privacy setting moved the privilege
-        // out of the account's granted privileges and into its restricted ones.
+        // directly, so changing the privacy setting is what changes the privilege. Each entry below
+        // was confirmed against the service by moving the setting and re-reading the token: the
+        // privilege changed state with it. A setting value other than Everyone is what restricts,
+        // so PeopleOnMyList restricts just as Blocked does.
         private static readonly Dictionary<int, string> PrivacyEquivalent = new Dictionary<int, string>
         {
+            { 234, "CommunicateUsingVideo" },
             { 247, "AllowUserCreatedContentViewing" },
+            { 251, "CommunicateUsingTextAndVoice" },
             { 252, "CommunicateUsingTextAndVoice" },
+        };
+
+        // A setting can control more than one privilege, so the privilege to name when talking about
+        // the setting is called out here rather than being picked out of the mapping above, where it
+        // would depend on the order the entries happen to be stored in.
+        private static readonly Dictionary<string, int> PrivacyEquivalentPrimary = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "CommunicateUsingVideo", 234 },
+            { "AllowUserCreatedContentViewing", 247 },
+            { "CommunicateUsingTextAndVoice", 252 },
         };
 
         /// <summary>
@@ -103,20 +116,17 @@ namespace XblTestAccount
         }
 
         /// <summary>
-        /// Gets the privilege that a privacy setting controls, where one is known.
+        /// Gets the privilege that a privacy setting is described by, where one is known. A setting
+        /// can control several privileges, so this is the one that represents it.
         /// </summary>
         /// <param name="setting">The privacy setting name as reported by the service.</param>
         /// <param name="id">Receives the privilege id the setting controls.</param>
         /// <returns>True when the setting controls a known privilege.</returns>
         internal static bool TryGetPrivilegeForSetting(string setting, out int id)
         {
-            foreach (var entry in PrivacyEquivalent)
+            if (setting != null && PrivacyEquivalentPrimary.TryGetValue(setting, out id))
             {
-                if (string.Equals(entry.Value, setting, StringComparison.OrdinalIgnoreCase))
-                {
-                    id = entry.Key;
-                    return true;
-                }
+                return true;
             }
 
             id = 0;

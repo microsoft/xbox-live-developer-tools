@@ -152,8 +152,14 @@ bare HTTP 400. Privileges that the service derives from a privacy setting are ch
 
 | Privilege | Controlled by |
 |---|---|
-| 247 (User Generated Content) | `privacy set AllowUserCreatedContentViewing Blocked` |
-| 252 (Comms (text and voice)) | `privacy set CommunicateUsingTextAndVoice Blocked` |
+| 234 (Video Communications (People On My List)) | `privacy set CommunicateUsingVideo` |
+| 247 (User Generated Content) | `privacy set AllowUserCreatedContentViewing` |
+| 251 (Comms (People On My List)) | `privacy set CommunicateUsingTextAndVoice` |
+| 252 (Comms (text and voice)) | `privacy set CommunicateUsingTextAndVoice` |
+
+Any value other than `Everyone` restricts, so `PeopleOnMyList` restricts just as `Blocked` does. This is also why a
+privilege can read as `Restricted` while `block` and `allow` never mention it: those report the parental service's list,
+and a privilege the service derives from a privacy setting is not on it.
 
 The claims settle a little after a change, so a `privilege show --refresh` issued immediately afterwards may still report
 the old value; repeat it after a moment.
