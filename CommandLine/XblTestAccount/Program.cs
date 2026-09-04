@@ -23,6 +23,7 @@ namespace XblTestAccount
         private const string HelpHelp = "Display this help screen.";
         private const string VersionHelp = "Display version information.";
         private const string JsonHelp = "Optional. Write the output as parsable json instead of a table.";
+        private const string RestrictedState = "Restricted";
 
         /// <summary>
         /// Parses the options of a single command.
@@ -341,6 +342,11 @@ namespace XblTestAccount
 
             List<PrivilegeState> states = BuildPrivilegeStates(testAccount);
 
+            if (options.Blocked)
+            {
+                states = states.Where(state => state.State == RestrictedState).ToList();
+            }
+
             if (options.Json)
             {
                 WriteJson(states.Select(state => new
@@ -355,16 +361,24 @@ namespace XblTestAccount
                 return 0;
             }
 
-            Console.WriteLine($"Privileges for {testAccount.Gamertag} ({testAccount.Xuid}):");
+            string heading = options.Blocked ? "Restricted privileges" : "Privileges";
+            Console.WriteLine($"{heading} for {testAccount.Gamertag} ({testAccount.Xuid}):");
 
-            // Pad to the widest name and state so the notes line up in a column, rather than
-            // relying on tab stops that the varying name lengths push out of alignment.
-            int nameWidth = states.Max(state => state.Name.Length);
-            int stateWidth = states.Max(state => state.State.Length);
-            foreach (PrivilegeState state in states)
+            if (states.Count == 0)
             {
-                string note = DescribePrivilegeSource(state.Id);
-                Console.WriteLine($"    {FormatId(state.Id)}  {state.Name.PadRight(nameWidth)}  {state.State.PadRight(stateWidth)}  {note}".TrimEnd());
+                Console.WriteLine("    (none)");
+            }
+            else
+            {
+                // Pad to the widest name and state so the notes line up in a column, rather than
+                // relying on tab stops that the varying name lengths push out of alignment.
+                int nameWidth = states.Max(state => state.Name.Length);
+                int stateWidth = states.Max(state => state.State.Length);
+                foreach (PrivilegeState state in states)
+                {
+                    string note = DescribePrivilegeSource(state.Id);
+                    Console.WriteLine($"    {FormatId(state.Id)}  {state.Name.PadRight(nameWidth)}  {state.State.PadRight(stateWidth)}  {note}".TrimEnd());
+                }
             }
 
             Console.WriteLine();
@@ -424,24 +438,9 @@ namespace XblTestAccount
                 string gerund = block ? "Restricting" : "Unrestricting";
                 Console.WriteLine($"{gerund} {DescribePrivileges(privileges)} on {testAccount.Gamertag} ({xuid}) in sandbox {sandbox}.");
 
-                IList<int> restricted = await PrivilegeClient.SetRestrictionsAsync(sandbox, xuid, privileges, block);
+                await PrivilegeClient.SetRestrictionsAsync(sandbox, xuid, privileges, block);
 
-                Console.WriteLine($"Privileges now restricted by the parental service for {testAccount.Gamertag} ({xuid}):");
-                if (restricted.Count == 0)
-                {
-                    Console.WriteLine("    (none)");
-                }
-                else
-                {
-                    int nameWidth = restricted.Max(id => PrivilegeNames.GetName(id, UnknownPrivilegeName).Length);
-                    foreach (int privilege in restricted.OrderBy(id => id))
-                    {
-                        Console.WriteLine($"    {FormatId(privilege)}  {PrivilegeNames.GetName(privilege, UnknownPrivilegeName).PadRight(nameWidth)}");
-                    }
-                }
-
-                Console.WriteLine();
-                Console.WriteLine($"This is only what the parental service holds. Run \"{ToolName} privilege show --refresh\" for the effective set.");
+                Console.WriteLine($"Done. Run \"{ToolName} privilege show --refresh -b\" for the privileges now restricted.");
                 return 0;
             }
             catch (HttpRequestException ex)
@@ -608,7 +607,7 @@ namespace XblTestAccount
                 // A privilege the token names in neither claim is simply not held by this account,
                 // which is worth reporting as its own state rather than as a restriction.
                 string state = restricted.Contains(id)
-                    ? "Restricted"
+                    ? RestrictedState
                     : granted.Contains(id) ? "Granted" : "Not held";
 
                 states.Add(new PrivilegeState
@@ -1052,7 +1051,6 @@ namespace XblTestAccount
                 Entry("-s, --sandbox", "Required. The sandbox to sign the test account in to."),
                 Entry("-f, --force", "Optional. Ignore any cached credential and always show the sign in UI."),
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
             });
 
             return 0;
@@ -1066,7 +1064,6 @@ namespace XblTestAccount
             WriteEntries(new[]
             {
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
             });
 
             return 0;
@@ -1081,7 +1078,6 @@ namespace XblTestAccount
             {
                 Entry("-j, --json", JsonHelp),
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
             });
 
             return 0;
@@ -1096,10 +1092,9 @@ namespace XblTestAccount
             {
                 Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
                 Entry("block", "block a privilege"),
                 Entry("allow", "allow a privilege"),
-                Entry("show (-j)", "show privileges, pass -j to output as parsable json"),
+                Entry("show (-j)", "show privileges, pass -j to output as parsable json, -b for only the restricted ones"),
             });
         }
 
@@ -1113,7 +1108,6 @@ namespace XblTestAccount
                 Entry("privilegenumber", "i.e. 254"),
                 Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
             });
 
             return 0;
@@ -1127,10 +1121,10 @@ namespace XblTestAccount
             WriteEntries(new[]
             {
                 Entry("-j, --json", JsonHelp),
+                Entry("-b, --blocked", "Optional. Report only the privileges that are restricted."),
                 Entry("-r, --refresh", "Optional. Mint a new token so that the privileges are reported as they are now, rather than as they were at sign in."),
                 Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
             });
 
             return 0;
@@ -1145,7 +1139,6 @@ namespace XblTestAccount
             {
                 Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
                 Entry("set", "set a privacy setting"),
                 Entry("show (-j)", "show privacy settings, pass -j to output as parsable json"),
             });
@@ -1162,7 +1155,6 @@ namespace XblTestAccount
                 Entry("value", $"i.e. Blocked. One of {string.Join(", ", Enum.GetNames(typeof(PrivacyValue)))}."),
                 Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
             });
 
             return 0;
@@ -1178,7 +1170,6 @@ namespace XblTestAccount
                 Entry("-j, --json", JsonHelp),
                 Entry("-s, --sandbox", SandboxHelp),
                 Entry("--help", HelpHelp),
-                Entry("--version", VersionHelp),
             });
 
             return 0;
@@ -1288,6 +1279,13 @@ namespace XblTestAccount
             /// </summary>
             [Option('j', "json", Required = false, HelpText = JsonHelp)]
             public bool Json { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to report only the restricted privileges.
+            /// </summary>
+            [Option('b', "blocked", Required = false,
+                HelpText = "Optional. Report only the privileges that are restricted.")]
+            public bool Blocked { get; set; }
 
             /// <summary>
             /// Gets or sets a value indicating whether to mint a new token first.

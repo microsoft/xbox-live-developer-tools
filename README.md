@@ -110,15 +110,15 @@ XblTestAccount.exe signout
 and the sandbox defaults to the one the account signed in to.
 
 ```
-XblTestAccount.exe privilege show [--refresh] [--json] [--sandbox XXXXXX.0]
+XblTestAccount.exe privilege show [--refresh] [--blocked] [--json] [--sandbox XXXXXX.0]
 XblTestAccount.exe privilege block <privilegenumber...> [--sandbox XXXXXX.0]
 XblTestAccount.exe privilege allow <privilegenumber...> [--sandbox XXXXXX.0]
 ```
 
 `privilege show` reports every privilege this tool knows the name of together with the state the account holds it in, so
 one listing covers both the names and the states. Privileges are claims on the token, so it reports them as they were at
-sign in; add `--refresh` to mint a new token and see them as they are now. Pass `--json` (`-j`) to get the same data as
-parsable json.
+sign in; add `--refresh` to mint a new token and see them as they are now. Pass `--blocked` (`-b`) to report only the
+restricted privileges, and `--json` (`-j`) to get the same data as parsable json.
 
 ***Success output example:***
 
@@ -133,18 +133,16 @@ Privileges for {gamertag} ({xuid}):
 
 > XblTestAccount.exe privilege block 185
 Restricting 185 (Cross Network Play) on {gamertag} ({xuid}) in sandbox {sandbox}.
-Privileges now restricted by the parental service for {gamertag} ({xuid}):
-    185  Cross Network Play
-
-This is only what the parental service holds. Run "XblTestAccount privilege show --refresh" for the effective set.
+Done. Run "XblTestAccount privilege show --refresh -b" for the privileges now restricted.
 ```
 
 A privilege whose number this tool does not have a name for is reported as `(unknown)`, because the service mints new
 numbers from time to time. A privilege the token names in neither claim is reported as `Not held`.
 
-`block` and `allow` report only what the parental service holds. A privilege the service derives from a privacy setting
-is enforced through the token claims and never appears there, which is why `privilege show --refresh` is the way to read
-the effective set.
+`block` and `allow` confirm the change and stop there, because the list they used to print came from the parental
+service and so disagreed with `privilege show`: a privilege the service derives from a privacy setting is enforced
+through the token claims and never appears in the parental list. `privilege show --refresh -b` is the way to read the
+effective set.
 
 Only **185 (Cross Network Play)** and **254 (Multiplayer Sessions)** can be blocked and allowed, matching what
 XblTestAccountGui exposes; the tool refuses other numbers up front rather than letting the service reject them with a
@@ -157,9 +155,7 @@ bare HTTP 400. Privileges that the service derives from a privacy setting are ch
 | 251 (Comms (People On My List)) | `privacy set CommunicateUsingTextAndVoice` |
 | 252 (Comms (text and voice)) | `privacy set CommunicateUsingTextAndVoice` |
 
-Any value other than `Everyone` restricts, so `PeopleOnMyList` restricts just as `Blocked` does. This is also why a
-privilege can read as `Restricted` while `block` and `allow` never mention it: those report the parental service's list,
-and a privilege the service derives from a privacy setting is not on it.
+Any value other than `Everyone` restricts, so `PeopleOnMyList` restricts just as `Blocked` does.
 
 The claims settle a little after a change, so a `privilege show --refresh` issued immediately afterwards may still report
 the old value; repeat it after a moment.
