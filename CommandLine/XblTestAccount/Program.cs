@@ -144,12 +144,6 @@ namespace XblTestAccount
                 return 0;
             }
 
-            if (IsVersionFlag(action))
-            {
-                WriteVersion();
-                return 0;
-            }
-
             switch (action.ToLowerInvariant())
             {
                 case "show":
@@ -200,12 +194,6 @@ namespace XblTestAccount
             if (IsHelpFlag(action))
             {
                 WritePrivacyHelp();
-                return 0;
-            }
-
-            if (IsVersionFlag(action))
-            {
-                WriteVersion();
                 return 0;
             }
 
