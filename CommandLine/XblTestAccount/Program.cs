@@ -92,7 +92,7 @@ namespace XblTestAccount
                         return WriteSignInHelp();
                     }
 
-                    return TryParse(rest, out SignInOptions signIn) ? await OnSignIn(signIn) : UsageError("signin");
+                    return TryParse(rest, out SignInOptions signIn) ? await OnSignIn(signIn) : UsageError(WriteSignInHelp);
 
                 case "signout":
                     if (WantsHelp(rest))
@@ -100,7 +100,7 @@ namespace XblTestAccount
                         return WriteSignOutHelp();
                     }
 
-                    return TryParse(rest, out SignOutOptions _) ? OnSignOut() : UsageError("signout");
+                    return TryParse(rest, out SignOutOptions _) ? OnSignOut() : UsageError(WriteSignOutHelp);
 
                 case "show":
                     if (WantsHelp(rest))
@@ -108,7 +108,7 @@ namespace XblTestAccount
                         return WriteShowHelp();
                     }
 
-                    return TryParse(rest, out ShowOptions show) ? OnShow(show) : UsageError("show");
+                    return TryParse(rest, out ShowOptions show) ? OnShow(show) : UsageError(WriteShowHelp);
 
                 case "privilege":
                     return await OnPrivilegeCommand(rest);
@@ -156,7 +156,7 @@ namespace XblTestAccount
 
                     return TryParse(rest, out PrivilegeShowOptions show)
                         ? await OnPrivilegeShow(show)
-                        : UsageError("privilege show");
+                        : UsageError(WritePrivilegeShowHelp);
 
                 case "block":
                 case "allow":
@@ -167,7 +167,7 @@ namespace XblTestAccount
 
                     return TryParse(rest, out PrivilegeChangeOptions change)
                         ? await OnPrivilegeChange(change, action.ToLowerInvariant())
-                        : UsageError("privilege " + action.ToLowerInvariant());
+                        : UsageError(() => WritePrivilegeChangeHelp(action.ToLowerInvariant()));
 
                 default:
                     Console.Error.WriteLine($"Error: unknown privilege action \"{action}\". Expected block, allow or show.");
@@ -209,7 +209,7 @@ namespace XblTestAccount
 
                     return TryParse(rest, out PrivacyShowOptions show)
                         ? await OnPrivacyShow(show)
-                        : UsageError("privacy show");
+                        : UsageError(WritePrivacyShowHelp);
 
                 case "set":
                     if (WantsHelp(rest))
@@ -219,7 +219,7 @@ namespace XblTestAccount
 
                     return TryParse(rest, out PrivacySetOptions set)
                         ? await OnPrivacySet(set)
-                        : UsageError("privacy set");
+                        : UsageError(WritePrivacySetHelp);
 
                 default:
                     Console.Error.WriteLine($"Error: unknown privacy action \"{action}\". Expected set or show.");
@@ -406,7 +406,7 @@ namespace XblTestAccount
             {
                 Console.Error.WriteLine($"Error: the {action} action requires at least one privilege number, for example \"{ToolName} privilege {action} 185\".");
                 Console.Error.WriteLine($"Run \"{ToolName} privilege show\" to see the numbers.");
-                return -1;
+                return UsageError(() => WritePrivilegeChangeHelp(action));
             }
 
             var privileges = new List<int>();
@@ -527,7 +527,7 @@ namespace XblTestAccount
             {
                 Console.Error.WriteLine($"Error: the set action requires a setting and a value, for example \"{ToolName} privacy set CommunicateDuringCrossNetworkPlay Blocked\".");
                 Console.Error.WriteLine($"Run \"{ToolName} privacy show\" to see the settings.");
-                return -1;
+                return UsageError(WritePrivacySetHelp);
             }
 
             if (!TryParseEnumName(NormalizeValue(options.Value), out PrivacyValue value))
@@ -942,13 +942,15 @@ namespace XblTestAccount
         }
 
         /// <summary>
-        /// Reports that a command was called wrongly and points at its help screen.
+        /// Reports that a command was called wrongly by showing its help, so that the reader can
+        /// see what the command takes without having to ask for it in a second run.
         /// </summary>
-        /// <param name="command">The command as it is typed, such as "privilege block".</param>
+        /// <param name="writeHelp">Writes the help screen of the command that was called wrongly.</param>
         /// <returns>The exit code for a usage error.</returns>
-        private static int UsageError(string command)
+        private static int UsageError(Func<int> writeHelp)
         {
-            Console.Error.WriteLine($"Run \"{ToolName} {command} --help\" for usage.");
+            Console.Error.WriteLine();
+            writeHelp();
             return -1;
         }
 
