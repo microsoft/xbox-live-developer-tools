@@ -5,6 +5,7 @@ namespace XblTestAccount
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using System.Net;
     using System.Net.Http;
@@ -381,11 +382,6 @@ namespace XblTestAccount
                 }
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Only the privileges marked editable can be blocked and allowed by the account itself.");
-            Console.WriteLine("A privilege marked \"set with\" follows a privacy setting, so change that setting instead.");
-            Console.WriteLine("The rest are fixed by the service, for a reason such as the age group of the account.");
-
             if (!options.Refresh)
             {
                 Console.WriteLine();
@@ -404,13 +400,26 @@ namespace XblTestAccount
         private static async Task<int> OnPrivilegeChange(PrivilegeChangeOptions options, string action)
         {
             bool block = action == "block";
-            List<int> privileges = options.Privileges?.ToList() ?? new List<int>();
+            List<string> given = options.Privileges?.ToList() ?? new List<string>();
 
-            if (privileges.Count == 0)
+            if (given.Count == 0)
             {
                 Console.Error.WriteLine($"Error: the {action} action requires at least one privilege number, for example \"{ToolName} privilege {action} 185\".");
                 Console.Error.WriteLine($"Run \"{ToolName} privilege show\" to see the numbers.");
                 return -1;
+            }
+
+            var privileges = new List<int>();
+            foreach (string value in given)
+            {
+                if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int privilege))
+                {
+                    Console.Error.WriteLine($"Error: \"{value}\" is not a privilege number. Expected a number such as 185.");
+                    Console.Error.WriteLine($"Run \"{ToolName} privilege show\" to see the numbers.");
+                    return -1;
+                }
+
+                privileges.Add(privilege);
             }
 
             if (!ValidateEditable(privileges, action))
@@ -875,22 +884,61 @@ namespace XblTestAccount
                 switch (error)
                 {
                     case UnknownOptionError unknown:
-                        Console.Error.WriteLine($"Error: unknown option \"{unknown.Token}\".");
+                        Console.Error.WriteLine($"Error: unknown option {FormatUnknownOption(unknown.Token)}.");
                         break;
                     case MissingRequiredOptionError missing:
-                        Console.Error.WriteLine($"Error: \"{missing.NameInfo.NameText}\" is required.");
+                        Console.Error.WriteLine($"Error: required option {FormatOptionName(missing.NameInfo)} is missing.");
                         break;
                     case MissingValueOptionError missingValue:
-                        Console.Error.WriteLine($"Error: \"{missingValue.NameInfo.NameText}\" needs a value.");
+                        Console.Error.WriteLine($"Error: option {FormatOptionName(missingValue.NameInfo)} needs a value.");
                         break;
                     case BadFormatConversionError badFormat:
-                        Console.Error.WriteLine($"Error: \"{badFormat.NameInfo.NameText}\" was given a value of the wrong kind.");
+                        Console.Error.WriteLine($"Error: option {FormatOptionName(badFormat.NameInfo)} was given a value of the wrong kind.");
                         break;
                     default:
                         Console.Error.WriteLine("Error: the arguments could not be understood.");
                         break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Formats an option the reader typed but that does not exist. The parser hands back the
+        /// token with its dashes removed, so they are put back to match what was typed.
+        /// </summary>
+        /// <param name="token">The option token as the parser reports it, without dashes.</param>
+        /// <returns>The option written the way it is typed.</returns>
+        private static string FormatUnknownOption(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return "that was given";
+            }
+
+            return token.Length == 1 ? "-" + token : "--" + token;
+        }
+
+        /// <summary>
+        /// Formats an option for a message the way it is typed, so that the reader can copy it
+        /// straight on to the command line. The parser reports it as "u, name", without the dashes.
+        /// </summary>
+        /// <param name="name">The names the parser holds for the option.</param>
+        /// <returns>The option written as "-u, --name".</returns>
+        private static string FormatOptionName(NameInfo name)
+        {
+            var names = new List<string>();
+
+            if (!string.IsNullOrEmpty(name.ShortName))
+            {
+                names.Add("-" + name.ShortName);
+            }
+
+            if (!string.IsNullOrEmpty(name.LongName))
+            {
+                names.Add("--" + name.LongName);
+            }
+
+            return names.Count == 0 ? "the argument" : string.Join(", ", names);
         }
 
         /// <summary>
@@ -1127,6 +1175,21 @@ namespace XblTestAccount
                 Entry("--help", HelpHelp),
             });
 
+            string[] notes =
+            {
+                "Only the privileges marked editable can be blocked and allowed by the account itself.",
+                "A privilege marked \"set with\" follows a privacy setting, so change that setting instead.",
+                "The rest are fixed by the service, for a reason such as the age group of the account.",
+            };
+
+            foreach (string note in notes)
+            {
+                foreach (string line in Wrap(note, ConsoleWidth()))
+                {
+                    Console.WriteLine(line);
+                }
+            }
+
             return 0;
         }
 
@@ -1306,11 +1369,13 @@ namespace XblTestAccount
             /// <remarks>
             /// Not marked required, so that an empty list reaches the command and is refused with
             /// guidance on where to find the numbers, rather than by the parser with a bare note
-            /// that a nameless value is missing.
+            /// that a nameless value is missing. Taken as text rather than as numbers for the same
+            /// reason: the parser has no name for a positional value, so it can only report that
+            /// something somewhere was of the wrong kind, whereas the command can name the value.
             /// </remarks>
             [Value(0, MetaName = "privilegenumber", Required = false,
                 HelpText = "The privilege numbers to change, for example 185 254.")]
-            public IEnumerable<int> Privileges { get; set; }
+            public IEnumerable<string> Privileges { get; set; }
         }
 
         /// <summary>
