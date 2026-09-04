@@ -9,6 +9,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System.Net.Http;
     using System.Threading.Tasks;
     using DevTools.Common;
+    using Microsoft.Identity.Client;
     using Newtonsoft.Json;
 
     internal class AuthClient
@@ -111,7 +112,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return account;
         }
 
-        public async Task<TestAccount> SignInTestAccountAsync(string sandbox)
+        public async Task<TestAccount> SignInTestAccountAsync(string sandbox, bool forceInteractiveSignIn)
         {
             if (this.AuthContext == null)
             {
@@ -128,10 +129,38 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 throw new InvalidOperationException("To log in a Partner Center account, call the SignInAsync method");
             }
 
-            string msaToken = await this.AuthContext.AcquireTokenAsync();
-            XasTokenResponse token = await this.FetchXstsToken(msaToken, sandbox);
+            XasTokenResponse token = null;
 
-            var account = new TestAccount(token);
+            if (!forceInteractiveSignIn)
+            {
+                // Reuse an unexpired XSTS token first, then a silently refreshed MSA token, and
+                // only fall back to interactive sign in when neither is available. This is what
+                // allows a test account to be used from a script or an automated build with no UI.
+                string cacheKey = AuthTokenCache.GetCacheKey(this.AuthContext.UserName, this.AuthContext.AccountSource, this.AuthContext.Tenant, string.Empty, sandbox);
+                this.XTokenCache.Value.TryGetCachedToken(cacheKey, out token);
+
+                if (token == null)
+                {
+                    string silentMsaToken = await this.TryAcquireTokenSilentAsync();
+                    if (!string.IsNullOrEmpty(silentMsaToken))
+                    {
+                        token = await this.FetchXstsToken(silentMsaToken, sandbox);
+                    }
+                }
+            }
+
+            if (token == null)
+            {
+                string msaToken = await this.AuthContext.AcquireTokenAsync();
+                token = await this.FetchXstsToken(msaToken, sandbox);
+            }
+
+            var account = new TestAccount(token)
+            {
+                UserName = this.AuthContext.UserName,
+                Sandbox = sandbox
+            };
+
             return account;
         }
 
@@ -225,6 +254,24 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             this.XTokenCache.Value.UpdateToken(key, token);
 
             return token;
+        }
+
+        private async Task<string> TryAcquireTokenSilentAsync()
+        {
+            try
+            {
+                return await this.AuthContext.AcquireTokenSilentAsync();
+            }
+            catch (MsalException e)
+            {
+                Log.WriteLog("Silent token acquisition failed, interactive sign in is required: " + e.Message);
+            }
+            catch (InvalidOperationException e)
+            {
+                Log.WriteLog("No cached credential found, interactive sign in is required: " + e.Message);
+            }
+
+            return null;
         }
     }
 }

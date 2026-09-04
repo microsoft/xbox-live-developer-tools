@@ -62,6 +62,16 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         }
 
         /// <summary>
+        /// The user name (email address) that was used to sign in the test account.
+        /// </summary>
+        public string UserName { get; set; }
+
+        /// <summary>
+        /// The sandbox the test account was signed in to.
+        /// </summary>
+        public string Sandbox { get; set; }
+
+        /// <summary>
         /// Age group of test account
         /// </summary>
         public string AgeGroup { get; set; }
