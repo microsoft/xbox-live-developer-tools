@@ -8,125 +8,234 @@ namespace XblTestAccount
     using System.Linq;
     using System.Net;
     using System.Net.Http;
+    using System.Reflection;
+    using System.Text;
     using System.Threading.Tasks;
     using CommandLine;
-    using CommandLine.Text;
     using Microsoft.Xbox.Services.DevTools.Authentication;
+    using Newtonsoft.Json;
 
     internal class Program
     {
+        private const string ToolName = "XblTestAccount";
         private const string UnknownPrivilegeName = "(unknown)";
+        private const string SandboxHelp = "Optional. The sandbox to use. Defaults to the sandbox the test account signed in to.";
+        private const string HelpHelp = "Display this help screen.";
+        private const string VersionHelp = "Display version information.";
+        private const string JsonHelp = "Optional. Write the output as parsable json instead of a table.";
 
         /// <summary>
-        /// The actions the privilege verb takes.
+        /// Parses the options of a single command.
         /// </summary>
-        private enum PrivilegeAction
+        /// <remarks>
+        /// The help and version screens are rendered by this tool rather than by the parser, so
+        /// that the base help offers "--help" and "--version" as options instead of listing "help"
+        /// and "version" as verbs, and so that a command such as "privilege" can document the sub
+        /// commands it takes. The parser has no notion of a nested verb, so each command takes its
+        /// own sub command off the front of the arguments and parses only what is left.
+        /// </remarks>
+        private static readonly Parser CommandParser = new Parser(settings =>
         {
-            /// <summary>
-            /// List every privilege id this tool knows the name of.
-            /// </summary>
-            ListAll,
-
-            /// <summary>
-            /// Restrict the given privileges.
-            /// </summary>
-            Block,
-
-            /// <summary>
-            /// Clear the restriction on the given privileges.
-            /// </summary>
-            Allow,
-        }
-
-        /// <summary>
-        /// The actions the privacy verb takes.
-        /// </summary>
-        private enum PrivacyAction
-        {
-            /// <summary>
-            /// List every privacy setting the service exposes, with its current value.
-            /// </summary>
-            ListAll,
-
-            /// <summary>
-            /// Change one privacy setting.
-            /// </summary>
-            Set,
-        }
+            settings.AutoHelp = false;
+            settings.AutoVersion = false;
+            settings.HelpWriter = null;
+        });
 
         private static async Task<int> Main(string[] args)
         {
-            int exitCode = 0;
             try
             {
-                string invokedVerb = string.Empty;
-                SignInOptions signInOptions = null;
-                ShowOptions showOptions = null;
-                PrivilegeOptions privilegeOptions = null;
-                PrivacyOptions privacyOptions = null;
-
-                // Only assign the option and verb here, as the commandlineParser doesn't support async callback yet.
-                var result = Parser.Default.ParseArguments<SignInOptions, SignOutOptions, ShowOptions, PrivilegeOptions, PrivacyOptions>(args)
-                    .WithParsed<SignInOptions>(options =>
-                    {
-                        invokedVerb = "signin";
-                        signInOptions = options;
-                    })
-                    .WithParsed<SignOutOptions>(options => exitCode = OnSignOut())
-                    .WithParsed<ShowOptions>(options =>
-                    {
-                        invokedVerb = "show";
-                        showOptions = options;
-                    })
-                    .WithParsed<PrivilegeOptions>(options =>
-                    {
-                        invokedVerb = "privilege";
-                        privilegeOptions = options;
-                    })
-                    .WithParsed<PrivacyOptions>(options =>
-                    {
-                        invokedVerb = "privacy";
-                        privacyOptions = options;
-                    })
-                    .WithNotParsed(errors => exitCode = IsHelpOrVersionRequest(errors) ? 0 : -1);
-
-                if (invokedVerb == "signin" && signInOptions != null)
-                {
-                    exitCode = await OnSignIn(signInOptions);
-                }
-                else if (invokedVerb == "show" && showOptions != null)
-                {
-                    exitCode = await OnShow(showOptions);
-                }
-                else if (invokedVerb == "privilege" && privilegeOptions != null)
-                {
-                    exitCode = await OnPrivilege(privilegeOptions);
-                }
-                else if (invokedVerb == "privacy" && privacyOptions != null)
-                {
-                    exitCode = await OnPrivacy(privacyOptions);
-                }
+                return await Run(args);
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine("Error: " + ex.Message);
-                exitCode = -1;
+                return -1;
             }
-
-            return exitCode;
         }
 
         /// <summary>
-        /// Gets a value indicating whether the parser stopped because help or version was asked
-        /// for, which is a successful run rather than a usage error.
+        /// Dispatches on the command, which is always the first argument.
         /// </summary>
-        private static bool IsHelpOrVersionRequest(IEnumerable<Error> errors)
+        /// <param name="args">The command line as given.</param>
+        /// <returns>The exit code of the command.</returns>
+        private static async Task<int> Run(string[] args)
         {
-            return errors != null
-                && errors.Any()
-                && errors.All(error => error.Tag == ErrorType.HelpRequestedError
-                    || error.Tag == ErrorType.HelpVerbRequestedError
-                    || error.Tag == ErrorType.VersionRequestedError);
+            if (args == null || args.Length == 0)
+            {
+                WriteRootHelp();
+                return 0;
+            }
+
+            string command = args[0];
+            string[] rest = args.Skip(1).ToArray();
+
+            if (IsHelpFlag(command))
+            {
+                WriteRootHelp();
+                return 0;
+            }
+
+            if (IsVersionFlag(command))
+            {
+                WriteVersion();
+                return 0;
+            }
+
+            switch (command.ToLowerInvariant())
+            {
+                case "signin":
+                    if (WantsHelp(rest))
+                    {
+                        return WriteSignInHelp();
+                    }
+
+                    return TryParse(rest, out SignInOptions signIn) ? await OnSignIn(signIn) : UsageError("signin");
+
+                case "signout":
+                    if (WantsHelp(rest))
+                    {
+                        return WriteSignOutHelp();
+                    }
+
+                    return TryParse(rest, out SignOutOptions _) ? OnSignOut() : UsageError("signout");
+
+                case "show":
+                    if (WantsHelp(rest))
+                    {
+                        return WriteShowHelp();
+                    }
+
+                    return TryParse(rest, out ShowOptions show) ? OnShow(show) : UsageError("show");
+
+                case "privilege":
+                    return await OnPrivilegeCommand(rest);
+
+                case "privacy":
+                    return await OnPrivacyCommand(rest);
+
+                default:
+                    Console.Error.WriteLine($"Error: unknown command \"{command}\".");
+                    WriteRootHelp();
+                    return -1;
+            }
+        }
+
+        /// <summary>
+        /// Dispatches the sub command of the privilege command.
+        /// </summary>
+        /// <param name="args">The arguments after the privilege command.</param>
+        /// <returns>The exit code of the sub command.</returns>
+        private static async Task<int> OnPrivilegeCommand(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                Console.Error.WriteLine("Error: the privilege command requires an action.");
+                WritePrivilegeHelp();
+                return -1;
+            }
+
+            string action = args[0];
+            string[] rest = args.Skip(1).ToArray();
+
+            if (IsHelpFlag(action))
+            {
+                WritePrivilegeHelp();
+                return 0;
+            }
+
+            if (IsVersionFlag(action))
+            {
+                WriteVersion();
+                return 0;
+            }
+
+            switch (action.ToLowerInvariant())
+            {
+                case "show":
+                    if (WantsHelp(rest))
+                    {
+                        return WritePrivilegeShowHelp();
+                    }
+
+                    return TryParse(rest, out PrivilegeShowOptions show)
+                        ? await OnPrivilegeShow(show)
+                        : UsageError("privilege show");
+
+                case "block":
+                case "allow":
+                    if (WantsHelp(rest))
+                    {
+                        return WritePrivilegeChangeHelp(action.ToLowerInvariant());
+                    }
+
+                    return TryParse(rest, out PrivilegeChangeOptions change)
+                        ? await OnPrivilegeChange(change, action.ToLowerInvariant())
+                        : UsageError("privilege " + action.ToLowerInvariant());
+
+                default:
+                    Console.Error.WriteLine($"Error: unknown privilege action \"{action}\". Expected block, allow or show.");
+                    WritePrivilegeHelp();
+                    return -1;
+            }
+        }
+
+        /// <summary>
+        /// Dispatches the sub command of the privacy command.
+        /// </summary>
+        /// <param name="args">The arguments after the privacy command.</param>
+        /// <returns>The exit code of the sub command.</returns>
+        private static async Task<int> OnPrivacyCommand(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                Console.Error.WriteLine("Error: the privacy command requires an action.");
+                WritePrivacyHelp();
+                return -1;
+            }
+
+            string action = args[0];
+            string[] rest = args.Skip(1).ToArray();
+
+            if (IsHelpFlag(action))
+            {
+                WritePrivacyHelp();
+                return 0;
+            }
+
+            if (IsVersionFlag(action))
+            {
+                WriteVersion();
+                return 0;
+            }
+
+            switch (action.ToLowerInvariant())
+            {
+                case "show":
+                    if (WantsHelp(rest))
+                    {
+                        return WritePrivacyShowHelp();
+                    }
+
+                    return TryParse(rest, out PrivacyShowOptions show)
+                        ? await OnPrivacyShow(show)
+                        : UsageError("privacy show");
+
+                case "set":
+                    if (WantsHelp(rest))
+                    {
+                        return WritePrivacySetHelp();
+                    }
+
+                    return TryParse(rest, out PrivacySetOptions set)
+                        ? await OnPrivacySet(set)
+                        : UsageError("privacy set");
+
+                default:
+                    Console.Error.WriteLine($"Error: unknown privacy action \"{action}\". Expected set or show.");
+                    WritePrivacyHelp();
+                    return -1;
+            }
         }
 
         private static async Task<int> OnSignIn(SignInOptions signInOptions)
@@ -139,7 +248,7 @@ namespace XblTestAccount
                 Console.WriteLine($"Test account {testAccount.UserName} has successfully signed in to sandbox {testAccount.Sandbox}.");
                 DisplayTestAccount(testAccount, "\t");
                 Console.WriteLine();
-                Console.WriteLine("Run \"XblTestAccount show\" for its privileges and privacy settings.");
+                Console.WriteLine($"Run \"{ToolName} privilege show\" for its privileges, or \"{ToolName} privacy show\" for its privacy settings.");
                 return 0;
             }
             catch (HttpRequestException ex)
@@ -173,10 +282,46 @@ namespace XblTestAccount
         }
 
         /// <summary>
-        /// Reports everything known about the signed in account: who it is, the state of every
-        /// privilege it holds, and the value of every privacy setting the service exposes.
+        /// Reports who the signed in account is. The privileges and the privacy settings are
+        /// reported by their own commands, so that each command has one job and one shape.
         /// </summary>
-        private static async Task<int> OnShow(ShowOptions options)
+        /// <param name="options">The output options of the show command.</param>
+        /// <returns>Zero when the account was reported.</returns>
+        private static int OnShow(ShowOptions options)
+        {
+            TestAccount testAccount = LoadSignedInTestAccount();
+            if (testAccount == null)
+            {
+                return -1;
+            }
+
+            if (options.Json)
+            {
+                WriteJson(new
+                {
+                    userName = testAccount.UserName,
+                    gamertag = testAccount.Gamertag,
+                    xuid = testAccount.Xuid,
+                    sandbox = testAccount.Sandbox,
+                    ageGroup = testAccount.AgeGroup.ToString(),
+                });
+
+                return 0;
+            }
+
+            Console.WriteLine($"Test account {testAccount.UserName} is currently signed in.");
+            DisplayTestAccount(testAccount, "\t");
+            return 0;
+        }
+
+        /// <summary>
+        /// Reports every privilege this tool knows of, together with the state the signed in
+        /// account holds it in and where it is controlled from. One listing answers both questions,
+        /// rather than splitting the names into one command and the states into another.
+        /// </summary>
+        /// <param name="options">The output options and the sandbox to work against.</param>
+        /// <returns>Zero when the privileges were reported.</returns>
+        private static async Task<int> OnPrivilegeShow(PrivilegeShowOptions options)
         {
             TestAccount testAccount = LoadSignedInTestAccount();
             if (testAccount == null)
@@ -206,26 +351,38 @@ namespace XblTestAccount
                 }
             }
 
-            Console.WriteLine($"Test account {testAccount.UserName} is currently signed in.");
-            DisplayTestAccount(testAccount, "\t");
+            List<PrivilegeState> states = BuildPrivilegeStates(testAccount);
+
+            if (options.Json)
+            {
+                WriteJson(states.Select(state => new
+                {
+                    id = state.Id,
+                    name = state.Known ? state.Name : null,
+                    state = state.State,
+                    editable = state.Editable,
+                    privacySetting = state.PrivacySetting,
+                }));
+
+                return 0;
+            }
+
+            Console.WriteLine($"Privileges for {testAccount.Gamertag} ({testAccount.Xuid}):");
+
+            // Pad to the widest name and state so the notes line up in a column, rather than
+            // relying on tab stops that the varying name lengths push out of alignment.
+            int nameWidth = states.Max(state => state.Name.Length);
+            int stateWidth = states.Max(state => state.State.Length);
+            foreach (PrivilegeState state in states)
+            {
+                string note = DescribePrivilegeSource(state.Id);
+                Console.WriteLine($"    {FormatId(state.Id)}  {state.Name.PadRight(nameWidth)}  {state.State.PadRight(stateWidth)}  {note}".TrimEnd());
+            }
 
             Console.WriteLine();
-            DisplayPrivileges(testAccount);
-
-            Console.WriteLine();
-
-            // The privacy settings are not carried on the token, so they cost a service call. A
-            // failure here is reported but does not fail the verb, as the account itself was shown.
-            try
-            {
-                IDictionary<string, string> settings = await PrivacyClient.GetSettingsAsync(sandbox, testAccount.Xuid);
-                DisplayPrivacySettings(settings);
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.Error.WriteLine("Warning: could not read the privacy settings.");
-                Console.Error.WriteLine(ex.Message);
-            }
+            Console.WriteLine("Only the privileges marked editable can be blocked and allowed by the account itself.");
+            Console.WriteLine("A privilege marked \"set with\" follows a privacy setting, so change that setting instead.");
+            Console.WriteLine("The rest are fixed by the service, for a reason such as the age group of the account.");
 
             if (!options.Refresh)
             {
@@ -236,34 +393,21 @@ namespace XblTestAccount
             return 0;
         }
 
-        private static async Task<int> OnPrivilege(PrivilegeOptions options)
+        /// <summary>
+        /// Blocks or allows the given privileges on the signed in account.
+        /// </summary>
+        /// <param name="options">The privilege numbers and the sandbox to work against.</param>
+        /// <param name="action">Either "block" or "allow".</param>
+        /// <returns>Zero when the change was made.</returns>
+        private static async Task<int> OnPrivilegeChange(PrivilegeChangeOptions options, string action)
         {
-            // The action is a positional word rather than an enum option: CommandLineParser 2.2.1
-            // matches enum values case sensitively and reports a bare "bad format" error on a
-            // mismatch, so it is parsed here where a useful message can be given.
-            if (!TryParseEnumName(options.Action, out PrivilegeAction action))
-            {
-                Console.Error.WriteLine($"Error: unknown action \"{options.Action}\". Expected {DescribeActions<PrivilegeAction>()}.");
-                return -1;
-            }
-
+            bool block = action == "block";
             List<int> privileges = options.Privileges?.ToList() ?? new List<int>();
-
-            if (action == PrivilegeAction.ListAll)
-            {
-                if (privileges.Count > 0)
-                {
-                    Console.Error.WriteLine("Error: the listall action does not take a privilege list.");
-                    return -1;
-                }
-
-                return ListPrivileges();
-            }
 
             if (privileges.Count == 0)
             {
-                Console.Error.WriteLine($"Error: the {ActionWord(action)} action requires at least one privilege id, for example \"XblTestAccount privilege {ActionWord(action)} 185\".");
-                Console.Error.WriteLine("Run \"XblTestAccount privilege listall\" to see the ids.");
+                Console.Error.WriteLine($"Error: the {action} action requires at least one privilege number, for example \"{ToolName} privilege {action} 185\".");
+                Console.Error.WriteLine($"Run \"{ToolName} privilege show\" to see the numbers.");
                 return -1;
             }
 
@@ -289,11 +433,10 @@ namespace XblTestAccount
 
             try
             {
-                string verb = action == PrivilegeAction.Block ? "Restricting" : "Unrestricting";
-                Console.WriteLine($"{verb} {DescribePrivileges(privileges)} on {testAccount.Gamertag} ({xuid}) in sandbox {sandbox}.");
+                string gerund = block ? "Restricting" : "Unrestricting";
+                Console.WriteLine($"{gerund} {DescribePrivileges(privileges)} on {testAccount.Gamertag} ({xuid}) in sandbox {sandbox}.");
 
-                IList<int> restricted = await PrivilegeClient.SetRestrictionsAsync(
-                    sandbox, xuid, privileges, action == PrivilegeAction.Block);
+                IList<int> restricted = await PrivilegeClient.SetRestrictionsAsync(sandbox, xuid, privileges, block);
 
                 Console.WriteLine($"Privileges now restricted by the parental service for {testAccount.Gamertag} ({xuid}):");
                 if (restricted.Count == 0)
@@ -310,7 +453,7 @@ namespace XblTestAccount
                 }
 
                 Console.WriteLine();
-                Console.WriteLine("This is only what the parental service holds. Run \"XblTestAccount show --refresh\" for the effective set.");
+                Console.WriteLine($"This is only what the parental service holds. Run \"{ToolName} privilege show --refresh\" for the effective set.");
                 return 0;
             }
             catch (HttpRequestException ex)
@@ -321,14 +464,61 @@ namespace XblTestAccount
             }
         }
 
-        private static async Task<int> OnPrivacy(PrivacyOptions options)
+        /// <summary>
+        /// Reports every privacy setting the service exposes, with its current value.
+        /// </summary>
+        /// <param name="options">The output options and the sandbox to work against.</param>
+        /// <returns>Zero when the settings were reported.</returns>
+        private static async Task<int> OnPrivacyShow(PrivacyShowOptions options)
         {
-            if (!TryParseEnumName(options.Action, out PrivacyAction action))
+            TestAccount testAccount = LoadSignedInTestAccount();
+            if (testAccount == null)
             {
-                Console.Error.WriteLine($"Error: unknown action \"{options.Action}\". Expected {DescribeActions<PrivacyAction>()}.");
                 return -1;
             }
 
+            if (!TryResolveSandbox(testAccount, options.Sandbox, out string sandbox))
+            {
+                return -1;
+            }
+
+            try
+            {
+                IDictionary<string, string> settings = await PrivacyClient.GetSettingsAsync(sandbox, testAccount.Xuid);
+
+                if (options.Json)
+                {
+                    WriteJson(settings.Select(entry => new
+                    {
+                        setting = entry.Key,
+                        value = entry.Value,
+                        privilege = PrivilegeNames.TryGetPrivilegeForSetting(entry.Key, out int privilege)
+                            ? (int?)privilege
+                            : null,
+                    }));
+
+                    return 0;
+                }
+
+                Console.WriteLine($"Privacy settings for {testAccount.Gamertag} ({testAccount.Xuid}):");
+                DisplayPrivacySettings(settings);
+                return 0;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.Error.WriteLine("Error: the privacy call failed.");
+                Console.Error.WriteLine(ex.Message);
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// Changes one privacy setting on the signed in account.
+        /// </summary>
+        /// <param name="options">The setting, the value and the sandbox to work against.</param>
+        /// <returns>Zero when the change was made.</returns>
+        private static async Task<int> OnPrivacySet(PrivacySetOptions options)
+        {
             // The arguments are checked before the account is loaded and the service is called, so
             // that a usage mistake is reported without a round trip.
             if (options.Surplus != null && options.Surplus.Any())
@@ -337,29 +527,17 @@ namespace XblTestAccount
                 return -1;
             }
 
-            PrivacyValue value = default(PrivacyValue);
-            if (action == PrivacyAction.ListAll)
+            if (string.IsNullOrWhiteSpace(options.Setting) || string.IsNullOrWhiteSpace(options.Value))
             {
-                if (!string.IsNullOrWhiteSpace(options.Setting) || !string.IsNullOrWhiteSpace(options.Value))
-                {
-                    Console.Error.WriteLine("Error: the listall action does not take a setting or a value.");
-                    return -1;
-                }
+                Console.Error.WriteLine($"Error: the set action requires a setting and a value, for example \"{ToolName} privacy set CommunicateDuringCrossNetworkPlay Blocked\".");
+                Console.Error.WriteLine($"Run \"{ToolName} privacy show\" to see the settings.");
+                return -1;
             }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(options.Setting) || string.IsNullOrWhiteSpace(options.Value))
-                {
-                    Console.Error.WriteLine("Error: the set action requires a setting and a value, for example \"XblTestAccount privacy set CommunicateDuringCrossNetworkPlay Blocked\".");
-                    Console.Error.WriteLine("Run \"XblTestAccount privacy listall\" to see the settings.");
-                    return -1;
-                }
 
-                if (!TryParseEnumName(NormalizeValue(options.Value), out value))
-                {
-                    Console.Error.WriteLine($"Error: unknown value \"{options.Value}\". Expected {string.Join(", ", Enum.GetNames(typeof(PrivacyValue)))}.");
-                    return -1;
-                }
+            if (!TryParseEnumName(NormalizeValue(options.Value), out PrivacyValue value))
+            {
+                Console.Error.WriteLine($"Error: unknown value \"{options.Value}\". Expected {string.Join(", ", Enum.GetNames(typeof(PrivacyValue)))}.");
+                return -1;
             }
 
             TestAccount testAccount = LoadSignedInTestAccount();
@@ -379,13 +557,6 @@ namespace XblTestAccount
             try
             {
                 IDictionary<string, string> settings = await PrivacyClient.GetSettingsAsync(sandbox, xuid);
-
-                if (action == PrivacyAction.ListAll)
-                {
-                    Console.WriteLine($"Privacy settings for {testAccount.Gamertag} ({xuid}):");
-                    DisplayPrivacySettings(settings, string.Empty);
-                    return 0;
-                }
 
                 // The service is the authority on which settings exist, so the name is checked
                 // against the set it just reported rather than a list held by this tool.
@@ -408,12 +579,12 @@ namespace XblTestAccount
                 else
                 {
                     Console.Error.WriteLine($"Warning: the service accepted the change but still reports {setting} as {applied ?? "missing"}.");
-                    Console.Error.WriteLine("It can take a moment to become visible. Run \"XblTestAccount privacy listall\" again to confirm.");
+                    Console.Error.WriteLine($"It can take a moment to become visible. Run \"{ToolName} privacy show\" again to confirm.");
                 }
 
                 if (PrivilegeNames.TryGetPrivilegeForSetting(setting, out int privilege))
                 {
-                    Console.WriteLine($"This setting controls privilege {PrivilegeNames.Describe(privilege)}. Run \"XblTestAccount show --refresh\" to see it take effect.");
+                    Console.WriteLine($"This setting controls privilege {PrivilegeNames.Describe(privilege)}. Run \"{ToolName} privilege show --refresh\" to see it take effect.");
                 }
 
                 return 0;
@@ -427,40 +598,53 @@ namespace XblTestAccount
         }
 
         /// <summary>
-        /// Lists every privilege id this tool knows the name of, marking which can be changed
-        /// directly and which follow a privacy setting.
+        /// Builds the state of every privilege worth reporting: the ones this tool knows the name
+        /// of, plus any the token carries that it does not.
         /// </summary>
-        private static int ListPrivileges()
+        /// <param name="testAccount">The account whose token carries the privilege claims.</param>
+        /// <returns>The privileges in ascending id order.</returns>
+        private static List<PrivilegeState> BuildPrivilegeStates(TestAccount testAccount)
         {
-            // Pad to the widest name so the notes line up in a column, rather than relying on tab
-            // stops that the varying name lengths push out of alignment.
-            int nameWidth = PrivilegeNames.All.Values.Max(name => name.Length);
+            var restricted = new SortedSet<int>(ParsePrivilegeString(testAccount.RestrictedPrivilegeString));
+            var granted = new SortedSet<int>(ParsePrivilegeString(testAccount.PrivilegeString));
 
-            Console.WriteLine("Known privilege ids:");
-            foreach (var privilege in PrivilegeNames.All.OrderBy(entry => entry.Key))
+            var ids = new SortedSet<int>(PrivilegeNames.All.Keys);
+            ids.UnionWith(granted);
+            ids.UnionWith(restricted);
+
+            var states = new List<PrivilegeState>();
+            foreach (int id in ids)
             {
-                string note = DescribePrivilegeSource(privilege.Key);
-                string name = note.Length > 0 ? privilege.Value.PadRight(nameWidth) : privilege.Value;
-                Console.WriteLine($"    {FormatId(privilege.Key)}  {name}  {note}".TrimEnd());
+                bool known = PrivilegeNames.TryGetName(id, out string name);
+
+                // A privilege the token names in neither claim is simply not held by this account,
+                // which is worth reporting as its own state rather than as a restriction.
+                string state = restricted.Contains(id)
+                    ? "Restricted"
+                    : granted.Contains(id) ? "Granted" : "Not held";
+
+                states.Add(new PrivilegeState
+                {
+                    Id = id,
+                    Known = known,
+                    Name = known ? name : UnknownPrivilegeName,
+                    State = state,
+                    Editable = PrivilegeNames.IsEditable(id),
+                    PrivacySetting = PrivilegeNames.TryGetPrivacySetting(id, out string setting) ? setting : null,
+                });
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Only the privileges marked editable can be blocked and allowed by the account itself.");
-            Console.WriteLine("A privilege marked \"set with\" follows a privacy setting, so change that setting instead.");
-            Console.WriteLine("The rest are fixed by the service, for a reason such as the age group of the account.");
-            Console.WriteLine();
-            Console.WriteLine("Run \"XblTestAccount show\" to see which of these the signed in account holds.");
-            return 0;
+            return states;
         }
 
         /// <summary>
         /// Refuses a change to a privilege the account may not edit, because the service rejects
         /// one with a bare HTTP 400 that carries no explanation.
         /// </summary>
-        /// <param name="privileges">The privilege ids the caller asked to change.</param>
-        /// <param name="action">The action the caller asked for.</param>
+        /// <param name="privileges">The privilege numbers the caller asked to change.</param>
+        /// <param name="action">Either "block" or "allow".</param>
         /// <returns>True when every privilege can be changed by the account itself.</returns>
-        private static bool ValidateEditable(IEnumerable<int> privileges, PrivilegeAction action)
+        private static bool ValidateEditable(IEnumerable<int> privileges, string action)
         {
             List<int> notEditable = privileges.Where(id => !PrivilegeNames.IsEditable(id)).ToList();
             if (notEditable.Count == 0)
@@ -478,10 +662,10 @@ namespace XblTestAccount
             {
                 if (PrivilegeNames.TryGetPrivacySetting(id, out string setting))
                 {
-                    string want = action == PrivilegeAction.Block ? nameof(PrivacyValue.Blocked) : nameof(PrivacyValue.Everyone);
+                    string want = action == "block" ? nameof(PrivacyValue.Blocked) : nameof(PrivacyValue.Everyone);
                     Console.Error.WriteLine();
-                    Console.Error.WriteLine($"{PrivilegeNames.Describe(id)} follows a privacy setting. To {ActionWord(action)} it, run:");
-                    Console.Error.WriteLine($"    XblTestAccount privacy set {setting} {want}");
+                    Console.Error.WriteLine($"{PrivilegeNames.Describe(id)} follows a privacy setting. To {action} it, run:");
+                    Console.Error.WriteLine($"    {ToolName} privacy set {setting} {want}");
                     suggested = true;
                 }
             }
@@ -502,7 +686,7 @@ namespace XblTestAccount
             TestAccount testAccount = ToolAuthentication.LoadLastSignedInTestAccount();
             if (testAccount == null)
             {
-                Console.Error.WriteLine("No signed in test account found. Run \"XblTestAccount signin\" first.");
+                Console.Error.WriteLine($"No signed in test account found. Run \"{ToolName} signin\" first.");
             }
 
             return testAccount;
@@ -576,28 +760,6 @@ namespace XblTestAccount
             return false;
         }
 
-        /// <summary>
-        /// Renders the actions of a verb as the lowercase words used on the command line.
-        /// </summary>
-        /// <typeparam name="T">The action enum of the verb.</typeparam>
-        /// <returns>A display string such as "listall, block or allow".</returns>
-        private static string DescribeActions<T>()
-            where T : struct
-        {
-            string[] names = Enum.GetNames(typeof(T)).Select(name => name.ToLowerInvariant()).ToArray();
-            return names.Length < 2
-                ? string.Join(string.Empty, names)
-                : $"{string.Join(", ", names.Take(names.Length - 1))} or {names.Last()}";
-        }
-
-        /// <summary>
-        /// Renders an action as the lowercase word used on the command line.
-        /// </summary>
-        private static string ActionWord(PrivilegeAction action)
-        {
-            return action.ToString().ToLowerInvariant();
-        }
-
         private static string DescribePrivileges(IEnumerable<int> privileges)
         {
             return string.Join(", ", privileges.Select(PrivilegeNames.Describe));
@@ -660,46 +822,11 @@ namespace XblTestAccount
         }
 
         /// <summary>
-        /// Reports every privilege named on the token, as its id, its name, whether it is granted
-        /// or restricted, and where it is controlled from.
-        /// </summary>
-        private static void DisplayPrivileges(TestAccount testAccount)
-        {
-            var restricted = new SortedSet<int>(ParsePrivilegeString(testAccount.RestrictedPrivilegeString));
-            var all = new SortedSet<int>(ParsePrivilegeString(testAccount.PrivilegeString));
-            all.UnionWith(restricted);
-
-            Console.WriteLine("Privileges:");
-            if (all.Count == 0)
-            {
-                Console.WriteLine("    (none reported on the token)");
-                return;
-            }
-
-            // Pad to the widest name and state so the notes line up in a column.
-            int nameWidth = all.Max(id => PrivilegeNames.GetName(id, UnknownPrivilegeName).Length);
-            int stateWidth = restricted.Count == 0 ? "Granted".Length : "Restricted".Length;
-
-            foreach (int id in all)
-            {
-                string state = restricted.Contains(id) ? "Restricted" : "Granted";
-                string note = DescribePrivilegeSource(id);
-                Console.WriteLine($"    {FormatId(id)}  {PrivilegeNames.GetName(id, UnknownPrivilegeName).PadRight(nameWidth)}  {state.PadRight(stateWidth)}  {note}".TrimEnd());
-            }
-        }
-
-        /// <summary>
         /// Reports every privacy setting the service returned, noting which privilege each controls.
         /// </summary>
         /// <param name="settings">The settings as reported by the service.</param>
-        /// <param name="heading">The heading to print, or an empty string for none.</param>
-        private static void DisplayPrivacySettings(IDictionary<string, string> settings, string heading = "Privacy settings:")
+        private static void DisplayPrivacySettings(IDictionary<string, string> settings)
         {
-            if (heading.Length > 0)
-            {
-                Console.WriteLine(heading);
-            }
-
             if (settings.Count == 0)
             {
                 Console.WriteLine("    (none)");
@@ -720,150 +847,532 @@ namespace XblTestAccount
             }
         }
 
-        [Verb("signin", HelpText = "Sign in an Xbox Live test account and cache the credential so that later runs need no UI.")]
+        private static void WriteJson(object payload)
+        {
+            Console.WriteLine(JsonConvert.SerializeObject(payload, Formatting.Indented));
+        }
+
+        /// <summary>
+        /// Parses the options of one command, reporting anything the parser rejected.
+        /// </summary>
+        /// <typeparam name="T">The option class of the command.</typeparam>
+        /// <param name="args">The arguments left after the command and any sub command.</param>
+        /// <param name="options">Receives the parsed options.</param>
+        /// <returns>True when the arguments parsed.</returns>
+        private static bool TryParse<T>(string[] args, out T options)
+            where T : new()
+        {
+            T parsed = default(T);
+            bool succeeded = false;
+
+            CommandParser.ParseArguments<T>(args)
+                .WithParsed(result =>
+                {
+                    parsed = result;
+                    succeeded = true;
+                })
+                .WithNotParsed(ReportParseErrors);
+
+            options = parsed;
+            return succeeded;
+        }
+
+        /// <summary>
+        /// Reports why the arguments of a command were rejected.
+        /// </summary>
+        /// <param name="errors">The errors the parser raised.</param>
+        private static void ReportParseErrors(IEnumerable<Error> errors)
+        {
+            foreach (Error error in errors)
+            {
+                switch (error)
+                {
+                    case UnknownOptionError unknown:
+                        Console.Error.WriteLine($"Error: unknown option \"{unknown.Token}\".");
+                        break;
+                    case MissingRequiredOptionError missing:
+                        Console.Error.WriteLine($"Error: \"{missing.NameInfo.NameText}\" is required.");
+                        break;
+                    case MissingValueOptionError missingValue:
+                        Console.Error.WriteLine($"Error: \"{missingValue.NameInfo.NameText}\" needs a value.");
+                        break;
+                    case BadFormatConversionError badFormat:
+                        Console.Error.WriteLine($"Error: \"{badFormat.NameInfo.NameText}\" was given a value of the wrong kind.");
+                        break;
+                    default:
+                        Console.Error.WriteLine("Error: the arguments could not be understood.");
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reports that a command was called wrongly and points at its help screen.
+        /// </summary>
+        /// <param name="command">The command as it is typed, such as "privilege block".</param>
+        /// <returns>The exit code for a usage error.</returns>
+        private static int UsageError(string command)
+        {
+            Console.Error.WriteLine($"Run \"{ToolName} {command} --help\" for usage.");
+            return -1;
+        }
+
+        private static bool IsHelpFlag(string argument)
+        {
+            return string.Equals(argument, "--help", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(argument, "-h", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(argument, "-?", StringComparison.Ordinal)
+                || string.Equals(argument, "/?", StringComparison.Ordinal);
+        }
+
+        private static bool IsVersionFlag(string argument)
+        {
+            return string.Equals(argument, "--version", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool WantsHelp(IEnumerable<string> args)
+        {
+            return args.Any(IsHelpFlag);
+        }
+
+        private static void WriteVersion()
+        {
+            Console.WriteLine($"{ToolName} {Assembly.GetExecutingAssembly().GetName().Version}");
+        }
+
+        private static void WriteHeading()
+        {
+            WriteVersion();
+            Console.WriteLine("Copyright (c) Microsoft Corporation. All rights reserved.");
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Writes a help screen as a list of names and descriptions, lined up in a column and
+        /// wrapped to the console width, with a blank line between entries.
+        /// </summary>
+        /// <param name="entries">The names and their descriptions, in the order to write them.</param>
+        private static void WriteEntries(IEnumerable<KeyValuePair<string, string>> entries)
+        {
+            List<KeyValuePair<string, string>> list = entries.ToList();
+            if (list.Count == 0)
+            {
+                return;
+            }
+
+            int nameWidth = list.Max(entry => entry.Key.Length);
+            string indent = new string(' ', nameWidth + 4);
+
+            foreach (KeyValuePair<string, string> entry in list)
+            {
+                bool first = true;
+                foreach (string text in Wrap(entry.Value, ConsoleWidth() - indent.Length))
+                {
+                    string line = first ? $"  {entry.Key.PadRight(nameWidth)}  {text}" : indent + text;
+                    Console.WriteLine(line.TrimEnd());
+                    first = false;
+                }
+
+                Console.WriteLine();
+            }
+        }
+
+        /// <summary>
+        /// Breaks a description into lines that fit the space left beside the name column.
+        /// </summary>
+        /// <param name="text">The description to break up.</param>
+        /// <param name="width">The number of characters available on a line.</param>
+        /// <returns>The description as one or more lines.</returns>
+        private static IEnumerable<string> Wrap(string text, int width)
+        {
+            if (string.IsNullOrEmpty(text) || width < 20)
+            {
+                yield return text ?? string.Empty;
+                yield break;
+            }
+
+            var line = new StringBuilder();
+            foreach (string word in text.Split(' '))
+            {
+                if (line.Length > 0 && line.Length + 1 + word.Length > width)
+                {
+                    yield return line.ToString();
+                    line.Clear();
+                }
+
+                if (line.Length > 0)
+                {
+                    line.Append(' ');
+                }
+
+                line.Append(word);
+            }
+
+            if (line.Length > 0)
+            {
+                yield return line.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Gets the width to wrap help at. A redirected console reports no width, so a conventional
+        /// one is used instead.
+        /// </summary>
+        /// <returns>The number of characters available on a line.</returns>
+        private static int ConsoleWidth()
+        {
+            try
+            {
+                return Console.WindowWidth > 40 ? Console.WindowWidth - 1 : 79;
+            }
+            catch (System.IO.IOException)
+            {
+                return 79;
+            }
+        }
+
+        private static KeyValuePair<string, string> Entry(string name, string description)
+        {
+            return new KeyValuePair<string, string>(name, description);
+        }
+
+        private static void WriteRootHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} <command> [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+                Entry("signin", "sign in a test account and cache the credential"),
+                Entry("signout", "sign out the signed in test account"),
+                Entry("show", "show the signed in test account"),
+                Entry("privilege", "show, block or allow privileges on the signed in test account"),
+                Entry("privacy", "show or set privacy settings on the signed in test account"),
+            });
+        }
+
+        private static int WriteSignInHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} signin -u <name> -s <sandbox> [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("-u, --name", "Required. The user name (email address) of the test account."),
+                Entry("-s, --sandbox", "Required. The sandbox to sign the test account in to."),
+                Entry("-f, --force", "Optional. Ignore any cached credential and always show the sign in UI."),
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+            });
+
+            return 0;
+        }
+
+        private static int WriteSignOutHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} signout");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+            });
+
+            return 0;
+        }
+
+        private static int WriteShowHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} show [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("-j, --json", JsonHelp),
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+            });
+
+            return 0;
+        }
+
+        private static void WritePrivilegeHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} privilege <block|allow|show> [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("-s, --sandbox", SandboxHelp),
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+                Entry("block", "block a privilege"),
+                Entry("allow", "allow a privilege"),
+                Entry("show (-j)", "show privileges, pass -j to output as parsable json"),
+            });
+        }
+
+        private static int WritePrivilegeChangeHelp(string action)
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} privilege {action} <privilegenumber> [privilegenumber...] [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("privilegenumber", "i.e. 254"),
+                Entry("-s, --sandbox", SandboxHelp),
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+            });
+
+            return 0;
+        }
+
+        private static int WritePrivilegeShowHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} privilege show [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("-j, --json", JsonHelp),
+                Entry("-r, --refresh", "Optional. Mint a new token so that the privileges are reported as they are now, rather than as they were at sign in."),
+                Entry("-s, --sandbox", SandboxHelp),
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+            });
+
+            return 0;
+        }
+
+        private static void WritePrivacyHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} privacy <set|show> [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("-s, --sandbox", SandboxHelp),
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+                Entry("set", "set a privacy setting"),
+                Entry("show (-j)", "show privacy settings, pass -j to output as parsable json"),
+            });
+        }
+
+        private static int WritePrivacySetHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} privacy set <setting> <value> [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("setting", "i.e. CommunicateUsingTextAndVoice"),
+                Entry("value", $"i.e. Blocked. One of {string.Join(", ", Enum.GetNames(typeof(PrivacyValue)))}."),
+                Entry("-s, --sandbox", SandboxHelp),
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+            });
+
+            return 0;
+        }
+
+        private static int WritePrivacyShowHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} privacy show [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("-j, --json", JsonHelp),
+                Entry("-s, --sandbox", SandboxHelp),
+                Entry("--help", HelpHelp),
+                Entry("--version", VersionHelp),
+            });
+
+            return 0;
+        }
+
+        /// <summary>
+        /// The state of one privilege on the signed in account.
+        /// </summary>
+        private class PrivilegeState
+        {
+            /// <summary>
+            /// Gets or sets the privilege id.
+            /// </summary>
+            public int Id { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether this tool knows the name of the privilege.
+            /// </summary>
+            public bool Known { get; set; }
+
+            /// <summary>
+            /// Gets or sets the friendly name, or a stand in when the privilege is not known.
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
+            /// Gets or sets the state the account holds the privilege in.
+            /// </summary>
+            public string State { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the account may change the privilege itself.
+            /// </summary>
+            public bool Editable { get; set; }
+
+            /// <summary>
+            /// Gets or sets the privacy setting that controls the privilege, where one does.
+            /// </summary>
+            public string PrivacySetting { get; set; }
+        }
+
+        /// <summary>
+        /// The sandbox option, which every command that calls the service takes.
+        /// </summary>
+        private class SandboxOptions
+        {
+            /// <summary>
+            /// Gets or sets the sandbox to work against.
+            /// </summary>
+            [Option('s', "sandbox", Required = false, HelpText = SandboxHelp)]
+            public string Sandbox { get; set; }
+        }
+
+        /// <summary>
+        /// The options of the signin command.
+        /// </summary>
         private class SignInOptions
         {
+            /// <summary>
+            /// Gets or sets the user name of the test account.
+            /// </summary>
             [Option('u', "name", Required = true,
                 HelpText = "The user name (email address) of the test account.")]
             public string UserName { get; set; }
 
+            /// <summary>
+            /// Gets or sets the sandbox to sign the test account in to.
+            /// </summary>
             [Option('s', "sandbox", Required = true,
                 HelpText = "The sandbox to sign the test account in to.")]
             public string Sandbox { get; set; }
 
+            /// <summary>
+            /// Gets or sets a value indicating whether to ignore any cached credential.
+            /// </summary>
             [Option('f', "force", Required = false,
                 HelpText = "Ignore any cached credential and always show the sign in UI.")]
             public bool Force { get; set; }
-
-            [Usage]
-            public static IEnumerable<Example> Examples
-            {
-                get
-                {
-                    yield return new Example(
-                        "Sign in an Xbox Live test account and cache the credential",
-                        new SignInOptions
-                        {
-                            UserName = "xxxx@xboxtest.com",
-                            Sandbox = "XXXXXX.0"
-                        });
-                }
-            }
         }
 
-        [Verb("signout", HelpText = "Sign out the signed in Xbox Live test account.")]
+        /// <summary>
+        /// The options of the signout command, which takes none.
+        /// </summary>
         private class SignOutOptions
         {
-            [Usage]
-            public static IEnumerable<Example> Examples
-            {
-                get
-                {
-                    yield return new Example("Sign out the signed in Xbox Live test account.", new SignOutOptions());
-                }
-            }
         }
 
-        [Verb("show", HelpText = "Display the signed in Xbox Live test account, its privileges and its privacy settings.")]
+        /// <summary>
+        /// The options of the show command.
+        /// </summary>
         private class ShowOptions
         {
+            /// <summary>
+            /// Gets or sets a value indicating whether to write the output as json.
+            /// </summary>
+            [Option('j', "json", Required = false, HelpText = JsonHelp)]
+            public bool Json { get; set; }
+        }
+
+        /// <summary>
+        /// The options of the privilege show command.
+        /// </summary>
+        private class PrivilegeShowOptions : SandboxOptions
+        {
+            /// <summary>
+            /// Gets or sets a value indicating whether to write the output as json.
+            /// </summary>
+            [Option('j', "json", Required = false, HelpText = JsonHelp)]
+            public bool Json { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to mint a new token first.
+            /// </summary>
             [Option('r', "refresh", Required = false,
-                HelpText = "Mint a new token so that the privilege claims are reported as they are now, rather than as they were at sign in.")]
+                HelpText = "Mint a new token so that the privileges are reported as they are now.")]
             public bool Refresh { get; set; }
-
-            [Option('s', "sandbox", Required = false,
-                HelpText = "The sandbox to use. Defaults to the sandbox the test account signed in to.")]
-            public string Sandbox { get; set; }
-
-            [Usage]
-            public static IEnumerable<Example> Examples
-            {
-                get
-                {
-                    yield return new Example("Display the test account, its privileges and its privacy settings.", new ShowOptions());
-                    yield return new Example("Display it with the privilege claims as they are now.", new ShowOptions { Refresh = true });
-                }
-            }
         }
 
-        [Verb("privilege", HelpText = "List the known Xbox Live privileges, or block and allow them on the signed in test account.")]
-        private class PrivilegeOptions
+        /// <summary>
+        /// The options of the privilege block and privilege allow commands.
+        /// </summary>
+        private class PrivilegeChangeOptions : SandboxOptions
         {
-            [Value(0, MetaName = "action", Required = true,
-                HelpText = "The action to take: listall, block or allow.")]
-            public string Action { get; set; }
-
-            [Value(1, MetaName = "privileges", Required = false,
-                HelpText = "The privilege ids to block or allow, for example 185 254.")]
+            /// <summary>
+            /// Gets or sets the privilege numbers to change.
+            /// </summary>
+            /// <remarks>
+            /// Not marked required, so that an empty list reaches the command and is refused with
+            /// guidance on where to find the numbers, rather than by the parser with a bare note
+            /// that a nameless value is missing.
+            /// </remarks>
+            [Value(0, MetaName = "privilegenumber", Required = false,
+                HelpText = "The privilege numbers to change, for example 185 254.")]
             public IEnumerable<int> Privileges { get; set; }
-
-            [Option('s', "sandbox", Required = false,
-                HelpText = "The sandbox to use. Defaults to the sandbox the test account signed in to.")]
-            public string Sandbox { get; set; }
-
-            [Usage]
-            public static IEnumerable<Example> Examples
-            {
-                get
-                {
-                    yield return new Example(
-                        "List the known privilege ids and their names",
-                        new PrivilegeOptions { Action = "listall" });
-
-                    yield return new Example(
-                        "Restrict cross network play",
-                        new PrivilegeOptions { Action = "block", Privileges = new[] { 185 } });
-
-                    yield return new Example(
-                        "Clear the restriction on cross network play",
-                        new PrivilegeOptions { Action = "allow", Privileges = new[] { 185 } });
-                }
-            }
         }
 
-        [Verb("privacy", HelpText = "List the privacy settings of the signed in Xbox Live test account, or change one of them.")]
-        private class PrivacyOptions
+        /// <summary>
+        /// The options of the privacy show command.
+        /// </summary>
+        private class PrivacyShowOptions : SandboxOptions
         {
-            [Value(0, MetaName = "action", Required = true,
-                HelpText = "The action to take: listall or set.")]
-            public string Action { get; set; }
+            /// <summary>
+            /// Gets or sets a value indicating whether to write the output as json.
+            /// </summary>
+            [Option('j', "json", Required = false, HelpText = JsonHelp)]
+            public bool Json { get; set; }
+        }
 
-            [Value(1, MetaName = "setting", Required = false,
-                HelpText = "The privacy setting to change, as named by \"privacy listall\".")]
+        /// <summary>
+        /// The options of the privacy set command.
+        /// </summary>
+        private class PrivacySetOptions : SandboxOptions
+        {
+            /// <summary>
+            /// Gets or sets the privacy setting to change.
+            /// </summary>
+            /// <remarks>
+            /// Not marked required, so that a missing setting reaches the command and is refused
+            /// with an example, rather than by the parser with a bare note that a nameless value
+            /// is missing.
+            /// </remarks>
+            [Value(0, MetaName = "setting", Required = false,
+                HelpText = "The privacy setting to change, as named by \"privacy show\".")]
             public string Setting { get; set; }
 
-            [Value(2, MetaName = "value", Required = false,
+            /// <summary>
+            /// Gets or sets the value to set.
+            /// </summary>
+            [Value(1, MetaName = "value", Required = false,
                 HelpText = "The value to set: Everyone, PeopleOnMyList or Blocked.")]
             public string Value { get; set; }
 
-            // CommandLineParser silently drops any positional argument past the last one declared,
-            // so a trailing sequence is declared to catch the surplus and refuse the command rather
-            // than acting on part of it.
-            [Value(3, Hidden = true)]
+            /// <summary>
+            /// Gets or sets any positional arguments past the ones this command takes.
+            /// </summary>
+            /// <remarks>
+            /// CommandLineParser silently drops any positional argument past the last one declared,
+            /// so a trailing sequence is declared to catch the surplus and refuse the command rather
+            /// than acting on part of it.
+            /// </remarks>
+            [Value(2, Hidden = true)]
             public IEnumerable<string> Surplus { get; set; }
-
-            [Option('s', "sandbox", Required = false,
-                HelpText = "The sandbox to use. Defaults to the sandbox the test account signed in to.")]
-            public string Sandbox { get; set; }
-
-            [Usage]
-            public static IEnumerable<Example> Examples
-            {
-                get
-                {
-                    yield return new Example(
-                        "List every privacy setting the service exposes, with its current value",
-                        new PrivacyOptions { Action = "listall" });
-
-                    yield return new Example(
-                        "Block communicating outside of Xbox with voice and text",
-                        new PrivacyOptions { Action = "set", Setting = "CommunicateDuringCrossNetworkPlay", Value = "Blocked" });
-
-                    yield return new Example(
-                        "Block communicating on Xbox with voice and text (privilege 252)",
-                        new PrivacyOptions { Action = "set", Setting = "CommunicateUsingTextAndVoice", Value = "Blocked" });
-                }
-            }
         }
     }
 }
