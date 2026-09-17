@@ -16,13 +16,15 @@ variables:
 jobs:
 
   ####################
-  # Visual Studio 2017
+  # Visual Studio 2022
   ####################
 
-  - job: Win32Vs17Build
-    displayName: DevTools Win32 VS2017 Build
+  # Fody 6.x (used by the Costura projects) requires MSBuild 16 or newer, so the
+  # build runs on the VS2022 pool rather than the retired VS2017 pool.
+  - job: Win32Vs22Build
+    displayName: DevTools Win32 VS2022 Build
     pool:
-      name: xbl-1es-vs2017-pool
+      name: xbl-1es-vs2022-pool
     timeoutInMinutes: 180
     strategy:
       matrix:
@@ -35,7 +37,7 @@ jobs:
           Configuration: Release
           Prefast: Disable
     steps:
-      - template: Tasks/vs2017-build.yml
+      - template: Tasks/vs2022-build.yml
         parameters:
           platform: $(Platform)
           configuration: $(Configuration)

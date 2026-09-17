@@ -51,13 +51,14 @@ steps:
       version: 2.1.816
       installationPath: $(Agent.ToolsDirectory)/dotnet
 
-  # Build the Visual Studio 17 solution.
+  # Build the solution with the Visual Studio 2022 toolset. Fody 6.x refuses to
+  # weave on MSBuild 15, so vsVersion must stay at 16.0 or newer.
   # Ref: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/visual-studio-build
   - task: VSBuild@1
     displayName: Build ${{ parameters.platform }}+${{ parameters.configuration }} Solution
     inputs:
       solution: XboxLiveTools.sln
-      vsVersion: 15.0
+      vsVersion: 17.0
       msbuildArchitecture: x64
       platform: ${{ parameters.platform }}
       configuration: ${{ parameters.configuration }}
