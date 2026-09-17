@@ -48,23 +48,35 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
 
         public async Task<bool> HasCredentialAsync()
         {
-            var accounts = await this.clientApp.GetAccountsAsync();
-            return accounts.FirstOrDefault() != null;
+            IAccount account = await this.SearchAccounts();
+            return account != null;
         }
 
         public async Task<IAccount> SearchAccounts()
         {
             var accounts = await this.clientApp.GetAccountsAsync();
-            var cachedAccount = accounts.SingleOrDefault(account => string.Compare(account.Username, this.UserName, StringComparison.OrdinalIgnoreCase) == 0);
+
+            // FirstOrDefault rather than SingleOrDefault: a duplicate entry in the shared token
+            // cache should not make silent authentication throw.
+            this.userAccount = string.IsNullOrEmpty(this.UserName)
+                ? accounts.FirstOrDefault()
+                : accounts.FirstOrDefault(account => string.Compare(account.Username, this.UserName, StringComparison.OrdinalIgnoreCase) == 0);
 
             return this.userAccount;
         }
 
         public async Task<string> AcquireTokenSilentAsync()
         {
+            // The MSAL token cache is persisted on disk and shared between processes, so re-check
+            // it here in case the account was signed in after this context was constructed.
             if (this.userAccount == null)
             {
-                throw new InvalidOperationException("No cached user found, please call SignInAsync to sign in a user.");
+                await this.SearchAccounts();
+            }
+
+            if (this.userAccount == null)
+            {
+                throw new InvalidOperationException("No cached user found, please call SignInTestAccountAsync to sign in a user.");
             }
 
             this.authResult = await this.clientApp.AcquireTokenSilent(this.scopes, this.userAccount).ExecuteAsync();
@@ -78,6 +90,10 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                         .WithLoginHint(this.UserName)
                         .WithPrompt(Prompt.ForceLogin)
                         .ExecuteAsync();
+
+            // Remember the account that was just signed in so that later silent calls on this
+            // context resolve without having to re-read the cache.
+            this.userAccount = this.authResult?.Account ?? this.userAccount;
 
             return this.authResult?.AccessToken;
         }

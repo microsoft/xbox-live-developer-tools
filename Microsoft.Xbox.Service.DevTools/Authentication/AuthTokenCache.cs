@@ -83,9 +83,31 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             lock (TokenLock)
             {
                 this.CachedTokens = this.CachedTokens
-                        .Where(o => string.Compare(o.Value.DisplayClaims["enm"]?.ToString(), userName, StringComparison.OrdinalIgnoreCase) != 0)
+                        .Where(o => !IsTokenForUser(o.Value, userName))
                         .ToDictionary(o => o.Key, o => o.Value);
             }
+        }
+
+        public void Clear()
+        {
+            lock (TokenLock)
+            {
+                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
+                this.CachedTokens = new Dictionary<string, XasTokenResponse>();
+                File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(this.CachedTokens));
+            }
+        }
+
+        private static bool IsTokenForUser(XasTokenResponse token, string userName)
+        {
+            // Not every cached token carries an "enm" claim (test account xsts tokens do not),
+            // so probe for it rather than indexing straight into the claim dictionary.
+            if (token?.DisplayClaims == null || !token.DisplayClaims.TryGetValue("enm", out object name))
+            {
+                return false;
+            }
+
+            return string.Compare(name?.ToString(), userName, StringComparison.OrdinalIgnoreCase) == 0;
         }
 
         private void LoadTokenCache()
