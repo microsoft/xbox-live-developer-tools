@@ -31,9 +31,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             lock (TokenLock)
             {
-                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
                 this.CachedTokens[key] = token;
-                File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(this.CachedTokens));
+                this.SaveTokenCache();
             }
         }
 
@@ -85,6 +84,10 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 this.CachedTokens = this.CachedTokens
                         .Where(o => !IsTokenForUser(o.Value, userName))
                         .ToDictionary(o => o.Key, o => o.Value);
+
+                // The cache outlives the process, so dropping the tokens from the dictionary alone
+                // would leave them on disk and let the next run serve a token for a signed out user.
+                this.SaveTokenCache();
             }
         }
 
@@ -92,9 +95,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             lock (TokenLock)
             {
-                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
                 this.CachedTokens = new Dictionary<string, XasTokenResponse>();
-                File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(this.CachedTokens));
+                this.SaveTokenCache();
             }
         }
 
@@ -108,6 +110,12 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             }
 
             return string.Compare(name?.ToString(), userName, StringComparison.OrdinalIgnoreCase) == 0;
+        }
+
+        private void SaveTokenCache()
+        {
+            string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
+            File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(this.CachedTokens));
         }
 
         private void LoadTokenCache()

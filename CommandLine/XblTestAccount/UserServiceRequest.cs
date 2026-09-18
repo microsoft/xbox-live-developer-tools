@@ -4,8 +4,13 @@
 namespace XblTestAccount
 {
     using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Linq;
     using System.Net;
     using System.Net.Http;
+    using System.Reflection;
     using System.Text;
     using System.Threading.Tasks;
     using Microsoft.Xbox.Services.DevTools.Authentication;
@@ -14,13 +19,25 @@ namespace XblTestAccount
     /// Issues a request to an Xbox Live user service with the signed in test account's token.
     /// </summary>
     /// <remarks>
-    /// This deliberately does not use the library's XboxLiveHttpRequest, which attaches a Partner
-    /// Center developer eToken. The parental and privacy services require a user XSTS token, so the
-    /// request is built here instead. The cost is that the library's correlation id logging and
-    /// retry policy do not apply, which is why the 401 retry below is implemented locally.
+    /// This deliberately does not use the library's XboxLiveHttpRequest, which is internal to the
+    /// library and retries on 403 rather than the 401 these services answer with once a privilege
+    /// changes. The policy it would have supplied is reproduced here: TLS 1.2, the tool user agent,
+    /// a single shared HttpClient, and correlation id capture, so that a call to the parental or
+    /// privacy service can still be traced with the service team after the fact.
     /// </remarks>
     internal static class UserServiceRequest
     {
+        private static readonly HttpClient Client = new HttpClient();
+
+        private static readonly string UserAgent = BuildUserAgent();
+
+        static UserServiceRequest()
+        {
+            // .Net is supposed to default to the latest TLS version on the machine, but the
+            // library pins it explicitly for the same services, so this does too.
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        }
+
         /// <summary>
         /// Sends a request, retrying once with a freshly minted token if the service rejects the
         /// token it was made with.
@@ -64,23 +81,35 @@ namespace XblTestAccount
                 throw new TestAccountTokenException(sandbox, ex);
             }
 
-            using (var client = new HttpClient())
             using (var request = new HttpRequestMessage(method, uri))
             {
                 request.Headers.TryAddWithoutValidation("Authorization", authHeader);
                 request.Headers.TryAddWithoutValidation("Accept", "application/json");
                 request.Headers.TryAddWithoutValidation("x-xbl-contract-version", contractVersion);
+                request.Headers.TryAddWithoutValidation("User-Agent", UserAgent);
 
                 if (body != null)
                 {
                     request.Content = new StringContent(body, Encoding.UTF8, "application/json");
                 }
 
-                using (HttpResponseMessage response = await client.SendAsync(request))
+                using (HttpResponseMessage response = await Client.SendAsync(request))
                 {
                     string content = response.Content == null
                         ? string.Empty
                         : await response.Content.ReadAsStringAsync();
+
+                    // Every call is traced with its correlation id, so that a write to the
+                    // parental or privacy service leaves a record of what was asked and which
+                    // service transaction answered it.
+                    string correlationId = ExtractCorrelationId(response);
+                    Trace.WriteLine(string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0} {1} returned HTTP {2}. Correlation id: {3}",
+                        method.Method,
+                        uri,
+                        (int)response.StatusCode,
+                        correlationId ?? "none"));
 
                     if (response.StatusCode == HttpStatusCode.Unauthorized && !forceTokenRefresh)
                     {
@@ -89,13 +118,48 @@ namespace XblTestAccount
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new HttpRequestException(
-                            $"The service returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}. {content}".TrimEnd());
+                        // The correlation id is carried into the message because it is the only
+                        // handle the service team can act on, and the message is what the tool
+                        // prints when a call fails.
+                        string message = $"The service returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}. {content}".TrimEnd();
+
+                        if (correlationId != null)
+                        {
+                            message += $" Correlation id: {correlationId}";
+                        }
+
+                        throw new HttpRequestException(message);
                     }
 
                     return content;
                 }
             }
+        }
+
+        /// <summary>
+        /// Reads whichever correlation header the service answered with, or null if it sent none.
+        /// </summary>
+        private static string ExtractCorrelationId(HttpResponseMessage response)
+        {
+            foreach (string header in new[] { "X-XblCorrelationId", "MS-CV" })
+            {
+                if (response.Headers.TryGetValues(header, out IEnumerable<string> values))
+                {
+                    string value = values?.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return value;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static string BuildUserAgent()
+        {
+            AssemblyName assemblyName = Assembly.GetEntryAssembly()?.GetName() ?? Assembly.GetExecutingAssembly().GetName();
+            return $"{assemblyName.Name}/{assemblyName.Version}";
         }
 
         /// <summary>
@@ -106,3 +170,4 @@ namespace XblTestAccount
         }
     }
 }
+
