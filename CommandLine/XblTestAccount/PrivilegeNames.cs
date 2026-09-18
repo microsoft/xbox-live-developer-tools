@@ -11,11 +11,9 @@ namespace XblTestAccount
     /// in the parental service.
     /// </summary>
     /// <remarks>
-    /// The names come from the "Claim values for privileges" table in the GDK documentation for the
-    /// Xbox services security token claims, the GDK XUserPrivilege enumeration and the Win32
-    /// KnownGamingPrivileges enumeration in gamingtcui.h. Only ids one of those sources names are
-    /// listed, so an account holds a handful of ids that are reported as their number, as does one
-    /// the service has minted since; the service mints new ones from time to time.
+    /// The names come from the GDK privilege claim table, GDK XUserPrivilege, and Win32
+    /// KnownGamingPrivileges in gamingtcui.h. Ids not named by those sources are shown as their
+    /// number because the service can mint new privileges.
     /// </remarks>
     internal static class PrivilegeNames
     {

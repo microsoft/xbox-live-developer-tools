@@ -19,11 +19,9 @@ namespace XblTestAccount
     /// Issues a request to an Xbox Live user service with the signed in test account's token.
     /// </summary>
     /// <remarks>
-    /// This deliberately does not use the library's XboxLiveHttpRequest, which is internal to the
-    /// library and retries on 403 rather than the 401 these services answer with once a privilege
-    /// changes. The policy it would have supplied is reproduced here: TLS 1.2, the tool user agent,
-    /// a single shared HttpClient, and correlation id capture, so that a call to the parental or
-    /// privacy service can still be traced with the service team after the fact.
+    /// This cannot use the library's internal XboxLiveHttpRequest, which retries on 403 instead of
+    /// the 401 these services return after privilege changes. It reproduces the needed behavior:
+    /// TLS 1.2, a shared HttpClient, the tool user agent, and correlation-id logging.
     /// </remarks>
     internal static class UserServiceRequest
     {
@@ -33,8 +31,7 @@ namespace XblTestAccount
 
         static UserServiceRequest()
         {
-            // .Net is supposed to default to the latest TLS version on the machine, but the
-            // library pins it explicitly for the same services, so this does too.
+            // Keep TLS behavior aligned with the library's explicit setting for these services.
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         }
 
@@ -50,10 +47,8 @@ namespace XblTestAccount
         /// <returns>The response body.</returns>
         internal static async Task<string> SendAsync(string sandbox, HttpMethod method, string uri, string contractVersion, string body)
         {
-            // An XToken carries the privilege claims of the account, so a call that changes
-            // privileges invalidates the token it was made with. The service then answers HTTP 401
-            // even though the cached token has not expired, so a 401 is retried once with a freshly
-            // minted token before it is reported as a failure.
+            // Privilege changes can invalidate a still-unexpired token, which surfaces as HTTP 401.
+            // Retry once with a fresh token before reporting failure.
             try
             {
                 return await SendOnceAsync(sandbox, method, uri, contractVersion, body, false);
@@ -66,8 +61,7 @@ namespace XblTestAccount
 
         private static async Task<string> SendOnceAsync(string sandbox, HttpMethod method, string uri, string contractVersion, string body, bool forceTokenRefresh)
         {
-            // These services require a user XSTS token. A Partner Center developer eToken is
-            // rejected with HTTP 401 even for a read-only GET.
+            // These endpoints require a user XSTS token, not a Partner Center developer eToken.
             string authHeader;
             try
             {
@@ -75,9 +69,7 @@ namespace XblTestAccount
             }
             catch (Exception ex)
             {
-                // Minting the token is a separate step from the call it authenticates, and it
-                // fails for its own reasons, so it is reported as itself rather than as the
-                // service refusing the request.
+                // Token minting failed before the service call.
                 throw new TestAccountTokenException(sandbox, ex);
             }
 
@@ -99,9 +91,7 @@ namespace XblTestAccount
                         ? string.Empty
                         : await response.Content.ReadAsStringAsync();
 
-                    // Every call is traced with its correlation id, so that a write to the
-                    // parental or privacy service leaves a record of what was asked and which
-                    // service transaction answered it.
+                    // Always log correlation id for service-side traceability.
                     string correlationId = ExtractCorrelationId(response);
                     Trace.WriteLine(string.Format(
                         CultureInfo.InvariantCulture,
@@ -118,9 +108,7 @@ namespace XblTestAccount
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        // The correlation id is carried into the message because it is the only
-                        // handle the service team can act on, and the message is what the tool
-                        // prints when a call fails.
+                        // Include correlation id in errors so support can trace the transaction.
                         string message = $"The service returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}. {content}".TrimEnd();
 
                         if (correlationId != null)
@@ -170,4 +158,3 @@ namespace XblTestAccount
         }
     }
 }
-
