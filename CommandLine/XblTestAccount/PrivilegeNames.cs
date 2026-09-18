@@ -11,20 +11,26 @@ namespace XblTestAccount
     /// in the parental service.
     /// </summary>
     /// <remarks>
-    /// The names follow the GDK XUserPrivilege enumeration and the Win32 KnownGamingPrivileges
-    /// enumeration in gamingtcui.h, which between them cover the ids a modern account holds. The
-    /// remainder are ids that appear in the token claim example in the GDK documentation for the
-    /// server side handling of user privileges. An id outside this set is reported as its number,
-    /// as the service mints new ones from time to time.
+    /// The names come from the "Claim values for privileges" table in the GDK documentation for the
+    /// Xbox services security token claims, the GDK XUserPrivilege enumeration and the Win32
+    /// KnownGamingPrivileges enumeration in gamingtcui.h. Only ids one of those sources names are
+    /// listed, so an account holds a handful of ids that are reported as their number, as does one
+    /// the service has minted since; the service mints new ones from time to time.
     /// </remarks>
     internal static class PrivilegeNames
     {
         private static readonly Dictionary<int, string> NameMapping = new Dictionary<int, string>
         {
             { 185, "Cross Network Play" },
+            { 186, "Play Tournament" },
+            { 187, "Create Tournament" },
             { 188, "Clubs" },
             { 189, "Non-interactive Sessions" },
             { 190, "Broadcast" },
+            { 191, "Premium Music Content" },
+            { 192, "Skype Advertisement" },
+            { 193, "Download Free Content" },
+            { 195, "Fitness Upload" },
             { 196, "Manage Profile Privacy" },
             { 197, "View Friends List" },
             { 198, "Game DVR" },
@@ -41,6 +47,7 @@ namespace XblTestAccount
             { 217, "Internet Browser" },
             { 219, "Subscription Content" },
             { 220, "Social Network Sharing" },
+            { 221, "PII Access" },
             { 224, "Premium Video" },
             { 226, "Dedicated Server Multiplayer" },
             { 227, "Manage Payment Instruments" },
