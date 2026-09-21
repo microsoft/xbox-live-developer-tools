@@ -17,7 +17,7 @@ steps:
       branchVersion: true
       extSync: true
 
-  - task: PoliCheck@1
+  - task: PoliCheck@2
     displayName: Run PoliCheck
 
   - task: NuGetToolInstaller@1
@@ -25,7 +25,7 @@ steps:
     inputs:
       versionSpec: 5.8
 
-  - task: NuGetAuthenticate@0
+  - task: NuGetAuthenticate@1
 
   # Install NuGet dependencies. The GUID below is the NuGetCommand
   # Refs:
@@ -122,10 +122,10 @@ steps:
       targetPath: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools'
       artifact: 'XboxLive_Developer_Tools_Packaging_PipelineArtifacts_$(CONFIGURATION)'
 
-  - task: CmdLine@1
+  - task: CmdLine@2
     displayName: postBuildScriptVPack.cmd
     inputs:
-      filename: 'Utilities\Pipelines\Scripts\postBuildScriptVPack.cmd'
+      script: 'call Utilities\Pipelines\Scripts\postBuildScriptVPack.cmd'
 
   - task: PublishPipelineArtifact@1
     displayName: 'Publish Pipeline Artifact VPack'
