@@ -7,6 +7,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
     using Microsoft.Xbox.Services.DevTools.Common;
     using Newtonsoft.Json;
 
@@ -31,9 +33,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             lock (TokenLock)
             {
-                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
                 this.CachedTokens[key] = token;
-                File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(this.CachedTokens));
+                this.SaveTokenCache();
             }
         }
 
@@ -85,6 +86,9 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 this.CachedTokens = this.CachedTokens
                         .Where(o => !IsTokenForUser(o.Value, userName))
                         .ToDictionary(o => o.Key, o => o.Value);
+
+                // Persist removals so signed-out users are not restored from disk on next run.
+                this.SaveTokenCache();
             }
         }
 
@@ -92,9 +96,8 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         {
             lock (TokenLock)
             {
-                string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
                 this.CachedTokens = new Dictionary<string, XasTokenResponse>();
-                File.WriteAllText(cacheFilePath, JsonConvert.SerializeObject(this.CachedTokens));
+                this.SaveTokenCache();
             }
         }
 
@@ -110,14 +113,35 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             return string.Compare(name?.ToString(), userName, StringComparison.OrdinalIgnoreCase) == 0;
         }
 
+        private void SaveTokenCache()
+        {
+            string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
+            byte[] plaintext = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this.CachedTokens));
+
+            // Protect bearer tokens at rest with CurrentUser-scoped DPAPI.
+            File.WriteAllBytes(cacheFilePath, ProtectedData.Protect(plaintext, null, DataProtectionScope.CurrentUser));
+        }
+
         private void LoadTokenCache()
         {
             lock (TokenLock)
             {
                 string cacheFilePath = Path.Combine(ClientSettings.Singleton.CacheFolder, this.cacheFile);
 
-                Dictionary<string, XasTokenResponse> cache = JsonConvert.DeserializeObject<Dictionary<string, XasTokenResponse>>(File.Exists(cacheFilePath) 
-                    ? File.ReadAllText(cacheFilePath) : string.Empty);
+                Dictionary<string, XasTokenResponse> cache = null;
+
+                if (File.Exists(cacheFilePath))
+                {
+                    try
+                    {
+                        cache = JsonConvert.DeserializeObject<Dictionary<string, XasTokenResponse>>(ReadCacheFile(cacheFilePath));
+                    }
+                    catch (Exception ex) when (ex is CryptographicException || ex is JsonException)
+                    {
+                        // Ignore unreadable cache and fall back to fresh sign-in.
+                        Log.WriteLog($"Ignoring unreadable token cache {this.cacheFile}: {ex.Message}");
+                    }
+                }
 
                 if (cache != null)
                 {
@@ -130,6 +154,21 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 {
                     this.CachedTokens = new Dictionary<string, XasTokenResponse>();
                 }
+            }
+        }
+
+        private static string ReadCacheFile(string cacheFilePath)
+        {
+            byte[] raw = File.ReadAllBytes(cacheFilePath);
+
+            try
+            {
+                return Encoding.UTF8.GetString(ProtectedData.Unprotect(raw, null, DataProtectionScope.CurrentUser));
+            }
+            catch (CryptographicException)
+            {
+                // Legacy caches are plaintext JSON; read once and re-protect on next write.
+                return Encoding.UTF8.GetString(raw);
             }
         }
     }
