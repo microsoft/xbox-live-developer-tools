@@ -17,7 +17,7 @@ steps:
       branchVersion: true
       extSync: true
 
-  - task: PoliCheck@1
+  - task: PoliCheck@2
     displayName: Run PoliCheck
 
   - task: NuGetToolInstaller@1
@@ -25,7 +25,7 @@ steps:
     inputs:
       versionSpec: 5.8
 
-  - task: NuGetAuthenticate@0
+  - task: NuGetAuthenticate@1
 
   # Install NuGet dependencies. The GUID below is the NuGetCommand
   # Refs:
@@ -51,13 +51,14 @@ steps:
       version: 2.1.816
       installationPath: $(Agent.ToolsDirectory)/dotnet
 
-  # Build the Visual Studio 17 solution.
+  # Build the solution with the Visual Studio 2022 toolset. Fody 6.x refuses to
+  # weave on MSBuild 15, so vsVersion must stay at 16.0 or newer.
   # Ref: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/visual-studio-build
   - task: VSBuild@1
     displayName: Build ${{ parameters.platform }}+${{ parameters.configuration }} Solution
     inputs:
       solution: XboxLiveTools.sln
-      vsVersion: 15.0
+      vsVersion: 17.0
       msbuildArchitecture: x64
       platform: ${{ parameters.platform }}
       configuration: ${{ parameters.configuration }}
@@ -121,10 +122,10 @@ steps:
       targetPath: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools'
       artifact: 'XboxLive_Developer_Tools_Packaging_PipelineArtifacts_$(CONFIGURATION)'
 
-  - task: CmdLine@1
+  - task: CmdLine@2
     displayName: postBuildScriptVPack.cmd
     inputs:
-      filename: 'Utilities\Pipelines\Scripts\postBuildScriptVPack.cmd'
+      script: 'call Utilities\Pipelines\Scripts\postBuildScriptVPack.cmd'
 
   - task: PublishPipelineArtifact@1
     displayName: 'Publish Pipeline Artifact VPack'
