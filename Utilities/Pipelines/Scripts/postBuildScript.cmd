@@ -8,10 +8,8 @@ set TOOLS_SOURCEDIRECTORY=%BUILD_SOURCESDIRECTORY%
 
 
 set TOOLS_DROP_LOCATION=%TOOLS_BINARIESDIRECTORY%\XboxLiveDeveloperTools
-set TOOLS_DROP_LOCATION_VPACK=%TOOLS_DROP_LOCATION%\Tools-VPack
 rmdir /s /q %TOOLS_DROP_LOCATION%
 mkdir %TOOLS_DROP_LOCATION%
-mkdir %TOOLS_DROP_LOCATION_VPACK%
 mkdir %TOOLS_DROP_LOCATION%\ToolZip
 
 setlocal
@@ -42,14 +40,6 @@ copy %TOOLS_RELEASEDIRECTORY%\XblPlayerDataReset\XblPlayerDataReset.exe         
 copy %TOOLS_RELEASEDIRECTORY%\XblConnectedStorage\XblConnectedStorage.exe                           %TOOLS_DROP_LOCATION%\ToolZip
 copy %TOOLS_RELEASEDIRECTORY%\SessionHistoryViewer\MultiplayerSessionHistoryViewer.exe              %TOOLS_DROP_LOCATION%\ToolZip
 copy %TOOLS_BINARIESDIRECTORY%\%CONFIGURATION%\Microsoft.Xbox.Services.DevTools.2023.3.0.nupkg      %TOOLS_DROP_LOCATION%
-
-REM ------------------- OS VPACK BEGIN -------------------
-copy %TOOLS_RELEASEDIRECTORY%\XblConfig\XblConfig.exe                                               %TOOLS_DROP_LOCATION_VPACK%
-copy %TOOLS_RELEASEDIRECTORY%\XblConnectedStorage\XblConnectedStorage.exe                           %TOOLS_DROP_LOCATION_VPACK%
-copy %TOOLS_RELEASEDIRECTORY%\XblDevAccount\XblDevAccount.exe                                       %TOOLS_DROP_LOCATION_VPACK%
-copy %TOOLS_RELEASEDIRECTORY%\XblTestAccount\XblTestAccount.exe                                     %TOOLS_DROP_LOCATION_VPACK%
-copy %TOOLS_RELEASEDIRECTORY%\XblPlayerDataReset\XblPlayerDataReset.exe                             %TOOLS_DROP_LOCATION_VPACK%
-copy %TOOLS_RELEASEDIRECTORY%\Microsoft.Xbox.Services.DevTools\Microsoft.Xbox.Services.DevTools.dll %TOOLS_DROP_LOCATION_VPACK%
 
 echo.
 echo Done postBuildScript.cmd
