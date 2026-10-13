@@ -106,29 +106,8 @@ steps:
     inputs:
       filename: 'Utilities\Pipelines\Scripts\postBuildScript.cmd'
 
-  - task: PkgESVPack@12
-    displayName: 'Package ES - VPack'
-    inputs:
-      sourceDirectory: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools\Tools-VPack'
-      description: 'XboxLiveDeveloperTools.$(CONFIGURATION)'
-      pushPkgName: 'XboxLiveDeveloperTools.$(CONFIGURATION)'
-      vpackToken: '$(PAT-XboxADO)'
-    env:
-      PAT: $(PAT-XboxADO)
-
   - task: PublishPipelineArtifact@1
     displayName: 'Publish Pipeline Artifact'
     inputs:
       targetPath: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools'
       artifact: 'XboxLive_Developer_Tools_Packaging_PipelineArtifacts_$(CONFIGURATION)'
-
-  - task: CmdLine@2
-    displayName: postBuildScriptVPack.cmd
-    inputs:
-      script: 'call Utilities\Pipelines\Scripts\postBuildScriptVPack.cmd'
-
-  - task: PublishPipelineArtifact@1
-    displayName: 'Publish Pipeline Artifact VPack'
-    inputs:
-      targetPath: '$(Pipeline.Workspace)\b\XboxLiveDeveloperTools\Tools-VPack'
-      artifact: 'XboxLive_Developer_Tools_Packaging_PipelineArtifacts_VPack_$(CONFIGURATION)'
