@@ -11,6 +11,7 @@ namespace XblTestAccount
     using System.Net.Http;
     using System.Reflection;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using CommandLine;
     using Microsoft.Xbox.Services.DevTools.Authentication;
@@ -114,6 +115,9 @@ namespace XblTestAccount
 
                 case "privacy":
                     return await OnPrivacyCommand(rest);
+
+                case "people":
+                    return await OnPeopleCommand(rest);
 
                 default:
                     Console.Error.WriteLine($"Error: unknown command \"{command}\".");
@@ -227,6 +231,59 @@ namespace XblTestAccount
             }
         }
 
+        /// <summary>
+        /// Dispatches the sub command of the people command.
+        /// </summary>
+        /// <param name="args">The arguments after the people command.</param>
+        /// <returns>The exit code of the sub command.</returns>
+        private static async Task<int> OnPeopleCommand(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                Console.Error.WriteLine("Error: the people command requires an action.");
+                WritePeopleHelp();
+                return -1;
+            }
+
+            string action = args[0];
+            string[] rest = args.Skip(1).ToArray();
+
+            if (IsHelpFlag(action))
+            {
+                WritePeopleHelp();
+                return 0;
+            }
+
+            if (string.Equals(action, "show", StringComparison.OrdinalIgnoreCase))
+            {
+                if (WantsHelp(rest))
+                {
+                    return WritePeopleShowHelp();
+                }
+
+                return TryParse(rest, out PeopleShowOptions show)
+                    ? await OnPeopleShow(show)
+                    : UsageError(WritePeopleShowHelp);
+            }
+
+            if (TryParseEnumName(action, out PeopleAction change))
+            {
+                if (WantsHelp(rest))
+                {
+                    return WritePeopleChangeHelp(change);
+                }
+
+                return TryParse(rest, out PeopleChangeOptions options)
+                    ? await OnPeopleChange(options, change)
+                    : UsageError(() => WritePeopleChangeHelp(change));
+            }
+
+            string expected = string.Join(", ", Enum.GetNames(typeof(PeopleAction)).Select(name => name.ToLowerInvariant()));
+            Console.Error.WriteLine($"Error: unknown people action \"{action}\". Expected show, {expected}.");
+            WritePeopleHelp();
+            return -1;
+        }
+
         private static async Task<int> OnSignIn(SignInOptions signInOptions)
         {
             try
@@ -237,7 +294,7 @@ namespace XblTestAccount
                 Console.WriteLine($"Test account {testAccount.UserName} has successfully signed in to sandbox {testAccount.Sandbox}.");
                 DisplayTestAccount(testAccount, "\t");
                 Console.WriteLine();
-                Console.WriteLine($"Run \"{ToolName} privilege show\" for its privileges, or \"{ToolName} privacy show\" for its privacy settings.");
+                Console.WriteLine($"Run \"{ToolName} --help\" to see what you can do with this account.");
                 return 0;
             }
             catch (HttpRequestException ex)
@@ -603,6 +660,433 @@ namespace XblTestAccount
         }
 
         /// <summary>
+        /// Reports who the signed in account follows, blocks and mutes.
+        /// </summary>
+        /// <param name="options">The lists to report and the output options.</param>
+        /// <returns>Zero when the lists were reported.</returns>
+        private static async Task<int> OnPeopleShow(PeopleShowOptions options)
+        {
+            TestAccount testAccount = LoadSignedInTestAccount();
+            if (testAccount == null)
+            {
+                return -1;
+            }
+
+            if (!TryResolveSandbox(testAccount, out string sandbox))
+            {
+                return -1;
+            }
+
+            // With no list named, every list is reported.
+            bool all = !options.Following && !options.Blocked && !options.Muted;
+
+            try
+            {
+                IList<FollowedPerson> following = all || options.Following ? await PeopleClient.GetFollowingAsync(sandbox) : null;
+                IList<string> blocked = all || options.Blocked ? await PeopleClient.GetBlockedAsync(sandbox, testAccount.Xuid) : null;
+                IList<string> muted = all || options.Muted ? await PeopleClient.GetMutedAsync(sandbox, testAccount.Xuid) : null;
+
+                if (options.Json)
+                {
+                    var payload = new Dictionary<string, object>();
+                    if (following != null)
+                    {
+                        payload["following"] = following.Select(person => new
+                        {
+                            xuid = person.Xuid,
+                            isFavorite = person.IsFavorite,
+                            followsBack = person.IsFollowingCaller,
+                        });
+                    }
+
+                    if (blocked != null)
+                    {
+                        payload["blocked"] = blocked;
+                    }
+
+                    if (muted != null)
+                    {
+                        payload["muted"] = muted;
+                    }
+
+                    WriteJson(payload);
+                    return 0;
+                }
+
+                Console.WriteLine($"People lists for {testAccount.Gamertag} ({testAccount.Xuid}):");
+
+                if (following != null)
+                {
+                    DisplayPeople("Following", following.Select(person => Entry(person.Xuid, DescribeFollowedPerson(person))).ToList());
+                }
+
+                if (blocked != null)
+                {
+                    DisplayPeople("Blocked", blocked.Select(xuid => Entry(xuid, string.Empty)).ToList());
+                }
+
+                if (muted != null)
+                {
+                    DisplayPeople("Muted", muted.Select(xuid => Entry(xuid, string.Empty)).ToList());
+                }
+
+                return 0;
+            }
+            catch (TestAccountTokenException ex)
+            {
+                return ReportTokenFailure(ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.Error.WriteLine("Error: the people call failed.");
+                Console.Error.WriteLine(ex.Message);
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// Follows, friends, favorites, blocks or mutes people, or undoes one of those, on the
+        /// signed in account. Large lists are sent in batches, paced to the service's rate limit.
+        /// </summary>
+        /// <param name="options">The people to change.</param>
+        /// <param name="action">The change to make.</param>
+        /// <returns>Zero when every person was changed.</returns>
+        private static async Task<int> OnPeopleChange(PeopleChangeOptions options, PeopleAction action)
+        {
+            string verb = action.ToString().ToLowerInvariant();
+
+            if (!TryReadXuids(options, out List<string> xuids))
+            {
+                return -1;
+            }
+
+            if (xuids.Count == 0)
+            {
+                Console.Error.WriteLine($"Error: the {verb} action requires at least one XUID or a file of them, for example \"{ToolName} people {verb} 2814634367189023\".");
+                return UsageError(() => WritePeopleChangeHelp(action));
+            }
+
+            TestAccount testAccount = LoadSignedInTestAccount();
+            if (testAccount == null)
+            {
+                return -1;
+            }
+
+            if (!TryResolveSandbox(testAccount, out string sandbox))
+            {
+                return -1;
+            }
+
+            if (XuidList.TryParse(testAccount.Xuid, out string self) && xuids.Remove(self))
+            {
+                Console.WriteLine($"Skipping {testAccount.Gamertag} ({self}), which is the signed in account itself.");
+                if (xuids.Count == 0)
+                {
+                    Console.Error.WriteLine("Error: no other XUIDs were given.");
+                    return -1;
+                }
+            }
+
+            var skipped = new List<string>();
+            if (action == PeopleAction.Follow || action == PeopleAction.Friend)
+            {
+                // The service removes the block when following or friending someone, even if the call fails.
+                try
+                {
+                    var blocked = new HashSet<string>(await PeopleClient.GetBlockedAsync(sandbox, testAccount.Xuid), StringComparer.Ordinal);
+                    skipped = xuids.Where(blocked.Contains).ToList();
+                }
+                catch (TestAccountTokenException ex)
+                {
+                    return ReportTokenFailure(ex);
+                }
+                catch (HttpRequestException ex)
+                {
+                    Console.Error.WriteLine("Error: the blocked list could not be read, so nobody was changed.");
+                    Console.Error.WriteLine(ex.Message);
+                    return -1;
+                }
+
+                if (skipped.Count > 0)
+                {
+                    xuids.RemoveAll(skipped.Contains);
+                    Console.WriteLine($"Skipping {CountPeople(skipped.Count)} the account has blocked, since {DescribeGerund(action).ToLowerInvariant()} them would remove the block. Run \"{ToolName} people unblock\" first to {verb} them:");
+                    foreach (string xuid in skipped)
+                    {
+                        Console.WriteLine("    " + xuid);
+                    }
+
+                    if (xuids.Count == 0)
+                    {
+                        Console.Error.WriteLine($"Error: nobody is left to {verb}.");
+                        return -1;
+                    }
+                }
+            }
+
+            if (action == PeopleAction.Follow && xuids.Count > PeopleClient.FollowLimit)
+            {
+                Console.Error.WriteLine($"Error: {xuids.Count} XUIDs were given, but the service lets an account follow no more than {PeopleClient.FollowLimit} people in 12 hours.");
+                Console.Error.WriteLine("Split the list and follow the rest later.");
+                return -1;
+            }
+
+            int batchSize = PeopleClient.GetBatchSize(action);
+            int delay = PeopleClient.GetBatchDelayMilliseconds(action);
+            int batches = (xuids.Count + batchSize - 1) / batchSize;
+
+            Console.WriteLine($"{DescribeGerund(action)} {CountPeople(xuids.Count)} as {testAccount.Gamertag} ({testAccount.Xuid}).");
+            if (batches > 1 && delay > 0)
+            {
+                Console.WriteLine($"Sending {batches} batches of up to {batchSize}, {delay / 1000} seconds apart to stay inside the rate limit. Press Ctrl+C to stop.");
+            }
+
+            var failed = new List<string>();
+            int done = 0;
+
+            // Not disposed, so that a Ctrl+C handler still running after the loop cannot cancel a disposed source.
+            var cancel = new CancellationTokenSource();
+
+            // The first Ctrl+C stops between batches so that the work done can be reported; a
+            // second one ends the process as usual.
+            ConsoleCancelEventHandler onCancel = (sender, e) =>
+            {
+                if (!cancel.IsCancellationRequested)
+                {
+                    e.Cancel = true;
+                    Console.Error.WriteLine("Stopping after the current batch...");
+                    cancel.Cancel();
+                }
+            };
+
+            Console.CancelKeyPress += onCancel;
+            try
+            {
+                for (int offset = 0; offset < xuids.Count && !cancel.IsCancellationRequested; offset += batchSize)
+                {
+                    if (offset > 0 && delay > 0)
+                    {
+                        Console.WriteLine($"Waiting {delay / 1000} seconds for the rate limit...");
+                        try
+                        {
+                            await Task.Delay(delay, cancel.Token);
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            break;
+                        }
+                    }
+
+                    List<string> batch = xuids.Skip(offset).Take(batchSize).ToList();
+                    if (batches > 1)
+                    {
+                        Console.WriteLine($"Batch {(offset / batchSize) + 1} of {batches}: {CountPeople(batch.Count)}.");
+                    }
+
+                    try
+                    {
+                        failed.AddRange(await PeopleClient.ApplyAsync(sandbox, action, batch));
+                    }
+                    catch (TaskCanceledException ex)
+                    {
+                        // HttpClient reports its timeout as a cancellation.
+                        throw new HttpRequestException("The request timed out.", ex);
+                    }
+
+                    done += batch.Count;
+                }
+            }
+            catch (TestAccountTokenException ex)
+            {
+                int exitCode = ReportTokenFailure(ex);
+                ReportPeopleFailures(verb, failed);
+                ReportPeopleProgress(done - failed.Count, xuids.Count);
+                return exitCode;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.Error.WriteLine($"Error: the {verb} call failed.");
+                Console.Error.WriteLine(ex.Message);
+                ReportPeopleFailures(verb, failed);
+                ReportPeopleProgress(done - failed.Count, xuids.Count);
+
+                if (action == PeopleAction.Friend && ex.Message.Contains("HTTP 403"))
+                {
+                    Console.Error.WriteLine($"The service rejects a whole friend batch that includes someone the account has blocked, and removes those blocks. Run \"{ToolName} people show --blocked\" to check.");
+                }
+                else if ((action == PeopleAction.Follow || action == PeopleAction.Friend) && ex.Message.Contains("HTTP 429"))
+                {
+                    Console.Error.WriteLine($"The service allows 100 follows per 30 seconds and {PeopleClient.FollowLimit} per 12 hours.");
+                }
+
+                return -1;
+            }
+            finally
+            {
+                Console.CancelKeyPress -= onCancel;
+            }
+
+            bool cancelled = cancel.IsCancellationRequested && done < xuids.Count;
+
+            ReportPeopleFailures(verb, failed);
+
+            if (cancelled)
+            {
+                Console.Error.WriteLine($"Stopped after {done} of {CountPeople(xuids.Count)}.");
+            }
+
+            if (failed.Count > 0 || cancelled)
+            {
+                return -1;
+            }
+
+            Console.WriteLine($"Done. Run \"{ToolName} people show {DescribeListOption(action)}\" to see the list.");
+            if (DescribeListOption(action) != "--following")
+            {
+                Console.WriteLine("It can take a moment for the change to show.");
+            }
+
+            return skipped.Count > 0 ? -1 : 0;
+        }
+
+        /// <summary>
+        /// Gathers the XUIDs given on the command line and in any file, in order and without
+        /// repeats, reporting the first value that is not a XUID.
+        /// </summary>
+        /// <param name="options">The people command options.</param>
+        /// <param name="xuids">Receives the XUIDs.</param>
+        /// <returns>True when every value was a XUID.</returns>
+        private static bool TryReadXuids(PeopleChangeOptions options, out List<string> xuids)
+        {
+            xuids = new List<string>();
+            var values = (options.Xuids ?? Enumerable.Empty<string>())
+                .Select(value => Entry(value, "on the command line"))
+                .ToList();
+
+            if (!string.IsNullOrWhiteSpace(options.File))
+            {
+                IList<string> read;
+                try
+                {
+                    read = XuidList.ReadFile(options.File);
+                }
+                catch (Exception ex) when (ex is System.IO.IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is NotSupportedException)
+                {
+                    Console.Error.WriteLine($"Error: could not read \"{options.File}\". {ex.Message}");
+                    return false;
+                }
+
+                if (read.Count == 0)
+                {
+                    Console.Error.WriteLine($"Error: no XUIDs were found in \"{options.File}\".");
+                    return false;
+                }
+
+                values.AddRange(read.Select(value => Entry(value, $"in \"{options.File}\"")));
+            }
+
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, string> value in values)
+            {
+                if (!XuidList.TryParse(value.Key, out string xuid))
+                {
+                    Console.Error.WriteLine($"Error: \"{value.Key}\" {value.Value} is not a XUID. Expected a number such as 2814634367189023.");
+                    if (value.Value != "on the command line")
+                    {
+                        Console.Error.WriteLine("A file must be a plain list of XUIDs, or a CSV with a Xuid column.");
+                    }
+
+                    return false;
+                }
+
+                if (seen.Add(xuid))
+                {
+                    xuids.Add(xuid);
+                }
+            }
+
+            return true;
+        }
+
+        private static string DescribeFollowedPerson(FollowedPerson person)
+        {
+            var notes = new List<string>();
+            if (person.IsFavorite)
+            {
+                notes.Add("favorite");
+            }
+
+            if (person.IsFollowingCaller)
+            {
+                notes.Add("follows back");
+            }
+
+            return string.Join(", ", notes);
+        }
+
+        private static string DescribeGerund(PeopleAction action)
+        {
+            switch (action)
+            {
+                case PeopleAction.Favorite:
+                    return "Favoriting";
+                case PeopleAction.Unfavorite:
+                    return "Unfavoriting";
+                case PeopleAction.Mute:
+                    return "Muting";
+                case PeopleAction.Unmute:
+                    return "Unmuting";
+                default:
+                    return action + "ing";
+            }
+        }
+
+        /// <summary>
+        /// Gets the people show option that reports the list an action changes.
+        /// </summary>
+        private static string DescribeListOption(PeopleAction action)
+        {
+            switch (action)
+            {
+                case PeopleAction.Block:
+                case PeopleAction.Unblock:
+                    return "--blocked";
+                case PeopleAction.Mute:
+                case PeopleAction.Unmute:
+                    return "--muted";
+                default:
+                    return "--following";
+            }
+        }
+
+        private static string CountPeople(int count)
+        {
+            return count == 1 ? "1 person" : $"{count} people";
+        }
+
+        private static void ReportPeopleFailures(string verb, IList<string> failed)
+        {
+            if (failed.Count == 0)
+            {
+                return;
+            }
+
+            Console.Error.WriteLine($"Error: the service could not {verb} {CountPeople(failed.Count)}:");
+            foreach (string xuid in failed)
+            {
+                Console.Error.WriteLine("    " + xuid);
+            }
+        }
+
+        private static void ReportPeopleProgress(int done, int total)
+        {
+            if (done > 0)
+            {
+                Console.Error.WriteLine($"{done} of {CountPeople(total)} were changed before the failure.");
+            }
+        }
+
+        /// <summary>
         /// Builds the state of every privilege worth reporting: the ones this tool knows the name
         /// of, plus any the token carries that it does not.
         /// </summary>
@@ -879,6 +1363,30 @@ namespace XblTestAccount
             }
         }
 
+        /// <summary>
+        /// Reports one people list, with any note for each person.
+        /// </summary>
+        /// <param name="heading">The name of the list.</param>
+        /// <param name="people">The XUIDs in the list, each with a note that may be empty.</param>
+        private static void DisplayPeople(string heading, IList<KeyValuePair<string, string>> people)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"{heading} ({people.Count}):");
+
+            if (people.Count == 0)
+            {
+                Console.WriteLine("    (none)");
+                return;
+            }
+
+            int xuidWidth = people.Max(person => person.Key.Length);
+
+            foreach (KeyValuePair<string, string> person in people)
+            {
+                Console.WriteLine($"    {person.Key.PadRight(xuidWidth)}  {person.Value}".TrimEnd());
+            }
+        }
+
         private static void WriteJson(object payload)
         {
             Console.WriteLine(JsonConvert.SerializeObject(payload, Formatting.Indented));
@@ -1123,6 +1631,7 @@ namespace XblTestAccount
                 Entry("show", "show the signed in test account"),
                 Entry("privilege", "show, block or allow privileges on the signed in test account"),
                 Entry("privacy", "show or set privacy settings on the signed in test account"),
+                Entry("people", "show or change who the signed in test account follows, blocks and mutes"),
             });
         }
 
@@ -1268,6 +1777,118 @@ namespace XblTestAccount
             });
 
             return 0;
+        }
+
+        private static void WritePeopleHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} people <action> [options]");
+            Console.WriteLine();
+
+            var entries = new List<KeyValuePair<string, string>>
+            {
+                Entry("--help", HelpHelp),
+                Entry("show (-j)", "show who the account follows, blocks and mutes, pass -j to output as parsable json"),
+            };
+
+            foreach (PeopleAction action in Enum.GetValues(typeof(PeopleAction)))
+            {
+                entries.Add(Entry(action.ToString().ToLowerInvariant(), DescribePeopleAction(action)));
+            }
+
+            WriteEntries(entries);
+        }
+
+        private static int WritePeopleShowHelp()
+        {
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} people show [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("--following", "Optional. Report only the people the account follows."),
+                Entry("-b, --blocked", "Optional. Report only the people the account has blocked."),
+                Entry("-m, --muted", "Optional. Report only the people the account has muted."),
+                Entry("-j, --json", JsonHelp),
+                Entry("--help", HelpHelp),
+            });
+
+            foreach (string line in Wrap("With none of --following, --blocked or --muted, every list is reported.", ConsoleWidth()))
+            {
+                Console.WriteLine(line);
+            }
+
+            return 0;
+        }
+
+        private static int WritePeopleChangeHelp(PeopleAction action)
+        {
+            string verb = action.ToString().ToLowerInvariant();
+
+            WriteHeading();
+            Console.WriteLine($"Usage: {ToolName} people {verb} <xuid> [xuid...] [options]");
+            Console.WriteLine($"       {ToolName} people {verb} -f <file> [options]");
+            Console.WriteLine();
+            WriteEntries(new[]
+            {
+                Entry("xuid", "i.e. 2814634367189023"),
+                Entry("-f, --file", "Optional. A file of XUIDs: a plain list separated by spaces, commas or new lines, or a CSV export of test accounts from Partner Center, read by its Xuid column."),
+                Entry("--help", HelpHelp),
+            });
+
+            var notes = new List<string>();
+            int delay = PeopleClient.GetBatchDelayMilliseconds(action);
+            if (delay > 0)
+            {
+                notes.Add($"Up to {PeopleClient.GetBatchSize(action)} people are sent per request, {delay / 1000} seconds apart to stay inside the service's rate limit. Press Ctrl+C to stop between requests.");
+            }
+
+            if (action == PeopleAction.Follow)
+            {
+                notes.Add($"The service lets an account follow no more than {PeopleClient.FollowLimit} people in 12 hours.");
+            }
+
+            if (action == PeopleAction.Follow || action == PeopleAction.Friend)
+            {
+                notes.Add($"People the account has blocked are skipped, since {verb}ing them would remove the block. Unblock them first to {verb} them.");
+            }
+
+            foreach (string note in notes)
+            {
+                foreach (string line in Wrap(note, ConsoleWidth()))
+                {
+                    Console.WriteLine(line);
+                }
+            }
+
+            return 0;
+        }
+
+        private static string DescribePeopleAction(PeopleAction action)
+        {
+            switch (action)
+            {
+                case PeopleAction.Follow:
+                    return "follow people";
+                case PeopleAction.Unfollow:
+                    return "stop following people";
+                case PeopleAction.Friend:
+                    return "make people mutual friends, so that each follows the other";
+                case PeopleAction.Favorite:
+                    return "mark people the account follows as favorites";
+                case PeopleAction.Unfavorite:
+                    return "clear the favorite mark from people";
+                case PeopleAction.Block:
+                    return "block people";
+                case PeopleAction.Unblock:
+                    return "unblock people";
+                case PeopleAction.Mute:
+                    return "mute people";
+                case PeopleAction.Unmute:
+                    return "unmute people";
+                default:
+                    return string.Empty;
+            }
         }
 
         /// <summary>
@@ -1444,6 +2065,63 @@ namespace XblTestAccount
             /// </remarks>
             [Value(2, Hidden = true)]
             public IEnumerable<string> Surplus { get; set; }
+        }
+
+        /// <summary>
+        /// The options of the people show command.
+        /// </summary>
+        private class PeopleShowOptions
+        {
+            /// <summary>
+            /// Gets or sets a value indicating whether to report the people the account follows.
+            /// </summary>
+            [Option("following", Required = false,
+                HelpText = "Optional. Report only the people the account follows.")]
+            public bool Following { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to report the people the account has blocked.
+            /// </summary>
+            [Option('b', "blocked", Required = false,
+                HelpText = "Optional. Report only the people the account has blocked.")]
+            public bool Blocked { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to report the people the account has muted.
+            /// </summary>
+            [Option('m', "muted", Required = false,
+                HelpText = "Optional. Report only the people the account has muted.")]
+            public bool Muted { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether to write the output as json.
+            /// </summary>
+            [Option('j', "json", Required = false, HelpText = JsonHelp)]
+            public bool Json { get; set; }
+        }
+
+        /// <summary>
+        /// The options of the people commands that change a list.
+        /// </summary>
+        private class PeopleChangeOptions
+        {
+            /// <summary>
+            /// Gets or sets the XUIDs given on the command line.
+            /// </summary>
+            /// <remarks>
+            /// Taken as text and not required, for the same reasons as the privilege numbers: so
+            /// that the command can name a bad value and explain an empty list.
+            /// </remarks>
+            [Value(0, MetaName = "xuid", Required = false,
+                HelpText = "The XUIDs of the people to change.")]
+            public IEnumerable<string> Xuids { get; set; }
+
+            /// <summary>
+            /// Gets or sets a file of XUIDs.
+            /// </summary>
+            [Option('f', "file", Required = false,
+                HelpText = "A file of XUIDs, either a plain list or a Partner Center CSV export.")]
+            public string File { get; set; }
         }
     }
 }
