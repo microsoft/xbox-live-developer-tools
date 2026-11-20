@@ -59,9 +59,12 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
         public async Task<IAccount> SearchAccounts()
         {
             var accounts = await this.clientApp.GetAccountsAsync();
+
+            // FirstOrDefault rather than SingleOrDefault: a duplicate entry in the shared token
+            // cache should not make silent authentication throw.
             this.userAccount = string.IsNullOrEmpty(this.UserName)
-                ? accounts.SingleOrDefault()
-                : accounts.SingleOrDefault(a => a.Username.Equals(this.UserName, StringComparison.OrdinalIgnoreCase));
+                ? accounts.FirstOrDefault()
+                : accounts.FirstOrDefault(account => string.Compare(account.Username, this.UserName, StringComparison.OrdinalIgnoreCase) == 0);
 
             return this.userAccount;
         }
