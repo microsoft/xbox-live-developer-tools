@@ -62,8 +62,9 @@ Developer account {Name} has successfully signed out.
 ### XblTestAccount.exe
 
 XblTestAccount signs in an Xbox Live test account and caches the credential, so that later runs obtain a user token
-without showing any UI. It also reads and changes the privileges and privacy settings of the signed in account, which is
-the command line equivalent of the Privacy and Privilege tabs in XblTestAccountGui.
+without showing any UI. It also reads and changes the privileges, privacy settings and people lists of the signed in
+account, which is the command line equivalent of the Privacy/Privilege, Follow/Block/Mute and People tabs in
+XblTestAccountGui.
 
 #### Usage
 
@@ -83,10 +84,10 @@ Test account {UserName} has successfully signed in to sandbox {Sandbox}.
     Sandbox : {sandbox}
     Age Group : {ageGroup}
 
-Run "XblTestAccount privilege show" for its privileges, or "XblTestAccount privacy show" for its privacy settings.
+Run "XblTestAccount --help" to see what you can do with this account.
 ```
 
-***show:*** Displays who the signed in test account is. The privileges and the privacy settings have their own commands,
+***show:*** Displays who the signed in test account is. Other details, such as its privileges, have their own commands,
 so that each command answers one question.
 
 ```
@@ -191,6 +192,48 @@ CommunicateDuringCrossNetworkPlay is now Blocked.
 A privacy setting is the account's own choice about who it shares with, whereas a privilege is a restriction the parental
 service applies. A write is not immediately visible to a read, so the tool reads the value back until the change appears
 and warns if it never does.
+
+***people:*** Shows who the signed in test account follows, blocks and mutes, or changes those lists. This is the command
+line equivalent of the Follow/Block/Mute and People tabs in XblTestAccountGui. The action is required.
+
+```
+XblTestAccount.exe people show [--following] [--blocked] [--muted] [--json]
+XblTestAccount.exe people <follow|unfollow|friend|favorite|unfavorite|block|unblock|mute|unmute> <xuid...> [--file <file>]
+```
+
+`people show` reports every list unless one or more of `--following`, `--blocked` (`-b`) and `--muted` (`-m`) is passed.
+
+The change actions take XUIDs on the command line, in a file passed with `--file` (`-f`), or both. A file is either a
+plain list separated by spaces, commas or new lines, or a CSV export of test accounts from Partner Center, which is read
+by its `Xuid` column. Repeated XUIDs and the signed in account's own XUID are skipped.
+
+Large lists are sent in batches: 50 people per request for the social actions and 100 for block and mute. `follow`
+waits 35 seconds between batches and `friend` waits 2 seconds, to stay inside the service's rate limit; press Ctrl+C to
+stop between batches. The service lets an account follow no more than 500 people in 12 hours, so `follow` refuses a
+longer list up front. Following or friending someone removes the account's block on them, so `follow` and `friend` skip
+anyone on the blocked list; `unblock` them first.
+
+***Success output example:***
+
+```
+> XblTestAccount.exe people show
+People lists for {gamertag} ({xuid}):
+
+Following (2):
+    2814634367189023  favorite, follows back
+    2814634367189024
+
+Blocked (0):
+    (none)
+
+Muted (1):
+    2814634367189025
+
+> XblTestAccount.exe people mute 2814634367189024
+Muting 1 person as {gamertag} ({xuid}).
+Done. Run "XblTestAccount people show --muted" to see the list.
+It can take a moment for the change to show.
+```
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
