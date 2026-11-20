@@ -7,6 +7,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Identity.Client;
+    using Microsoft.Identity.Client.Extensibility;
     using Microsoft.Xbox.Services.DevTools.Common;
 
     internal class MsalTestAuthContext : IAuthContext
@@ -89,6 +90,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
             this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
                         .WithLoginHint(this.UserName)
                         .WithPrompt(Prompt.ForceLogin)
+                        .WithCustomWebUi(new WebView2WebUi("Test", allowSingleSignOn: false))
                         .ExecuteAsync();
 
             // Remember the account that was just signed in so that later silent calls on this

@@ -7,6 +7,7 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Identity.Client;
+    using Microsoft.Identity.Client.Extensibility;
     using Microsoft.Xbox.Services.DevTools.Common;
 
     internal class MsalDevAuthContext : IAuthContext
@@ -79,12 +80,15 @@ namespace Microsoft.Xbox.Services.DevTools.Authentication
                 this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
                                   .WithAccount(this.userAccount)
                                   .WithPrompt(Prompt.NoPrompt)
+                                  .WithCustomWebUi(new WebView2WebUi("Dev", allowSingleSignOn: true))
                                   .ExecuteAsync();
             }
             else
             {
                 this.authResult = await this.clientApp.AcquireTokenInteractive(this.scopes)
+                                  .WithLoginHint(this.UserName)
                                   .WithPrompt(Prompt.SelectAccount)
+                                  .WithCustomWebUi(new WebView2WebUi("Dev", allowSingleSignOn: true))
                                   .ExecuteAsync();
             }
 

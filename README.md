@@ -19,6 +19,10 @@ To get access to Xbox Live services you must be a managed developer, enrolled in
 
 ## Command Line Executable Usage:
 
+Sign-in windows use the [Microsoft Edge WebView2 Runtime](https://go.microsoft.com/fwlink/p/?LinkId=2124703), which is
+included with Windows 11 and current Windows 10. Keep the `runtimes` folder next to the executables, because it contains
+the WebView2 loader.
+
 ### XblDevAccount.exe
 
 This executable is used to signin/out dev accounts and to save the credentials to be used across other Xbox Live executables that require dev credentials. 
